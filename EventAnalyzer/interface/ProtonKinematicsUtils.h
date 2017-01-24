@@ -1,17 +1,18 @@
-#ifndef RecoCTPPS_ProtonProducer_ProtonKinematicsUtils_h
-#define RecoCTPPS_ProtonProducer_ProtonKinematicsUtils_h
+#ifndef DiphotonAnalyzer_EventAnalyzer_ProtonKinematicsUtils_h
+#define DiphotonAnalyzer_EventAnalyzer_ProtonKinematicsUtils_h
 
-#include "DataFormats/CTPPSReco/interface/ProtonTrack.h"
+#include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
 #include "DataFormats/Provenance/interface/RunID.h"
 
 #include <iostream>
 
 namespace ProtonUtils {
 
-    float tracksDistance( const reco::ProtonTrack& near_p, const reco::ProtonTrack& far_p )
+    float tracksDistance( const TotemRPLocalTrack& near_p, const TotemRPLocalTrack& far_p )
     {
         const float z_far = far_p.getZ0();
-        const TVector2 far_xy_ext = near_p.getTrackPoint( z_far ), far_xy_obs = TVector2( far_p.getX0(), far_p.getY0() );
+        const TVector2 far_xy_ext = near_p.getTrackPoint( z_far ),
+                       far_xy_obs = TVector2( far_p.getX0(), far_p.getY0() );
         return (far_xy_ext-far_xy_obs).Mod()/1.e3; // mm -> m
     }
 

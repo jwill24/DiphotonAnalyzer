@@ -29,10 +29,12 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "flashgg/DataFormats/interface/Proton.h"
 #include "flashgg/DataFormats/interface/DiPhotonCandidate.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
+
+#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
+#include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
 //                               JW
 #include "flashgg/DataFormats/interface/Electron.h"
 #include "flashgg/DataFormats/interface/Muon.h"
@@ -40,6 +42,7 @@
 //
 
 #include "DiphotonAnalyzer/EventAnalyzer/interface/SelectionUtils.h"
+#include "DiphotonAnalyzer/EventAnalyzer/interface/XiInterpolator.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -49,8 +52,7 @@
 // class declaration
 //
 
-#define MAX_PROTON 10
-#define MAX_DIPROTON 5
+#define MAX_PROTON_TRK 15
 #define MAX_DIPHOTON 5
 //                               JW
 #define MAX_ELECTRON 10
@@ -75,7 +77,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     void clearTree();
     
-    edm::EDGetTokenT< edm::View<flashgg::Proton> > protonToken_;
+    edm::EDGetTokenT< edm::DetSetVector<TotemRPLocalTrack> > totemRPTracksToken_;
     edm::EDGetTokenT< edm::View<flashgg::DiPhotonCandidate> > diphotonToken_;
     edm::EDGetTokenT< edm::View<pat::MET> > metToken_;
     edm::EDGetTokenT< edm::View<reco::Vertex> > vtxToken_;
@@ -90,6 +92,9 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     double photonPairMinMass_;
     std::string filename_;
 
+    bool useXiInterp_;
+    ProtonUtils::XiInterpolator* xiInterp_;
+
     TFile* file_;
     TTree* tree_;
 
@@ -98,9 +103,9 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     unsigned int fBX, fRun, fLumiSection;
     unsigned long long fEventNum;
 
-    unsigned int fProtonNum;
-    float fProtonXi[MAX_PROTON];
-    unsigned int fProtonSide[MAX_PROTON];
+    unsigned int fProtonTrackNum;
+    float fProtonTrackXi[MAX_PROTON_TRK], fProtonTrackXiError[MAX_PROTON_TRK];
+    unsigned int fProtonTrackSide[MAX_PROTON_TRK], fProtonTrackPot[MAX_PROTON_TRK];
  //                   JW
     unsigned int fElectronNum;
     unsigned int fMuonNum;
@@ -109,9 +114,6 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     float fMuonPt[MAX_MUON], fMuonEta[MAX_MUON], fMuonPhi[MAX_MUON], fMuonE[MAX_MUON];
     float fJetPt[MAX_JET], fJetEta[MAX_JET], fJetPhi[MAX_JET], fJetE[MAX_JET], fJetMass[MAX_JET];
  //
-
-    unsigned int fDiprotonNum;
-    float fDiprotonM[MAX_DIPROTON], fDiprotonY[MAX_DIPROTON];
 
     unsigned int fDiphotonNum;
     float fDiphotonPt1[MAX_DIPHOTON], fDiphotonPt2[MAX_DIPHOTON];
@@ -144,16 +146,14 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 // constructors and destructor
 //
 TreeProducer::TreeProducer(const edm::ParameterSet& iConfig) :
-  protonToken_  ( mayConsume< edm::View<flashgg::Proton> >          ( iConfig.getParameter<edm::InputTag>( "protonLabel") ) ),
-  diphotonToken_( consumes< edm::View<flashgg::DiPhotonCandidate> > ( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
-  metToken_     ( mayConsume< edm::View<pat::MET> >                 ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
-  vtxToken_     ( mayConsume< edm::View<reco::Vertex> >             ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
+  totemRPTracksToken_( mayConsume< edm::DetSetVector<TotemRPLocalTrack> >( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
+  diphotonToken_     ( consumes< edm::View<flashgg::DiPhotonCandidate> > ( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
+  metToken_          ( mayConsume< edm::View<pat::MET> >                 ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
+  vtxToken_          ( mayConsume< edm::View<reco::Vertex> >             ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
 //                               JW
-  electronToken_( mayConsume< edm::View<flashgg::Electron> >        ( iConfig.getParameter<edm::InputTag>( "electronLabel") ) ),
-  muonToken_    ( mayConsume< edm::View<flashgg::Muon> >            ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
-  jetToken_     ( consumes< edm::View< std::vector<flashgg::Jet> > >( iConfig.getParameter<edm::InputTag>( "jetLabel") ) ),
-
-
+  electronToken_     ( mayConsume< edm::View<flashgg::Electron> >        ( iConfig.getParameter<edm::InputTag>( "electronLabel") ) ),
+  muonToken_         ( mayConsume< edm::View<flashgg::Muon> >            ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
+  jetToken_          ( consumes< edm::View< std::vector<flashgg::Jet> > >( iConfig.getParameter<edm::InputTag>( "jetLabel") ) ),
 //
   sqrtS_             ( iConfig.getParameter<double>( "sqrtS")),
   singlePhotonMinPt_ ( iConfig.getParameter<double>( "minPtSinglePhoton" ) ),
@@ -161,10 +161,14 @@ TreeProducer::TreeProducer(const edm::ParameterSet& iConfig) :
   singlePhotonMinR9_ ( iConfig.getParameter<double>( "minR9SinglePhoton" ) ),
   photonPairMinMass_ ( iConfig.getParameter<double>( "minMassDiPhoton" ) ),
   filename_          ( iConfig.getParameter<std::string>( "outputFilename" ) ),
+  useXiInterp_       ( iConfig.getParameter<bool>( "useXiInterpolation" ) ),
+  xiInterp_( 0 ),
   file_( 0 ), tree_( 0 )
 
 {
-  //now do what ever initialization is needed
+  xiInterp_ = new ProtonUtils::XiInterpolator;
+  if ( useXiInterp_ ) { xiInterp_->loadInterpolationGraphs( iConfig.getParameter<edm::FileInPath>( "xiInterpolationFile" ).fullPath().c_str() ); }
+
   file_ = new TFile( filename_.c_str(), "recreate" );
   file_->cd();
 
@@ -195,56 +199,52 @@ TreeProducer::~TreeProducer()
 void
 TreeProducer::clearTree()
 {
-  fProtonNum = 0;
-  for ( unsigned int i=0; i<MAX_PROTON; i++ ) {
-    fProtonXi[i] = 0.;
-    fProtonSide[i] = 2; //invalid
-  }
-
-  fDiprotonNum = 0;
-  for ( unsigned int i=0; i<MAX_DIPROTON; i++ ) {
-    fDiprotonM[i] = fDiprotonY[i] = 0.;
+  fProtonTrackNum = 0;
+  for ( unsigned int i=0; i<MAX_PROTON_TRK; i++ ) {
+    fProtonTrackXi[i] = fProtonTrackXiError[i] = -1.;
+    fProtonTrackSide[i] = 2; //invalid
+    fProtonTrackPot[i] = 0;
   }
 
   fDiphotonNum = 0;
   for ( unsigned int i=0; i<MAX_DIPHOTON; i++ ) {
-    fDiphotonPt1[i] = fDiphotonPt2[i] = 0.;
-    fDiphotonEta1[i] = fDiphotonEta2[i] = 0.;
-    fDiphotonPhi1[i] = fDiphotonPhi2[i] = 0.;
-    fDiphotonR91[i] = fDiphotonR92[i] = 0.;
-    fDiphotonM[i] = fDiphotonY[i] = fDiphotonPt[i] = fDiphotonDphi[i] = 0.;
+    fDiphotonPt1[i] = fDiphotonPt2[i] = -1.;
+    fDiphotonEta1[i] = fDiphotonEta2[i] = -1.;
+    fDiphotonPhi1[i] = fDiphotonPhi2[i] = -1.;
+    fDiphotonR91[i] = fDiphotonR92[i] = -1.;
+    fDiphotonM[i] = fDiphotonY[i] = fDiphotonPt[i] = fDiphotonDphi[i] = -1.;
     fDiphotonVertexTracks[i] = 0;
     fDiphotonVerticesAt1mmDist[i] = fDiphotonVerticesAt2mmDist[i] = fDiphotonVerticesAt5mmDist[i] = fDiphotonVerticesAt1cmDist[i] = 0;
-    fDiphotonVertexX[i] = fDiphotonVertexY[i] = fDiphotonVertexZ[i] = 0.;
+    fDiphotonVertexX[i] = fDiphotonVertexY[i] = fDiphotonVertexZ[i] = -1.;
     fDiphotonNearestDist[i] = 999.;
   }
 
   fElectronNum = 0;
   for ( unsigned int i=0; i<MAX_ELECTRON; i++ ) {
-    fElectronPt[i] = 0.;
-    fElectronEta[i] = 0.;
-    fElectronPhi[i] = 0.;
-    fElectronE[i] = 0.;
+    fElectronPt[i] = -1.;
+    fElectronEta[i] = -1.;
+    fElectronPhi[i] = -1.;
+    fElectronE[i] = -1.;
   }
 
   fMuonNum = 0;
   for ( unsigned int i=0; i<MAX_MUON; i++ ) {
-    fMuonPt[i] = 0.;
-    fMuonEta[i] = 0.;
-    fMuonPhi[i] = 0.;
-    fMuonE[i] = 0.;
+    fMuonPt[i] = -1.;
+    fMuonEta[i] = -1.;
+    fMuonPhi[i] = -1.;
+    fMuonE[i] = -1.;
   }
 
   fJetNum = 0;
   for ( unsigned int i=0; i<MAX_JET; i++ ) {
-    fJetPt[i] = 0.;
-    fJetPt[i] = 0.;
-    fJetEta[i] = 0.;
-    fJetE[i] = 0.;
-    fJetMass[i] = 0.;
+    fJetPt[i] = -1.;
+    fJetEta[i] = -1.;
+    fJetPhi[i] = -1.;
+    fJetE[i] = -1.;
+    fJetMass[i] = -1.;
   }
 
-  fMET = fMETPhi = 0.;
+  fMET = fMETPhi = -1.;
 
   fVertexNum = 0;
 
@@ -341,26 +341,23 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if ( fDiphotonNum<1 ) return;
 
   // fetch the proton collection from EDM file
-  edm::Handle< edm::View<flashgg::Proton> > protons;
-  iEvent.getByToken(protonToken_, protons);
+  edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
+  iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
 
-  fProtonNum = fDiprotonNum = 0;
-  for ( unsigned int i=0; i<protons->size() && fProtonNum<MAX_PROTON; i++ ) {
-    edm::Ptr<flashgg::Proton> proton = protons->ptrAt( i );
-
-    fProtonXi[i] = proton->xi();
-    fProtonSide[i] = proton->side();
-
-    for ( unsigned int j=i+1; j<protons->size() && fDiprotonNum<MAX_DIPROTON; j++ ) {
-      edm::Ptr<flashgg::Proton> proton2 = protons->ptrAt( j );
-      if ( proton2->side()==proton->side() ) continue;
-      fDiprotonM[fDiprotonNum] = sqrtS_*sqrt( proton->xi()*proton2->xi() );
-      fDiprotonY[fDiprotonNum] = log( proton2->xi()/proton->xi() )/2.;
-
-      fDiprotonNum++;
+  fProtonTrackNum = 0;
+  for ( edm::DetSetVector<TotemRPLocalTrack>::const_iterator it=rpLocalTracks->begin(); it!=rpLocalTracks->end(); it++ ) {
+    const TotemRPDetId detid( it->detId() );
+    for ( edm::DetSet<TotemRPLocalTrack>::const_iterator trk=it->begin(); trk!=it->end(); trk++ ) {
+      if ( !trk->isValid() ) { continue; }
+      float xi = -1., err_xi = -1.;
+      if ( useXiInterp_ ) { xiInterp_->computeXiSpline( detid, *trk, &xi, &err_xi ); }
+      else                { xiInterp_->computeXiLinear( detid, *trk, &xi, &err_xi ); }
+      fProtonTrackXi[fProtonTrackNum] = xi;
+      fProtonTrackXiError[fProtonTrackNum] = err_xi;
+      fProtonTrackSide[fProtonTrackNum] = detid.arm(); // 0 = left ; 1 = right
+      fProtonTrackPot[fProtonTrackNum] = detid.romanPot();
+      fProtonTrackNum++;
     }
-
-    fProtonNum++;
   }
  
  //                               JW
@@ -370,7 +367,7 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
  
  // fetch the electron collection from EDM file
   edm::Handle< edm::View<flashgg::Electron> > electrons;
-  iEvent.getByToken(electronToken_, electrons);
+  iEvent.getByToken( electronToken_, electrons );
  
  fElectronNum=0;
  //  edm::Ptr<reco::Vertex> electron_vtx[MAX_ELECTRON];
@@ -438,7 +435,7 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 //
  //
  
-  std::cout << "# found " << fDiphotonNum << " diphoton candidate(s) with " << fProtonNum << " proton(s)!" << std::endl;
+  std::cout << "# found " << fDiphotonNum << " diphoton candidate(s) with " << fProtonTrackNum << " proton track(s) (all pots)!" << std::endl;
   // retrieve the missing ET
   edm::Handle< edm::View<pat::MET> > mets;
   iEvent.getByToken( metToken_, mets );
@@ -481,13 +478,10 @@ TreeProducer::beginJob()
   tree_->Branch( "bunch_crossing", &fBX, "bunch_crossing/i");
   tree_->Branch( "event_number", &fEventNum, "event_number/l");
 
-  tree_->Branch( "num_proton", &fProtonNum, "num_proton/i" );
-  tree_->Branch( "proton_xi", fProtonXi, "proton_xi[num_proton]/F" );
-  tree_->Branch( "proton_side", fProtonSide, "proton_side[num_proton]/i" );
-
-  tree_->Branch( "num_diproton", &fDiprotonNum, "num_diproton/i" );
-  tree_->Branch( "diproton_mass", fDiprotonM, "diproton_mass[num_diproton]/F" );
-  tree_->Branch( "diproton_rapidity", fDiprotonY, "diproton_rapidity[num_diproton]/F" );
+  tree_->Branch( "num_proton_track", &fProtonTrackNum, "num_proton_track/i" );
+  tree_->Branch( "proton_track_xi", fProtonTrackXi, "proton_track_xi[num_proton]/F" );
+  tree_->Branch( "proton_track_side", fProtonTrackSide, "proton_track_side[num_proton]/i" );
+  tree_->Branch( "proton_track_pot", fProtonTrackPot, "proton_track_pot[num_proton]/i" );
 
   tree_->Branch( "num_diphoton", &fDiphotonNum, "num_diphoton/i" );
   tree_->Branch( "diphoton_pt1", fDiphotonPt1, "diphoton_pt1[num_diphoton]/F" );

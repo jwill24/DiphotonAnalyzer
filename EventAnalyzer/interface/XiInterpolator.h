@@ -1,10 +1,11 @@
 #ifndef RecoCTPPS_ProtonProducer_XiInterpolator_h
 #define RecoCTPPS_ProtonProducer_XiInterpolator_h
 
-#include "DataFormats/CTPPSReco/interface/Proton.h"
+#include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
+#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
 #include "DataFormats/Provenance/interface/RunID.h"
 
-#include "RecoCTPPS/ProtonProducer/interface/ProtonKinematicsUtils.h"
+#include "DiphotonAnalyzer/EventAnalyzer/interface/ProtonKinematicsUtils.h"
 
 #include "TFile.h"
 #include "TGraph.h"
@@ -81,21 +82,21 @@ namespace ProtonUtils {
                                                     << calib_.x_disp_r_f << ":" << calib_.x_disp_r_n;
         }
 
-        void computeXiLinear( const reco::Proton& prot, float* xi_, float* err_xi_ ) {
+        void computeXiLinear( const TotemRPDetId& detid, const TotemRPLocalTrack& trk, float* xi_, float* err_xi_ ) {
             *xi_ = *err_xi_ = 0.;
 
-            if ( !prot.isValid() ) return;
+            if ( !trk.isValid() ) return;
 
             float dx_n, dx_f;
             float x_n_shift = 0., x_f_shift = 0.;
-            switch ( prot.side() ) {
-                case reco::ProtonTrack::LeftSide: {
+            switch ( detid.arm() ) { // 0 = left, 1 = right
+                case 0: {
                     dx_n = calib_.x_disp_l_n;
                     dx_f = calib_.x_disp_l_f;
                     x_n_shift = align_.x_shift_l_n;
                     x_f_shift = align_.x_shift_l_f;
                 } break;
-                case reco::ProtonTrack::RightSide: {
+                case 1: {
                     dx_n = calib_.x_disp_r_n;
                     dx_f = calib_.x_disp_r_f;
                     x_n_shift = align_.x_shift_r_n;
@@ -107,15 +108,15 @@ namespace ProtonUtils {
             const float de_x = 0.2e-3/*m*/, de_rel_dx = 0.1;
 
             float x_corr = 0.;
-            if ( prot.farTrack() && prot.farTrack()->isValid() ) {
-                x_corr = ( prot.farTrack()->getX0() + x_f_shift ) * 1.e-3;
+            if ( detid.romanPot()==3 ) { // far pot //FIXME
+                x_corr = ( trk.getX0() + x_f_shift ) * 1.e-3;
                 *xi_ = x_corr / dx_f;
                 *err_xi_ = std::sqrt( std::pow( de_x/dx_f, 2 )
                                     + std::pow( de_rel_dx * (*xi_), 2 ) );
                 return;
             }
-            if ( prot.nearTrack() && prot.nearTrack()->isValid() ) {
-                x_corr = ( prot.nearTrack()->getX0() + x_n_shift ) * 1.e-3;
+            if ( detid.romanPot()==2 ) { // near pot //FIXME
+                x_corr = ( trk.getX0() + x_n_shift ) * 1.e-3;
                 *xi_ = x_corr / dx_n;
                 *err_xi_ = std::sqrt( std::pow( de_x/dx_n, 2 )
                                     + std::pow( de_rel_dx * (*xi_), 2 ) );
@@ -123,22 +124,22 @@ namespace ProtonUtils {
             }
         }
 
-        void computeXiSpline( const reco::Proton& prot, float* xi, float* err_xi ) {
+        void computeXiSpline( const TotemRPDetId& detid, const TotemRPLocalTrack& trk, float* xi, float* err_xi ) {
             *xi = *err_xi = 0.;
 
-            if ( !prot.isValid() ) return;
+            if ( !trk.isValid() ) return;
 
             TSpline3 *interp_near = 0, *interp_far = 0;
             float x_n_shift = 0., x_f_shift = 0.;
-            switch ( prot.side() ) {
-                case reco::ProtonTrack::LeftSide: {
+            switch ( detid.arm() ) { // 0 = left, 1 = right
+                case 0: {
                     interp_far = isLF_;
                     interp_near = isLN_;
                     x_n_shift = align_.x_shift_l_n;
                     x_f_shift = align_.x_shift_l_f;
                     break;
                 }
-                case reco::ProtonTrack::RightSide: {
+                case 1: {
                     interp_far = isRF_;
                     interp_near = isRN_;
                     x_n_shift = align_.x_shift_r_n;
@@ -152,16 +153,16 @@ namespace ProtonUtils {
             const float de_x = 0.4e-3/*m*/, de_rel_dx = 0.1;
 
             float x_corr = 0.;
-            if ( prot.farTrack() && prot.farTrack()->isValid() ) {
-                x_corr = ( prot.farTrack()->getX0() + x_f_shift ) * 1.e-3;
+            if ( detid.romanPot()==3 ) { // far pot //FIXME
+                x_corr = ( trk.getX0() + x_f_shift ) * 1.e-3;
                 *xi = interp_far->Eval( x_corr );
                 const float de_xi = interp_far->Eval( x_corr + de_x );
                 *err_xi = std::sqrt( std::pow( de_xi, 2 )
                                    + std::pow( de_rel_dx * (*xi), 2 ) );
                 return;
             }
-            if ( prot.nearTrack() && prot.nearTrack()->isValid() ) {
-                x_corr = ( prot.nearTrack()->getX0() + x_n_shift ) * 1.e-3;
+            if ( detid.romanPot()==2 ) { // near pot //FIXME
+                x_corr = ( trk.getX0() + x_n_shift ) * 1.e-3;
                 *xi = interp_near->Eval( x_corr );
                 const float de_xi = interp_near->Eval( x_corr + de_x );
                 *err_xi = std::sqrt( std::pow( de_xi, 2 )
