@@ -16,11 +16,21 @@ namespace ProtonUtils {
         return (far_xy_ext-far_xy_obs).Mod()/1.e3; // mm -> m
     }
 
+
+    std::map<edm::RunNumber_t,RPAlignmentConstants> alignmentMap;
+
     struct RPAlignmentConstants {
         RPAlignmentConstants() : x_shift_l_n(0.), x_shift_l_f(0.), x_shift_r_n(0.), x_shift_r_f(0.) {;}
         float x_shift_l_n, x_shift_l_f; // in mm
         float x_shift_r_n, x_shift_r_f; // in mm
     };
+
+    void defaultAlignmentConstants();
+    void fillAlignmentConstants( const char* );
+
+    RPAlignmentConstants getAlignmentConstants( const edm::RunNumber_t& run_id )
+    {
+    }
 
     RPAlignmentConstants getAlignmentConstants( const edm::RunNumber_t& run_id )
     {

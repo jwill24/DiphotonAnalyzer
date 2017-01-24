@@ -14,7 +14,7 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     minMassDiPhoton = cms.double(500.),
     outputFilename = cms.string('output.root'),
     # totem RP information extraction
-    protonLabel = cms.InputTag('totemRPLocalTrackFitter'),
+    totemRPTracksLabel = cms.InputTag('totemRPLocalTrackFitter'),
     useXiInterpolation = cms.bool(True),
     xiInterpolationFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/ctpps_optics_v1.root'),
 )
