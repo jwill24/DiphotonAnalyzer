@@ -43,6 +43,8 @@
 
 #include "DiphotonAnalyzer/EventAnalyzer/interface/SelectionUtils.h"
 #include "DiphotonAnalyzer/EventAnalyzer/interface/XiInterpolator.h"
+#include "DiphotonAnalyzer/EventAnalyzer/interface/FillNumberLUTHandler.h"
+#include "DiphotonAnalyzer/EventAnalyzer/interface/AlignmentLUTHandler.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -94,6 +96,9 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     bool useXiInterp_;
     ProtonUtils::XiInterpolator* xiInterp_;
+
+    CTPPSAlCa::FillNumberLUTHandler* fillLUTHandler_;
+    CTPPSAlCa::AlignmentLUTHandler* alignmentLUTHandler_;
 
     TFile* file_;
     TTree* tree_;
@@ -168,6 +173,8 @@ TreeProducer::TreeProducer(const edm::ParameterSet& iConfig) :
 {
   xiInterp_ = new ProtonUtils::XiInterpolator;
   if ( useXiInterp_ ) { xiInterp_->loadInterpolationGraphs( iConfig.getParameter<edm::FileInPath>( "xiInterpolationFile" ).fullPath().c_str() ); }
+  fillLUTHandler_ = new CTPPSAlCa::FillNumberLUTHandler( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() );
+  alignmentLUTHandler_ = new CTPPSAlCa::AlignmentLUTHandler( iConfig.getParameter<edm::FileInPath>( "alignmentLUTFile" ).fullPath().c_str() );
 
   file_ = new TFile( filename_.c_str(), "recreate" );
   file_->cd();
@@ -343,6 +350,10 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // fetch the proton collection from EDM file
   edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
   iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
+
+  const unsigned short fill_num = fillLUTHandler_->getFillNumber( iEvent.id().run() );
+  xiInterp_->setAlignmentConstants( alignmentLUTHandler_->getAlignmentConstants( fill_num ) ); // fill-based alignment corrections
+  xiInterp_->setCalibrationConstants( iEvent.id().run() ); // run-based calibration parameters
 
   fProtonTrackNum = 0;
   for ( edm::DetSetVector<TotemRPLocalTrack>::const_iterator it=rpLocalTracks->begin(); it!=rpLocalTracks->end(); it++ ) {

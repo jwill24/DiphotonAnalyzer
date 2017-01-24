@@ -13,7 +13,8 @@
 
 #include <iostream>
 
-namespace ProtonUtils {
+namespace ProtonUtils
+{
 
     class XiInterpolator
     {
@@ -68,19 +69,13 @@ namespace ProtonUtils {
             edm::LogInfo("XiInterpolator") << "Interpolation graphs successfully loaded from file " << filename;
         }
 
-        void setAlignmentConstants( const edm::RunNumber_t& run_id ) {
-            align_ = getAlignmentConstants( run_id );
-            edm::LogInfo("XiInterpolator")
-                << "Alignment constants loaded: " << align_.x_shift_l_f << ":" << align_.x_shift_l_n << " / "
-                                                  << align_.x_shift_r_f << ":" << align_.x_shift_r_n;
-        }
-
         void setCalibrationConstants( const edm::RunNumber_t& run_id ) {
-            calib_ = getCalibrationConstants( run_id );
+            calib_ = CTPPSAlCa::getCalibrationConstants( run_id );
             edm::LogInfo("ProtonReco")
                 << "Calibration constants loaded: " << calib_.x_disp_l_f << ":" << calib_.x_disp_l_n << " / "
                                                     << calib_.x_disp_r_f << ":" << calib_.x_disp_r_n;
         }
+        void setAlignmentConstants( const CTPPSAlCa::RPAlignmentConstants& ac ) { align_ = ac; }
 
         void computeXiLinear( const TotemRPDetId& detid, const TotemRPLocalTrack& trk, float* xi_, float* err_xi_ ) {
             *xi_ = *err_xi_ = 0.;
@@ -191,8 +186,8 @@ namespace ProtonUtils {
 
         TGraph *igLF_, *igLN_, *igRF_, *igRN_;
         TSpline3 *isLF_, *isLN_, *isRF_, *isRN_;
-        RPAlignmentConstants align_;
-        RPCalibrationConstants calib_;
+        CTPPSAlCa::RPAlignmentConstants align_;
+        CTPPSAlCa::RPCalibrationConstants calib_;
         
     };
 }
