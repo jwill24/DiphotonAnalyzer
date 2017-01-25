@@ -17,26 +17,40 @@ namespace ProtonUtils
 namespace CTPPSAlCa
 {
 
-    struct RPAlignmentConstants {
-        RPAlignmentConstants() :
-            x_shift_l_n( 0. ), x_shift_l_f( 0. ),
-            x_shift_r_n( 0. ), x_shift_r_f( 0. ) {;}
-        RPAlignmentConstants( float l_n, float l_f, float r_n, float r_f ) :
-            x_shift_l_n( l_n ), x_shift_l_f( l_f ),
-            x_shift_r_n( r_n ), x_shift_r_f( r_f ) {;}
-        bool valid() const { return ( ( x_shift_l_n!=0. ) && ( x_shift_l_f!=0. ) && ( x_shift_r_n!=0. ) && ( x_shift_r_f!=0. ) ); }
+    class RPAlignmentConstants
+    {
+      public:
+        struct Quantities {
+            Quantities() : x( 0. ), err_x( 0. ), y( 0. ), err_y( 0. ) {}
+            float x, err_x, y, err_y; // in mm
+        };
+        RPAlignmentConstants() {
+            map_[2] = Quantities();
+            map_[3] = Quantities();
+            map_[102] = Quantities();
+            map_[103] = Quantities();
+        }
+        void setQuantities( unsigned int detid, const Quantities& quant ) {
+            if ( map_.find( detid )==map_.end() ) return; //FIXME
+            map_[detid] = quant;
+        }
+        const Quantities quantities( unsigned int detid ) const {
+            std::map<unsigned int,Quantities>::const_iterator it = map_.find( detid );
+            if ( it==map_.end() ) return Quantities();
+            return it->second;
+        }
 
-        float x_shift_l_n, x_shift_l_f; // in mm
-        float x_shift_r_n, x_shift_r_f; // in mm
+      private:
+        std::map<unsigned int,Quantities> map_;
     };
 
     struct RPCalibrationConstants {
         RPCalibrationConstants() :
             x_disp_l_n( 0. ), x_disp_l_f( 0. ),
-            x_disp_r_n( 0. ), x_disp_r_f( 0. ) {;}
+            x_disp_r_n( 0. ), x_disp_r_f( 0. ) {}
         RPCalibrationConstants( float l_n, float l_f, float r_n, float r_f ) :
             x_disp_l_n( l_n ), x_disp_l_f( l_f ),
-            x_disp_r_n( r_n ), x_disp_r_f( r_f ) {;}
+            x_disp_r_n( r_n ), x_disp_r_f( r_f ) {}
 
         // dispersions (x-axis)
         float x_disp_l_n, x_disp_l_f;

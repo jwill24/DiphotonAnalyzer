@@ -83,35 +83,29 @@ namespace ProtonUtils
             if ( !trk.isValid() ) return;
 
             float dx_n, dx_f;
-            float x_n_shift = 0., x_f_shift = 0.;
+            const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rawId() );
             switch ( detid.arm() ) { // 0 = left, 1 = right
                 case 0: {
                     dx_n = calib_.x_disp_l_n;
                     dx_f = calib_.x_disp_l_f;
-                    x_n_shift = align_.x_shift_l_n;
-                    x_f_shift = align_.x_shift_l_f;
                 } break;
                 case 1: {
                     dx_n = calib_.x_disp_r_n;
                     dx_f = calib_.x_disp_r_f;
-                    x_n_shift = align_.x_shift_r_n;
-                    x_f_shift = align_.x_shift_r_f;
                 } break;
                 default: return;
             }
 
             const float de_x = 0.2e-3/*m*/, de_rel_dx = 0.1;
+            const float x_corr = ( trk.getX0() + ac.x ) * 1.e-3;
 
-            float x_corr = 0.;
             if ( detid.romanPot()==3 ) { // far pot //FIXME
-                x_corr = ( trk.getX0() + x_f_shift ) * 1.e-3;
                 *xi_ = x_corr / dx_f;
                 *err_xi_ = std::sqrt( std::pow( de_x/dx_f, 2 )
                                     + std::pow( de_rel_dx * (*xi_), 2 ) );
                 return;
             }
             if ( detid.romanPot()==2 ) { // near pot //FIXME
-                x_corr = ( trk.getX0() + x_n_shift ) * 1.e-3;
                 *xi_ = x_corr / dx_n;
                 *err_xi_ = std::sqrt( std::pow( de_x/dx_n, 2 )
                                     + std::pow( de_rel_dx * (*xi_), 2 ) );
@@ -125,31 +119,24 @@ namespace ProtonUtils
             if ( !trk.isValid() ) return;
 
             TSpline3 *interp_near = 0, *interp_far = 0;
-            float x_n_shift = 0., x_f_shift = 0.;
+            const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rawId() );
             switch ( detid.arm() ) { // 0 = left, 1 = right
                 case 0: {
                     interp_far = isLF_;
                     interp_near = isLN_;
-                    x_n_shift = align_.x_shift_l_n;
-                    x_f_shift = align_.x_shift_l_f;
-                    break;
-                }
+                } break;
                 case 1: {
                     interp_far = isRF_;
                     interp_near = isRN_;
-                    x_n_shift = align_.x_shift_r_n;
-                    x_f_shift = align_.x_shift_r_f;
-                    break;
-                }
+                } break;
                 default: return;
             }
             if ( ( !interp_far ) or ( !interp_near ) ) return;
 
             const float de_x = 0.4e-3/*m*/, de_rel_dx = 0.1;
+            const float x_corr = ( trk.getX0() + ac.x ) * 1.e-3;
 
-            float x_corr = 0.;
             if ( detid.romanPot()==3 ) { // far pot //FIXME
-                x_corr = ( trk.getX0() + x_f_shift ) * 1.e-3;
                 *xi = interp_far->Eval( x_corr );
                 const float de_xi = interp_far->Eval( x_corr + de_x );
                 *err_xi = std::sqrt( std::pow( de_xi, 2 )
@@ -157,7 +144,6 @@ namespace ProtonUtils
                 return;
             }
             if ( detid.romanPot()==2 ) { // near pot //FIXME
-                x_corr = ( trk.getX0() + x_n_shift ) * 1.e-3;
                 *xi = interp_near->Eval( x_corr );
                 const float de_xi = interp_near->Eval( x_corr + de_x );
                 *err_xi = std::sqrt( std::pow( de_xi, 2 )
