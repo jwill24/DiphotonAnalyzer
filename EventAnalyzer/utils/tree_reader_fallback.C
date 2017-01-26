@@ -317,15 +317,27 @@ void tree_reader_fallback( TString file=default_ntp_file )
       const float xi_reco1_withmet = xi_reco1 + met/sqrt_s,
                   xi_reco2_withmet = xi_reco2 + met/sqrt_s;
 
+      //const float met_x = met*cos( met_phi ),
+      //            met_y = met*sin( met_phi );
+      //pho1.SetPtEtaPhiM( diphoton_pt1[j], diphoton_eta1[j], diphoton_phi1[j], 0. );
+      //pho2.SetPtEtaPhiM( diphoton_pt2[j], diphoton_eta2[j], diphoton_phi2[j], 0. );
+      //const TLorentzVector lv_met( Met_x, met_y, 0., met ),
+      //                     dipho_met = pho1+pho2+lv_met;
+      ////cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;
+      //const float diphoton_plus_met_mass = dipho_met.M(),
+      //            diphoton_plus_met_rap = dipho_met.Rapidity();
+
       const float met_x = met*cos( met_phi ),
-                  met_y = met*sin( met_phi );
+	met_y = met*sin( met_phi );
       pho1.SetPtEtaPhiM( diphoton_pt1[j], diphoton_eta1[j], diphoton_phi1[j], 0. );
       pho2.SetPtEtaPhiM( diphoton_pt2[j], diphoton_eta2[j], diphoton_phi2[j], 0. );
+
+      //                  JW                                                                                                  
       const TLorentzVector lv_met( met_x, met_y, 0., met ),
-                           dipho_met = pho1+pho2+lv_met;
-      //cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;
+	dipho_met = pho1+pho2+electron+muon+jet+lv_met;
+      //cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;                                                       
       const float diphoton_plus_met_mass = dipho_met.M(),
-                  diphoton_plus_met_rap = dipho_met.Rapidity();
+	diphoton_plus_met_rap = dipho_met.Rapidity();
 
       //cout << xi_reco1 << ", " << xi_reco2 << endl;
       h_diphoton_pt->Fill( diphoton_pt[j] );
@@ -341,18 +353,6 @@ void tree_reader_fallback( TString file=default_ntp_file )
       h_diphoton_subleadpt->Fill( diphoton_pt2[j] );
       h_diphoton_leadeta->Fill( diphoton_eta1[j] );
       h_diphoton_subleadeta->Fill( diphoton_eta2[j] );
-
-      const float met_x = met*cos( met_phi ),
-                  met_y = met*sin( met_phi );
-      pho1.SetPtEtaPhiM( diphoton_pt1[j], diphoton_eta1[j], diphoton_phi1[j], 0. );
-      pho2.SetPtEtaPhiM( diphoton_pt2[j], diphoton_eta2[j], diphoton_phi2[j], 0. );
- 
-      //                  JW
-      const TLorentzVector lv_met( met_x, met_y, 0., met ),
-                           dipho_met = pho1+pho2+electron+muon+jet+lv_met;
-      //cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;
-      const float diphoton_plus_met_mass = dipho_met.M(),
-                  diphoton_plus_met_rap = dipho_met.Rapidity();
 
       h_met_vs_pt->Fill( met, diphoton_pt[j] );
       h_metx_vs_mety->Fill( met_x, met_y );
