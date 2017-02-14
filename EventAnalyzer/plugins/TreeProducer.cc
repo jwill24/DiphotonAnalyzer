@@ -105,7 +105,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
     // --- tree components ---
 
-    unsigned int fBX, fRun, fLumiSection;
+    unsigned int fBX, fFill, fRun, fLumiSection;
     unsigned long long fEventNum;
 
     unsigned int fProtonTrackNum;
@@ -271,6 +271,9 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   fLumiSection = iEvent.luminosityBlock();
   fEventNum = iEvent.id().event();
 
+  // get the fill number from the run id <-> fill number LUT
+  fFill = fillLUTHandler_->getFillNumber( iEvent.id().run() );
+
   // fetch the jet collection from EDM file
   edm::Handle< edm::View< std::vector<flashgg::Jet> > > jetsColls;
   iEvent.getByToken( jetToken_, jetsColls );
@@ -337,8 +340,6 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       fJetNum++;
     }
-    
-    //
 
     //std::cout << fDiphotonPt1[fDiphotonNum] << " --- " << fDiphotonPt2[fDiphotonNum] << " --- " << fDiphotonM[fDiphotonNum] << std::endl;
 
@@ -351,13 +352,14 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
   iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
 
-  const unsigned short fill_num = fillLUTHandler_->getFillNumber( iEvent.id().run() );
-  xiInterp_->setAlignmentConstants( alignmentLUTHandler_->getAlignmentConstants( fill_num ) ); // fill-based alignment corrections
-  xiInterp_->setCalibrationConstants( iEvent.id().run() ); // run-based calibration parameters
+  xiInterp_->setAlignmentConstants( alignmentLUTHandler_->getAlignmentConstants( fFill ) ); // fill-based alignment corrections
+  xiInterp_->setCalibrationConstants( fRun ); // run-based calibration parameters
 
   fProtonTrackNum = 0;
   for ( edm::DetSetVector<TotemRPLocalTrack>::const_iterator it=rpLocalTracks->begin(); it!=rpLocalTracks->end(); it++ ) {
-    const TotemRPDetId detid( it->detId() );
+    const TotemRPDetId detid( TotemRPDetId::decToRawId( it->detId()*10 ) );
+    const unsigned short side = detid.arm(),
+                         pot = detid.romanPot();
     for ( edm::DetSet<TotemRPLocalTrack>::const_iterator trk=it->begin(); trk!=it->end(); trk++ ) {
       if ( !trk->isValid() ) { continue; }
       float xi = -1., err_xi = -1.;
@@ -365,87 +367,57 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       else                { xiInterp_->computeXiLinear( detid, *trk, &xi, &err_xi ); }
       fProtonTrackXi[fProtonTrackNum] = xi;
       fProtonTrackXiError[fProtonTrackNum] = err_xi;
-      fProtonTrackSide[fProtonTrackNum] = detid.arm(); // 0 = left ; 1 = right
-      fProtonTrackPot[fProtonTrackNum] = detid.romanPot();
+      fProtonTrackSide[fProtonTrackNum] = side; // 0 = left ; 1 = right
+      fProtonTrackPot[fProtonTrackNum] = pot;
       fProtonTrackNum++;
     }
   }
  
- //                               JW
+  //                               JW
  
- //Implementing electron 4 vector
+  //Implementing electron 4 vector
  
  
- // fetch the electron collection from EDM file
+  // fetch the electron collection from EDM file
   edm::Handle< edm::View<flashgg::Electron> > electrons;
   iEvent.getByToken( electronToken_, electrons );
  
- fElectronNum=0;
- //  edm::Ptr<reco::Vertex> electron_vtx[MAX_ELECTRON];
+  fElectronNum=0;
+  //  edm::Ptr<reco::Vertex> electron_vtx[MAX_ELECTRON];
 
   for ( unsigned int i=0; i<electrons->size() && fElectronNum<MAX_ELECTRON; i++ ) {
-  edm::Ptr<flashgg::Electron> electron = electrons->ptrAt( i );
-  fElectronPt[fElectronNum] = electron->pt();
-  fElectronEta[fElectronNum] = electron->eta();
-  fElectronPhi[fElectronNum] = electron->phi();
-  fElectronE[fElectronNum] = electron->energy();
+    edm::Ptr<flashgg::Electron> electron = electrons->ptrAt( i );
+    fElectronPt[fElectronNum] = electron->pt();
+    fElectronEta[fElectronNum] = electron->eta();
+    fElectronPhi[fElectronNum] = electron->phi();
+    fElectronE[fElectronNum] = electron->energy();
 
-  //  fElectronVertexX[fElectronNum] = electron->vtx()->x();
-  //  fElectronVertexY[fElectronNum] = electron->vtx()->y();
-  //  fElectronVertexZ[fElectronNum] = electron->vtx()->z();
-  //  electron_vtx[fElectronNum] = electron->vtx();
+    //  fElectronVertexX[fElectronNum] = electron->vtx()->x();
+    //  fElectronVertexY[fElectronNum] = electron->vtx()->y();
+    //  fElectronVertexZ[fElectronNum] = electron->vtx()->z();
+    //  electron_vtx[fElectronNum] = electron->vtx();
+    fElectronNum++;
+  }
+ 
+  //Implementing muon 4 vector
 
- fElectronNum++;
- }
+  edm::Handle< edm::View<flashgg::Muon> > muons;
+  iEvent.getByToken(muonToken_,muons);
 
- 
- //Implementing muon 4 vector
- 
- 
- edm::Handle< edm::View<flashgg::Muon> > muons;
- iEvent.getByToken(muonToken_,muons);
+  // Add muon vertex here
+  fMuonNum=0;
+  //edm::Ptr<reco::Vertex> muon_vtx[MAX_MUON];
 
- // Add muon vertex here
+  for ( unsigned int i=0; i<muons->size() && fMuonNum<MAX_MUON; i++ ) {
+    edm::Ptr<flashgg::Muon> muon = muons->ptrAt( i );
+    fMuonPt[fMuonNum] = muon->pt();
+    fMuonEta[fMuonNum] = muon->eta();
+    fMuonPhi[fMuonNum] = muon->phi();
+    fMuonE[fMuonNum] = muon->energy();
  
- fMuonNum=0;
- //edm::Ptr<reco::Vertex> muon_vtx[MAX_MUON];
+    fMuonNum++;
+  }
 
-
- for ( unsigned int i=0; i<muons->size() && fMuonNum<MAX_MUON; i++ ) {
-  edm::Ptr<flashgg::Muon> muon = muons->ptrAt( i );
-  fMuonPt[fMuonNum] = muon->pt();
-  fMuonEta[fMuonNum] = muon->eta();
-  fMuonPhi[fMuonNum] = muon->phi();
-  fMuonE[fMuonNum] = muon->energy();
- 
- fMuonNum++;
- }
- 
- //Implementing jet 4 vector
- 
- /*
- edm::Handle< edm::View<vector<flashgg::Jet> > > jets;
- iEvent.getByToken(jetToken_,jets);
- 
- // Add jet vertex here
-
- fJetNum=0;
- //edm::Ptr<reco::Vertex> jet_vtx{MAX_JET];
-
- for ( unsigned int i=0; i<jets->size() && fJetNum<MAX_JET; i++ ) {
-   edm::Ptr<vector<flashgg::Jet> > jet = jets->ptrAt( i );
-   fJetPt[fJetNum] = jet->ptrAt(i)->pt();
-   fJetEta[fJetNum] = jet->eta();
-   fJetPhi[fJetNum] = jet->phi();
-   fJetE[fJetNum] = jet->energy();
-   fJetMass[fJetNum] = jet->mass();
- 
- fJetNum++;
- }
- */
-//
- //
- 
   std::cout << "# found " << fDiphotonNum << " diphoton candidate(s) with " << fProtonTrackNum << " proton track(s) (all pots)!" << std::endl;
   // retrieve the missing ET
   edm::Handle< edm::View<pat::MET> > mets;
@@ -485,6 +457,7 @@ void
 TreeProducer::beginJob()
 {
   tree_->Branch( "run_id", &fRun, "run_id/i");
+  tree_->Branch( "fill_number", &fFill, "fill_number/i");
   tree_->Branch( "lumisection", &fLumiSection, "lumisection/i");
   tree_->Branch( "bunch_crossing", &fBX, "bunch_crossing/i");
   tree_->Branch( "event_number", &fEventNum, "event_number/l");

@@ -25,7 +25,7 @@ process.load('DiphotonAnalyzer.EventAnalyzer.TreeProducer_cfi')
 
 # set some parameters to the run
 process.treeProducer.minPtSinglePhoton = cms.double(75.)
-process.treeProducer.minMassDiPhoton = cms.double(500.)
+process.treeProducer.minMassDiPhoton = cms.double(400.)
 process.treeProducer.outputFilename = cms.string('output_XXX_NAME_XXX.root')
 
 process.p = cms.Path(
