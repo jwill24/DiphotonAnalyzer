@@ -295,7 +295,7 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     if ( fabs( diphoton->leadingPhoton()->eta() )>=singlePhotonMaxEta_ or fabs( diphoton->subLeadingPhoton()->eta() )>=singlePhotonMaxEta_ ) continue;
     if ( diphoton->leadingPhoton()->pt()<singlePhotonMinPt_ or diphoton->subLeadingPhoton()->pt()<singlePhotonMinPt_ ) continue;
-    if ( diphoton->leadingPhoton()->r9()<singlePhotonMinR9_ or diphoton->subLeadingPhoton()->r9()<singlePhotonMinR9_ ) continue;
+    if ( diphoton->leadingPhoton()->full5x5_r9()<singlePhotonMinR9_ or diphoton->subLeadingPhoton()->full5x5_r9()<singlePhotonMinR9_ ) continue;
 
     if ( diphoton->mass()<photonPairMinMass_ ) continue;
 
@@ -308,12 +308,12 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     fDiphotonPt1[fDiphotonNum] = diphoton->leadingPhoton()->pt();
     fDiphotonEta1[fDiphotonNum] = diphoton->leadingPhoton()->eta();
     fDiphotonPhi1[fDiphotonNum] = diphoton->leadingPhoton()->phi();
-    fDiphotonR91[fDiphotonNum] = diphoton->leadingPhoton()->r9();
+    fDiphotonR91[fDiphotonNum] = diphoton->leadingPhoton()->full5x5_r9();
 
     fDiphotonPt2[fDiphotonNum] = diphoton->subLeadingPhoton()->pt();
     fDiphotonEta2[fDiphotonNum] = diphoton->subLeadingPhoton()->eta();
     fDiphotonPhi2[fDiphotonNum] = diphoton->subLeadingPhoton()->phi();
-    fDiphotonR92[fDiphotonNum] = diphoton->subLeadingPhoton()->r9();
+    fDiphotonR92[fDiphotonNum] = diphoton->subLeadingPhoton()->full5x5_r9();
 
     fDiphotonM[fDiphotonNum] = diphoton->mass();
     fDiphotonY[fDiphotonNum] = diphoton->rapidity();
@@ -490,9 +490,10 @@ TreeProducer::beginJob()
   tree_->Branch( "event_number", &fEventNum, "event_number/l");
 
   tree_->Branch( "num_proton_track", &fProtonTrackNum, "num_proton_track/i" );
-  tree_->Branch( "proton_track_xi", fProtonTrackXi, "proton_track_xi[num_proton]/F" );
-  tree_->Branch( "proton_track_side", fProtonTrackSide, "proton_track_side[num_proton]/i" );
-  tree_->Branch( "proton_track_pot", fProtonTrackPot, "proton_track_pot[num_proton]/i" );
+  tree_->Branch( "proton_track_xi", fProtonTrackXi, "proton_track_xi[num_proton_track]/F" );
+  tree_->Branch( "proton_track_xi_error", fProtonTrackXiError, "proton_track_xi_error[num_proton_track]/F" );
+  tree_->Branch( "proton_track_side", fProtonTrackSide, "proton_track_side[num_proton_track]/i" );
+  tree_->Branch( "proton_track_pot", fProtonTrackPot, "proton_track_pot[num_proton_track]/i" );
 
   tree_->Branch( "num_diphoton", &fDiphotonNum, "num_diphoton/i" );
   tree_->Branch( "diphoton_pt1", fDiphotonPt1, "diphoton_pt1[num_diphoton]/F" );
