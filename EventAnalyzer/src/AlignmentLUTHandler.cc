@@ -13,8 +13,17 @@ namespace CTPPSAlCa
     RPAlignmentConstants
     AlignmentLUTHandler::getAlignmentConstants( const unsigned short& fill_num ) const
     {
-        if ( !valid_ or !align_map_.count( fill_num ) ) return RPAlignmentConstants();
-        return align_map_.at( fill_num );
+        if ( !valid_ ) return RPAlignmentConstants();
+        std::map<unsigned int,RPAlignmentConstants>::const_iterator it = align_map_.find( fill_num );
+        if ( it!=align_map_.end() ) return it->second;
+
+        if ( fill_num<align_map_.begin()->first ) {
+            return align_map_.begin()->second; // retrieve the alignment from the first fill in the LUT
+        }
+        if ( fill_num>align_map_.rbegin()->first ) {
+            return align_map_.rbegin()->second; // retrieve the alignment from the last fill in the LUT
+        }
+        return RPAlignmentConstants();
     }
 
     void
