@@ -16,7 +16,7 @@ def createFilesListFromEOSPath(path, files):
     return out_filename
 
 def main(argv):
-    command_out = commands.getstatusoutput('eos ls '+argv[1])
+    command_out = commands.getstatusoutput('eos ls '+argv[1]+' | grep root')
     if command_out[0]!=0:
         print 'Directory \''+argv[1]+'\' not found on /eos/cms!'
         return -1
