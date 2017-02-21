@@ -9,7 +9,8 @@
 #include <fstream>
 #include <iostream>
 
-#define out_path "/afs/cern.ch/user/l/lforthom/www/private/twophoton/"
+//#define out_path "/afs/cern.ch/user/l/lforthom/www/private/twophoton/"
+#define out_path "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp/"
 #define default_ntp_file "run2016BCG_21oct.root"
 
 //#define out_path "/afs/cern.ch/user/l/lforthom/www/private/twophoton/runBC"
@@ -47,6 +48,44 @@ void plot_3hists( const char* name, const char* top_label, TH1* h, TH1* h_1tag, 
   c.RatioPlot( h, h_1tag, h_2tag, 0., 0.55 );
   c.Save( "png", out_path );
   c.Save( "pdf", out_path );
+}
+
+void plot_balances_new( const char* name, const char* top_label, const char* title, TGraphErrors* h2, TGraphErrors* h2_mtag=0, TGraphErrors* h2_ytag=0,
+                    const float& min_xy=-1., const float& max_xy=-1. )
+{
+  Canvas c( name, top_label );
+  TMultiGraph mg;
+  h2->SetMarkerStyle( 24 );
+  //c.SetLegendY1( 0.18 );
+  if ( h2_mtag!=0 or h2_ytag!=0 ) c.AddLegendEntry( h2, "All candidates", "p" );
+  mg.Add( h2, "ep" );
+  if ( h2_mtag ) {
+    h2_mtag->Draw( "p same" );
+    h2_mtag->SetMarkerStyle( 20 );
+    h2_mtag->SetMarkerSize( .95 );
+    h2_mtag->SetMarkerColor( kRed+1 );
+    c.AddLegendEntry( h2_mtag, "Mass matching", "p" );
+    mg.Add( h2_mtag );
+  }
+  if ( h2_ytag ) {
+    h2_ytag->Draw( "p same" );
+    h2_ytag->SetMarkerStyle( 31 );
+    h2_ytag->SetMarkerSize( .7 );
+    h2_ytag->SetMarkerColor( kGreen+2 );
+    c.AddLegendEntry( h2_ytag, "Rapidity matching", "p" );
+    mg.Add( h2_ytag );
+  }
+  mg.Draw( "ap" );
+  if ( min_xy!=-1. and max_xy!=-1. ) {
+    mg.GetXaxis()->SetLimits( min_xy, max_xy );
+    mg.GetYaxis()->SetRangeUser( min_xy, max_xy );
+  }
+
+  c.DrawDiagonal( min_xy, max_xy, 0. );
+  mg.GetHistogram()->SetTitle( title );
+  c.Prettify( mg.GetHistogram() );
+  c.Save( "pdf", out_path );
+  c.Save( "png", out_path );
 }
 
 void plot_balances( const char* name, const char* top_label, const char* title, TGraphErrors* h2, TGraphErrors* h2_mtag=0, TGraphErrors* h2_ytag=0,
@@ -94,6 +133,14 @@ void plot_balances( const char* name, const char* top_label, const char* title, 
   c.Save( "png", out_path );
 }
 
+float photon_rel_energy_scale( const float& pt, const float& eta, const float& r9 )
+{
+  if ( r9<0.94 ) return 0.004;
+  if ( fabs( eta )<1.4442 ) return 0.002;
+  if ( fabs( eta )>1.566 ) return 0.005;
+  return 1.;
+}
+
 void tree_reader_fallback( TString file=default_ntp_file )
 {
   TFile f(file);
@@ -112,15 +159,18 @@ void tree_reader_fallback( TString file=default_ntp_file )
   tr->SetBranchAddress( "event_number", &event_number );
   // diphoton quantities
   unsigned int num_diphoton;
-  float diphoton_pt1[5], diphoton_eta1[5], diphoton_phi1[5], diphoton_pt2[5], diphoton_eta2[5], diphoton_phi2[5];
+  float diphoton_pt1[5], diphoton_eta1[5], diphoton_phi1[5], diphoton_r9_1[5],
+        diphoton_pt2[5], diphoton_eta2[5], diphoton_phi2[5], diphoton_r9_2[5];
   float diphoton_pt[5], diphoton_mass[5], diphoton_rapidity[5], diphoton_dphi[5];
   tr->SetBranchAddress( "num_diphoton", &num_diphoton );
   tr->SetBranchAddress( "diphoton_pt1", diphoton_pt1 );
   tr->SetBranchAddress( "diphoton_eta1", diphoton_eta1 );
   tr->SetBranchAddress( "diphoton_phi1", diphoton_phi1 );
+  tr->SetBranchAddress( "diphoton_r91", diphoton_r9_1 );
   tr->SetBranchAddress( "diphoton_pt2", diphoton_pt2 );
   tr->SetBranchAddress( "diphoton_eta2", diphoton_eta2 );
   tr->SetBranchAddress( "diphoton_phi2", diphoton_phi2 );
+  tr->SetBranchAddress( "diphoton_r92", diphoton_r9_2 );
   tr->SetBranchAddress( "diphoton_pt", diphoton_pt );
   tr->SetBranchAddress( "diphoton_dphi", diphoton_dphi );
   tr->SetBranchAddress( "diphoton_mass", diphoton_mass );
@@ -136,17 +186,13 @@ void tree_reader_fallback( TString file=default_ntp_file )
   tr->SetBranchAddress( "diphoton_vertex_tracks", diphoton_vertex_tracks );
   // proton quantities
   unsigned int num_proton;
-  unsigned int proton_side[5];
-  float proton_xi[5];
-  tr->SetBranchAddress( "num_proton", &num_proton );
-  tr->SetBranchAddress( "proton_side", proton_side );
-  tr->SetBranchAddress( "proton_xi", proton_xi );
-  // diproton quantities
-  unsigned int num_diproton;
-  float diproton_mass[5], diproton_rapidity[5];
-  tr->SetBranchAddress( "num_diproton", &num_diproton );
-  tr->SetBranchAddress( "diproton_mass", diproton_mass );
-  tr->SetBranchAddress( "diproton_rapidity", diproton_rapidity );
+  unsigned int proton_side[10], proton_pot[10];
+  float proton_xi[10], proton_xi_error[10];
+  tr->SetBranchAddress( "num_proton_track", &num_proton );
+  tr->SetBranchAddress( "proton_track_side", proton_side );
+  tr->SetBranchAddress( "proton_track_pot", proton_pot );
+  tr->SetBranchAddress( "proton_track_xi", proton_xi );
+  tr->SetBranchAddress( "proton_track_xi_error", proton_xi_error );
   // vertex quantities
   unsigned int num_vertex;
   tr->SetBranchAddress( "num_vertex", &num_vertex );
@@ -174,13 +220,13 @@ void tree_reader_fallback( TString file=default_ntp_file )
   tr->SetBranchAddress("muon_energy", muon_energy );
   //Jet Quantities
   unsigned int num_jet;
-  float jet_pt[10], jet_eta[10], jet_phi[10], jet_energy[10];
+  float jet_pt[10], jet_eta[10], jet_phi[10], jet_energy[10], jet_mass[10];
   tr->SetBranchAddress("num_jet",&num_jet );
   tr->SetBranchAddress("jet_pt", jet_pt );
   tr->SetBranchAddress("jet_eta",jet_eta );
   tr->SetBranchAddress("jet_phi",jet_phi );
   tr->SetBranchAddress("jet_energy", jet_energy );
-  tr->SetBrnachAddress("jet_mass", jet_mass );
+  tr->SetBranchAddress("jet_mass", jet_mass );
   //
 
   TH1D* h_num_proton = new TH1D( "num_proton", "Number of protons reconstructed in event\\Events", 6, 0., 6. );
@@ -219,6 +265,9 @@ void tree_reader_fallback( TString file=default_ntp_file )
   TH1D* h_diphoton_mass_withmet = new TH1D( "diphotonmet_mass", "Diphoton + missing E_{T} mass\\Events\\GeV?.0f", 50, 500., 2000. ),
        *h_diphoton_mass_withmet_1tag = (TH1D*)h_diphoton_mass_withmet->Clone( "diphotonmet_mass_1tag" ),
        *h_diphoton_mass_withmet_2tag = (TH1D*)h_diphoton_mass_withmet->Clone( "diphotonmet_mass_2tag" );
+  TH1D* h_diphoton_mass_incl = new TH1D( "diphotonincl_mass", "Diphoton + other objects mass\\Events\\GeV?.0f", 50, 500., 2000. ),
+       *h_diphoton_mass_incl_1tag = (TH1D*)h_diphoton_mass_incl->Clone( "diphotonmet_mass_1tag" ),
+       *h_diphoton_mass_incl_2tag = (TH1D*)h_diphoton_mass_incl->Clone( "diphotonmet_mass_2tag" );
   TH1D* h_diphoton_rap = new TH1D( "diphoton_rap", "Diphoton rapidity\\Events\\?.1f", 40, -2.5, 2.5 ),
        *h_diphoton_rap_1tag = (TH1D*)h_diphoton_rap->Clone( "diphoton_rap_1tag" ),
        *h_diphoton_rap_2tag = (TH1D*)h_diphoton_rap->Clone( "diphoton_rap_2tag" );
@@ -270,8 +319,12 @@ void tree_reader_fallback( TString file=default_ntp_file )
                *h_xi2gg_vs_xi2pp_candm = new TGraphErrors,
                *h_xi2gg_vs_xi2pp_candy = new TGraphErrors,
                *h_xi2ggmet_vs_xi2pp = new TGraphErrors;
+  TGraphErrors* h_ximatch_45n = new TGraphErrors,
+               *h_ximatch_45f = new TGraphErrors,
+               *h_ximatch_56n = new TGraphErrors,
+               *h_ximatch_56f = new TGraphErrors;
 
-  ofstream events_list( "events_list_2016BC.txt" );
+  ofstream events_list( "events_list.txt" );
 
   unsigned int num_evts_notag = 0, num_evts_with_tag = 0;
   TLorentzVector pho1, pho2, electron, muon, jet;
@@ -280,33 +333,63 @@ void tree_reader_fallback( TString file=default_ntp_file )
     tr->GetEntry( i );
     // dump the list of events in a text file
 
+    //----- proton tracks retrieval part -----
+
     h_num_proton->Fill( num_proton );
     unsigned int num_1tag = 0, num_2tag = 0;
-    float xi_prot1 = -1., xi_prot2 = -1.;
+    float xi_prot1 = -1., err_xi_prot1 = -1.,
+          xi_prot2 = -1., err_xi_prot2 = -1.;
+    float max_diproton_mass = -1., max_diproton_mass_error = -1.,
+          max_diproton_mass_rap = -999.;
+
+    unsigned int num_diproton = 0;
+    bool has_45 = false, has_56 = false;
+
+    // xi / error
+    typedef std::pair<float, float> trackparam_t;
+    std::vector<trackparam_t> tracks_45_near, tracks_45_far,
+                              tracks_56_near, tracks_56_far;
+
+    // first loop to identify the RP and unflatten the collection
     for ( unsigned int j=0; j<num_proton; j++ ) {
-      for ( unsigned int k=j+1; k<num_proton; k++ ) {
-         if ( proton_side[j]==proton_side[k] ) continue;
-         if ( proton_side[j]==0 ) {
-           xi_prot1 = proton_xi[j];
-           xi_prot2 = proton_xi[k];
-         }
-         else {
-           xi_prot1 = proton_xi[k];
-           xi_prot2 = proton_xi[j];
-         }
-         num_2tag++;
-      }
-      num_1tag++;
-    }
-
-    float max_diproton_mass = -1., max_diproton_mass_rap = -999.;
-    for ( unsigned int j=0; j<num_diproton; j++ ) {
-      if ( diproton_mass[j]>max_diproton_mass ) {
-        max_diproton_mass = diproton_mass[j];
-        max_diproton_mass_rap = diproton_rapidity[j];
+      switch ( proton_side[j] ) {
+        case 0: { // 4-5
+          switch ( proton_pot[j] ) {
+            case 2: { tracks_45_near.push_back( trackparam_t( proton_xi[j], proton_xi_error[j] ) ); } break; // near pot
+            case 3: { tracks_45_far.push_back( trackparam_t( proton_xi[j], proton_xi_error[j] ) ); } break; // far pot
+          }
+          has_45 = true;
+        } break;
+        case 1: { // 5-6
+          switch ( proton_pot[j] ) {
+            case 2: { tracks_56_near.push_back( trackparam_t( proton_xi[j], proton_xi_error[j] ) ); } break; // near pot
+            case 3: { tracks_56_far.push_back( trackparam_t( proton_xi[j], proton_xi_error[j] ) ); } break; // far pot
+          }
+          has_56 = true;
+        } break;
       }
     }
 
+    if ( has_45 ) num_1tag++;
+    if ( has_56 ) num_1tag++;
+
+    const float sqs = 13.e3;
+
+    if ( has_45 && has_56 ) {
+      for ( unsigned short j=0; j<tracks_45_near.size(); j++ ) {
+        for ( unsigned short k=0; k<tracks_56_near.size(); k++ ) {
+          const float diproton_mass = sqs*sqrt( tracks_45_near[j].first*tracks_56_near[k].first );
+          if ( diproton_mass>max_diproton_mass ) {
+            max_diproton_mass = diproton_mass;
+            max_diproton_mass_error = sqs*sqs/4./diproton_mass * tracks_45_near[j].second * tracks_56_near[k].second;
+            max_diproton_mass_rap = log( tracks_56_near[k].first/tracks_45_near[j].first )/2.;
+          }
+        }
+      }
+      num_2tag++;
+    }
+
+    //----- leptons+jets retrieval part -----
 
     //          JW
     for ( unsigned int j=0; j<num_electron; j++ ) {
@@ -320,9 +403,18 @@ void tree_reader_fallback( TString file=default_ntp_file )
     }
     //
 
+    //----- diphotons retrieval part -----
+
     for ( unsigned int j=0; j<num_diphoton; j++ ) {
+
+      const float energy_corr_pho1 = photon_rel_energy_scale( diphoton_pt1[j], diphoton_eta1[j], diphoton_r9_1[j] ) * diphoton_pt1[j],
+                  energy_corr_pho2 = photon_rel_energy_scale( diphoton_pt2[j], diphoton_eta2[j], diphoton_r9_2[j] ) * diphoton_pt2[j];
+
       const float xi_reco1 = ( diphoton_pt1[j] * exp( -diphoton_eta1[j] ) + diphoton_pt2[j] * exp( -diphoton_eta2[j] ) )/sqrt_s,
-                  xi_reco2 = ( diphoton_pt1[j] * exp(  diphoton_eta1[j] ) + diphoton_pt2[j] * exp(  diphoton_eta2[j] ) )/sqrt_s;
+                  xi_reco2 = ( diphoton_pt1[j] * exp(  diphoton_eta1[j] ) + diphoton_pt2[j] * exp(  diphoton_eta2[j] ) )/sqrt_s,
+                  err_xi_reco1 = sqrt( pow( energy_corr_pho1, 2 ) * exp( -2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp( -2.*diphoton_eta2[j] ) )/sqrt_s,
+                  err_xi_reco2 = sqrt( pow( energy_corr_pho1, 2 ) * exp(  2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp(  2.*diphoton_eta2[j] ) )/sqrt_s; //FIXME
+cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << "\t" << err_xi_reco2 << endl;
       const float xi_reco1_withmet = xi_reco1 + met/sqrt_s,
                   xi_reco2_withmet = xi_reco2 + met/sqrt_s;
 
@@ -343,18 +435,20 @@ void tree_reader_fallback( TString file=default_ntp_file )
 
       //                  JW                                                                                                  
       const TLorentzVector lv_met( met_x, met_y, 0., met ),
-	dipho_met = pho1+pho2+electron+muon+jet+lv_met;
-      //cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;                                                       
+                           dipho_met = pho1+pho2+lv_met,
+                           dipho_incl = pho1+pho2+electron+muon+jet+lv_met;
+      //cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;
       const float diphoton_plus_met_mass = dipho_met.M(),
-	diphoton_plus_met_rap = dipho_met.Rapidity();
-      //
-
+                  diphoton_plus_met_rap = dipho_met.Rapidity(),
+                  diphoton_incl_mass = dipho_incl.M(),
+                  diphoton_incl_rap = dipho_incl.Rapidity();
 
       //cout << xi_reco1 << ", " << xi_reco2 << endl;
       h_diphoton_pt->Fill( diphoton_pt[j] );
       h_diphoton_pt_zoom->Fill( diphoton_pt[j] );
       h_diphoton_mass->Fill( diphoton_mass[j] );
       h_diphoton_mass_withmet->Fill( diphoton_plus_met_mass );
+      h_diphoton_mass_incl->Fill( diphoton_incl_mass );
       h_diphoton_rap->Fill( diphoton_rapidity[j] );
       h_diphoton_closestvtx->Fill( diphoton_vertex_nearestvtxdist[j] );
       h_diphoton_ntrk->Fill( diphoton_vertex_tracks[j] );
@@ -369,17 +463,33 @@ void tree_reader_fallback( TString file=default_ntp_file )
       h_metx_vs_mety->Fill( met_x, met_y );
       h_mggmet_vs_mgg->Fill( diphoton_plus_met_mass, diphoton_mass[j] );
 
-
-      //                 JW
-      h_lep_pt->Fill( electron_pt[j] + muon_pt[j]  );
-      h_jet_pt->Fill(jet_pt[j]);
-      //
+      for ( unsigned short k=0; k<tracks_45_near.size(); k++ ) {
+        const unsigned short id = h_ximatch_45n->GetN();
+        h_ximatch_45n->SetPoint( id, tracks_45_near[k].first, xi_reco1 );
+        h_ximatch_45n->SetPointError( id, tracks_45_near[k].second, err_xi_reco1 );
+      }
+      for ( unsigned short k=0; k<tracks_45_far.size(); k++ ) {
+        const unsigned short id = h_ximatch_45f->GetN();
+        h_ximatch_45f->SetPoint( id, tracks_45_far[k].first, xi_reco1 );
+        h_ximatch_45f->SetPointError( id, tracks_45_far[k].second, err_xi_reco1 );
+      }
+      for ( unsigned short k=0; k<tracks_56_near.size(); k++ ) {
+        const unsigned short id = h_ximatch_56n->GetN();
+        h_ximatch_56n->SetPoint( id, tracks_56_near[k].first, xi_reco2 );
+        h_ximatch_56n->SetPointError( id, tracks_56_near[k].second, err_xi_reco2 );
+      }
+      for ( unsigned short k=0; k<tracks_56_far.size(); k++ ) {
+        const unsigned short id = h_ximatch_56f->GetN();
+        h_ximatch_56f->SetPoint( id, tracks_56_far[k].first, xi_reco2 );
+        h_ximatch_56f->SetPointError( id, tracks_56_far[k].second, err_xi_reco2 );
+      }
 
       if ( num_1tag>0 ) {
         h_diphoton_pt_1tag->Fill( diphoton_pt[j] );
         h_diphoton_pt_zoom_1tag->Fill( diphoton_pt[j] );
         h_diphoton_mass_1tag->Fill( diphoton_mass[j] );
         h_diphoton_mass_withmet_1tag->Fill( diphoton_plus_met_mass );
+        h_diphoton_mass_incl_1tag->Fill( diphoton_incl_mass );
         h_diphoton_rap_1tag->Fill( diphoton_rapidity[j] );
         h_diphoton_closestvtx_1tag->Fill( diphoton_vertex_nearestvtxdist[j] );
         h_diphoton_ntrk_1tag->Fill( diphoton_vertex_tracks[j] );
@@ -400,6 +510,7 @@ void tree_reader_fallback( TString file=default_ntp_file )
         h_diphoton_pt_zoom_2tag->Fill( diphoton_pt[j] );
         h_diphoton_mass_2tag->Fill( diphoton_mass[j] );
         h_diphoton_mass_withmet_2tag->Fill( diphoton_plus_met_mass );
+        h_diphoton_mass_incl_2tag->Fill( diphoton_incl_mass );
         h_diphoton_rap_2tag->Fill( diphoton_rapidity[j] );
         h_diphoton_closestvtx_2tag->Fill( diphoton_vertex_nearestvtxdist[j] );
         h_diphoton_ntrk_2tag->Fill( diphoton_vertex_tracks[j] );
@@ -429,6 +540,7 @@ void tree_reader_fallback( TString file=default_ntp_file )
 
       if ( num_diproton>0 ) {
         h_mgg_vs_mpp->SetPoint( h_mgg_vs_mpp->GetN(), diphoton_mass[j], max_diproton_mass );
+        h_mgg_vs_mpp->SetPointError( h_mgg_vs_mpp->GetN(), 0., max_diproton_mass_error );
         h_mggmet_vs_mpp->SetPoint( h_mggmet_vs_mpp->GetN(), diphoton_plus_met_mass, max_diproton_mass );
         h_ygg_vs_ypp->SetPoint( h_ygg_vs_ypp->GetN(), diphoton_rapidity[j], max_diproton_mass_rap );
 	h_yggmet_vs_ypp->SetPoint( h_yggmet_vs_ypp->GetN(), diphoton_plus_met_rap, max_diproton_mass_rap );
@@ -517,6 +629,7 @@ void tree_reader_fallback( TString file=default_ntp_file )
   {
     plot_3hists( "diphoton_mass", top_label, h_diphoton_mass, h_diphoton_mass_1tag, h_diphoton_mass_2tag );
     plot_3hists( "diphoton_mass_withmet", top_label, h_diphoton_mass_withmet, h_diphoton_mass_withmet_1tag, h_diphoton_mass_withmet_2tag );
+    plot_3hists( "diphoton_mass_incl", top_label, h_diphoton_mass_incl, h_diphoton_mass_incl_1tag, h_diphoton_mass_incl_2tag );
     plot_3hists( "diphoton_pt", top_label, h_diphoton_pt, h_diphoton_pt_1tag, h_diphoton_pt_2tag );
     plot_3hists( "diphoton_pt_zoom", top_label, h_diphoton_pt_zoom, h_diphoton_pt_zoom_1tag, h_diphoton_pt_zoom_2tag );
     plot_3hists( "diphoton_lead_pt", top_label, h_diphoton_leadpt, h_diphoton_leadpt_1tag, h_diphoton_leadpt_2tag );
@@ -553,6 +666,12 @@ void tree_reader_fallback( TString file=default_ntp_file )
     plot_balances( "xi2_balance", top_label, "#xi_{2} from diphoton system\\Proton #xi_{2}", h_xi2gg_vs_xi2pp, h_xi2gg_vs_xi2pp_candm, h_xi2gg_vs_xi2pp_candy, 0., 0.45, rel_err_xi );
     plot_balances( "xi1_balance_withmet", top_label, "#xi_{1} from diphoton + #slash{E}_{T} system\\Proton #xi_{1}", h_xi1ggmet_vs_xi1pp, 0, 0, 0., 0.45, rel_err_xi );
     plot_balances( "xi2_balance_withmet", top_label, "#xi_{2} from diphoton + #slash{E}_{T} system\\Proton #xi_{2}", h_xi2ggmet_vs_xi2pp, 0, 0, 0., 0.45, rel_err_xi );
+
+    plot_balances_new( "xi1_balance_45n", top_label, "Proton #xi (sector 45 - near pot)\\Diphoton #xi", h_ximatch_45n, 0, 0, 0., 0.45 );
+    plot_balances_new( "xi1_balance_45f", top_label, "Proton #xi (sector 45 - far pot)\\Diphoton #xi", h_ximatch_45f, 0, 0, 0., 0.45 );
+    plot_balances_new( "xi1_balance_56n", top_label, "Proton #xi (sector 56 - near pot)\\Diphoton #xi", h_ximatch_56n, 0, 0, 0., 0.45 );
+    plot_balances_new( "xi1_balance_56f", top_label, "Proton #xi (sector 56 - far pot)\\Diphoton #xi", h_ximatch_56f, 0, 0, 0., 0.45 );
+
     plot_balances( "diphoton_pt_vs_diproton_mass", top_label, "Diphoton p_{T} (GeV)\\Diproton mass (GeV)", h_ptgg_vs_mpp );
     plot_balances( "diphoton_pt_vs_diphoton_mass", top_label, "Diphoton p_{T} (GeV)\\Diphoton mass (GeV)", h_ptgg_vs_mgg );
   }
