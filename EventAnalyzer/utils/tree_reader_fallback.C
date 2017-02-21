@@ -228,6 +228,7 @@ void tree_reader_fallback( TString file=default_ntp_file )
   tr->SetBranchAddress("jet_energy", jet_energy );
   tr->SetBranchAddress("jet_mass", jet_mass );
   //
+
   TH1D* h_num_proton = new TH1D( "num_proton", "Number of protons reconstructed in event\\Events", 6, 0., 6. );
   TH1D* h_mpp_over_mgg = new TH1D( "mpp_over_mgg", "m_{pp}^{missing} / m_{#gamma#gamma} for double-tag events\\Events\\?.2f", 30, -2., 4. ),
        *h_ypp_minus_ygg = new TH1D( "ypp_minus_ygg", "y_{pp}^{missing} - y_{#gamma#gamma} for double-tag events\\Events\\?.2f", 50, -2.5, 2.5 );
@@ -283,6 +284,14 @@ void tree_reader_fallback( TString file=default_ntp_file )
   TH1D* h_diphoton_closestvtx = new TH1D( "diphoton_closestvtx", "Distance diphoton/nearest vertex\\Events\\mm?.1f", 25, 0., 2.5 ),
        *h_diphoton_closestvtx_1tag = (TH1D*)h_diphoton_closestvtx->Clone( "diphoton_closestvtx_1tag" ),
        *h_diphoton_closestvtx_2tag = (TH1D*)h_diphoton_closestvtx->Clone( "diphoton_closestvtx_2tag" );
+  //  JW
+  TH1D* h_lep_pt = new TH1D("lep_pt", "Lepton pT\\Events", 35, 0., 750.),
+       *h_lep_pt_1tag = (TH1D*)h_lep_pt->Clone( "lep_pt_1tag" ),
+       *h_lep_pt_2tag = (TH1D*)h_lep_pt->Clone( "lep_pt_2tag" );
+  TH1D* h_jet_pt = new TH1D("jet_pt", "Jet pT\\Events", 35, 0., 750.),
+       *h_jet_pt_1tag = (TH1D*)h_jet_pt->Clone( "jet_pt_1tag" ),
+       *h_jet_pt_1tag = (TH1D*)h_jet_pt->Clone( "jet_pt_2tag" );
+  //
   TH2D* h_met_vs_pt = new TH2D( "met_vs_pt", "Missing E_{T} (GeV)\\Diphoton p_{T} (GeV)", 40, 0., 400., 40, 0., 400. ),
        *h_met_vs_pt_2tag = (TH2D*)h_met_vs_pt->Clone( "met_vs_pt_2tag" ),
        *h_metx_vs_mety = new TH2D( "metx_vs_mety", "#slash{E}_{T,x} (GeV)\\#slash{E}_{T,y} (GeV)", 50, -125., 125., 50, -125., 125. ),
@@ -409,10 +418,22 @@ cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << 
       const float xi_reco1_withmet = xi_reco1 + met/sqrt_s,
                   xi_reco2_withmet = xi_reco2 + met/sqrt_s;
 
+      //const float met_x = met*cos( met_phi ),
+      //            met_y = met*sin( met_phi );
+      //pho1.SetPtEtaPhiM( diphoton_pt1[j], diphoton_eta1[j], diphoton_phi1[j], 0. );
+      //pho2.SetPtEtaPhiM( diphoton_pt2[j], diphoton_eta2[j], diphoton_phi2[j], 0. );
+      //const TLorentzVector lv_met( Met_x, met_y, 0., met ),
+      //                     dipho_met = pho1+pho2+lv_met;
+      ////cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;
+      //const float diphoton_plus_met_mass = dipho_met.M(),
+      //            diphoton_plus_met_rap = dipho_met.Rapidity();
+
       const float met_x = met*cos( met_phi ),
-                  met_y = met*sin( met_phi );
+	met_y = met*sin( met_phi );
       pho1.SetPtEtaPhiM( diphoton_pt1[j], diphoton_eta1[j], diphoton_phi1[j], 0. );
       pho2.SetPtEtaPhiM( diphoton_pt2[j], diphoton_eta2[j], diphoton_phi2[j], 0. );
+
+      //                  JW                                                                                                  
       const TLorentzVector lv_met( met_x, met_y, 0., met ),
                            dipho_met = pho1+pho2+lv_met,
                            dipho_incl = pho1+pho2+electron+muon+jet+lv_met;
@@ -421,7 +442,6 @@ cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << 
                   diphoton_plus_met_rap = dipho_met.Rapidity(),
                   diphoton_incl_mass = dipho_incl.M(),
                   diphoton_incl_rap = dipho_incl.Rapidity();
-
 
       //cout << xi_reco1 << ", " << xi_reco2 << endl;
       h_diphoton_pt->Fill( diphoton_pt[j] );
@@ -479,6 +499,11 @@ cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << 
         h_diphoton_subleadpt_1tag->Fill( diphoton_pt2[j] );
         h_diphoton_leadeta_1tag->Fill( diphoton_eta1[j] );
         h_diphoton_subleadeta_1tag->Fill( diphoton_eta2[j] );
+	
+	//              JW
+	h_lep_pt_1tag->Fill( electron_pt[j] + muon_pt[j] );
+	h_jet_pt_1tag->Fill( jet_pt[j] )
+	//
       }
       if ( num_2tag>0 ) {
         h_diphoton_pt_2tag->Fill( diphoton_pt[j] );
@@ -495,6 +520,11 @@ cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << 
         h_diphoton_subleadpt_2tag->Fill( diphoton_pt2[j] );
         h_diphoton_leadeta_2tag->Fill( diphoton_eta1[j] );
         h_diphoton_subleadeta_2tag->Fill( diphoton_eta2[j] );
+
+	//              JW                                                                                                                                      
+	h_lep_pt_2tag->Fill( electron_pt[j] + muon_pt[j] );
+	h_jet_pt_2tag->Fill( jet_pt[j] )
+	//  
 
         h_xi1gg_vs_xi1pp->SetPoint( h_xi1gg_vs_xi1pp->GetN(), xi_reco1, xi_prot1 );
         h_xi2gg_vs_xi2pp->SetPoint( h_xi2gg_vs_xi2pp->GetN(), xi_reco2, xi_prot2 );
@@ -619,6 +649,10 @@ cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << 
     plot_3hists( "diphoton_vtx_numtracks", top_label, h_diphoton_ntrk, h_diphoton_ntrk_1tag, h_diphoton_ntrk_2tag );
     plot_3hists( "num_vertex", top_label, h_num_vtx, h_num_vtx_1tag, h_num_vtx_2tag );
     plot_3hists( "event_met", top_label, h_met, h_met_1tag, h_met_2tag );
+    //              JW
+    plot_3hists( "lep_pt", top_label, h_lep_pt, h_lep_pt_1tag, h_lep_pt_2tag );
+    plot_3hists( "jet_pt", top_label, h_jet_pt, h_jet_pt_1tag, h_lep_pt_2tag );
+    //
 
     cout << "total candidates: " << h_mgg_vs_mpp->Integral() << endl
          << " -> with mass matching: " << h_mgg_vs_mpp_candm->Integral() << endl
