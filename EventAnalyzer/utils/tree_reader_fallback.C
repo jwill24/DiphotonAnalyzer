@@ -133,6 +133,14 @@ void plot_balances( const char* name, const char* top_label, const char* title, 
   c.Save( "png", out_path );
 }
 
+float photon_rel_energy_scale( const float& pt, const float& eta, const float& r9 )
+{
+  if ( r9<0.94 ) return 0.004;
+  if ( fabs( eta )<1.4442 ) return 0.002;
+  if ( fabs( eta )>1.566 ) return 0.005;
+  return 1.;
+}
+
 void tree_reader_fallback( TString file=default_ntp_file )
 {
   TFile f(file);
@@ -151,15 +159,18 @@ void tree_reader_fallback( TString file=default_ntp_file )
   tr->SetBranchAddress( "event_number", &event_number );
   // diphoton quantities
   unsigned int num_diphoton;
-  float diphoton_pt1[5], diphoton_eta1[5], diphoton_phi1[5], diphoton_pt2[5], diphoton_eta2[5], diphoton_phi2[5];
+  float diphoton_pt1[5], diphoton_eta1[5], diphoton_phi1[5], diphoton_r9_1[5],
+        diphoton_pt2[5], diphoton_eta2[5], diphoton_phi2[5], diphoton_r9_2[5];
   float diphoton_pt[5], diphoton_mass[5], diphoton_rapidity[5], diphoton_dphi[5];
   tr->SetBranchAddress( "num_diphoton", &num_diphoton );
   tr->SetBranchAddress( "diphoton_pt1", diphoton_pt1 );
   tr->SetBranchAddress( "diphoton_eta1", diphoton_eta1 );
   tr->SetBranchAddress( "diphoton_phi1", diphoton_phi1 );
+  tr->SetBranchAddress( "diphoton_r91", diphoton_r9_1 );
   tr->SetBranchAddress( "diphoton_pt2", diphoton_pt2 );
   tr->SetBranchAddress( "diphoton_eta2", diphoton_eta2 );
   tr->SetBranchAddress( "diphoton_phi2", diphoton_phi2 );
+  tr->SetBranchAddress( "diphoton_r92", diphoton_r9_2 );
   tr->SetBranchAddress( "diphoton_pt", diphoton_pt );
   tr->SetBranchAddress( "diphoton_dphi", diphoton_dphi );
   tr->SetBranchAddress( "diphoton_mass", diphoton_mass );
@@ -386,9 +397,15 @@ void tree_reader_fallback( TString file=default_ntp_file )
     //----- diphotons retrieval part -----
 
     for ( unsigned int j=0; j<num_diphoton; j++ ) {
+
+      const float energy_corr_pho1 = photon_rel_energy_scale( diphoton_pt1[j], diphoton_eta1[j], diphoton_r9_1[j] ) * diphoton_pt1[j],
+                  energy_corr_pho2 = photon_rel_energy_scale( diphoton_pt2[j], diphoton_eta2[j], diphoton_r9_2[j] ) * diphoton_pt2[j];
+
       const float xi_reco1 = ( diphoton_pt1[j] * exp( -diphoton_eta1[j] ) + diphoton_pt2[j] * exp( -diphoton_eta2[j] ) )/sqrt_s,
                   xi_reco2 = ( diphoton_pt1[j] * exp(  diphoton_eta1[j] ) + diphoton_pt2[j] * exp(  diphoton_eta2[j] ) )/sqrt_s,
-                  err_xi_reco1 = 0., err_xi_reco2 = 0.; //FIXME
+                  err_xi_reco1 = sqrt( pow( energy_corr_pho1, 2 ) * exp( -2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp( -2.*diphoton_eta2[j] ) )/sqrt_s,
+                  err_xi_reco2 = sqrt( pow( energy_corr_pho1, 2 ) * exp(  2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp(  2.*diphoton_eta2[j] ) )/sqrt_s; //FIXME
+cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << "\t" << err_xi_reco2 << endl;
       const float xi_reco1_withmet = xi_reco1 + met/sqrt_s,
                   xi_reco2_withmet = xi_reco2 + met/sqrt_s;
 
