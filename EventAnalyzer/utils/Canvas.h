@@ -75,33 +75,6 @@ class Canvas : public TCanvas
     }
   }
 
-  inline void DrawDiagonal(const float& min, const float& max, const float& x_resol=-1., const float& y_resol=-1., bool abs_unc=false) {
-    //FIXME to do: implement x resolution
-    if (y_resol>0.) {
-      TGraph* sigmay_pm = new TGraph(4);
-      if (!abs_unc) {
-        sigmay_pm->SetPoint(0, min, min+y_resol*min);
-        sigmay_pm->SetPoint(1, max, max+y_resol*max);
-        sigmay_pm->SetPoint(2, max, max-y_resol*max);
-        sigmay_pm->SetPoint(3, min, min-y_resol*min);
-      }
-      else {
-        sigmay_pm->SetPoint(0, min, min+y_resol);
-        sigmay_pm->SetPoint(1, max, max+y_resol);
-        sigmay_pm->SetPoint(2, max, max-y_resol);
-        sigmay_pm->SetPoint(3, min, min-y_resol);
-      }
-      sigmay_pm->SetFillColorAlpha(kBlack, 0.1);
-      //sigmay_pm->SetFillColor(18);
-      sigmay_pm->Draw("f");
-    }
-    TLine l;
-    l.SetLineWidth( 3 );
-    l.SetLineColor( kGray );
-    l.SetLineStyle( 2 );
-    l.DrawLine( min, min, max, max );
-  }
-
   inline void RatioPlot(TH1* obj1, const TH1* obj2, const TH1* obj3, float ymin=-999., float ymax=-999.) {
     if (!fRatio) return;
     TH1* ratio1 = (TH1*)obj2->Clone(), *ratio2 = (TH1*)obj3->Clone();
