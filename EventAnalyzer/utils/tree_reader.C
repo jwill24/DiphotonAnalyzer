@@ -51,7 +51,7 @@ void plot_3hists( const char* name, const char* top_label, TH1* h, TH1* h_1tag, 
 }
 
 void plot_balances_new( const char* name, const char* top_label, const char* title, TGraphErrors* h2, TGraphErrors* h2_mtag=0, TGraphErrors* h2_ytag=0,
-                    const float& min_xy=-1., const float& max_xy=-1. )
+                        const float& min_xy=-1., const float& max_xy=-1., const float& rp_acc=-1. )
 {
   Canvas c( name, top_label );
   TMultiGraph mg;
@@ -79,6 +79,13 @@ void plot_balances_new( const char* name, const char* top_label, const char* tit
   if ( min_xy!=-1. and max_xy!=-1. ) {
     mg.GetXaxis()->SetLimits( min_xy, max_xy );
     mg.GetYaxis()->SetRangeUser( min_xy, max_xy );
+  }
+
+  if ( rp_acc>0. ) {
+    TLine* line = new TLine( min_xy, rp_acc, max_xy, rp_acc );
+    line->SetLineWidth( 2 );
+    line->SetLineColor( kBlack );
+    line->Draw( "same" );
   }
 
   c.DrawDiagonal( min_xy, max_xy, 0. );
@@ -141,7 +148,7 @@ float photon_rel_energy_scale( const float& pt, const float& eta, const float& r
   return 1.;
 }
 
-void tree_reader_fallback( TString file=default_ntp_file )
+void tree_reader( TString file=default_ntp_file )
 {
   TFile f(file);
   if ( !f.IsOpen() ) return;
@@ -159,9 +166,11 @@ void tree_reader_fallback( TString file=default_ntp_file )
   tr->SetBranchAddress( "event_number", &event_number );
   // diphoton quantities
   unsigned int num_diphoton;
-  float diphoton_pt1[5], diphoton_eta1[5], diphoton_phi1[5], diphoton_r9_1[5],
-        diphoton_pt2[5], diphoton_eta2[5], diphoton_phi2[5], diphoton_r9_2[5];
-  float diphoton_pt[5], diphoton_mass[5], diphoton_rapidity[5], diphoton_dphi[5];
+  const unsigned short max_diph = 10;
+  float diphoton_pt1[max_diph], diphoton_eta1[max_diph], diphoton_phi1[max_diph], diphoton_r9_1[max_diph],
+        diphoton_pt2[max_diph], diphoton_eta2[max_diph], diphoton_phi2[max_diph], diphoton_r9_2[max_diph];
+  float diphoton_pt[max_diph], diphoton_mass[max_diph], diphoton_rapidity[max_diph], diphoton_dphi[max_diph];
+  float diphoton_vertex_x[max_diph], diphoton_vertex_y[max_diph], diphoton_vertex_z[max_diph];
   tr->SetBranchAddress( "num_diphoton", &num_diphoton );
   tr->SetBranchAddress( "diphoton_pt1", diphoton_pt1 );
   tr->SetBranchAddress( "diphoton_eta1", diphoton_eta1 );
@@ -178,6 +187,9 @@ void tree_reader_fallback( TString file=default_ntp_file )
   unsigned int diphoton_vertex_vtx1mmdist[5], diphoton_vertex_vtx2mmdist[5], diphoton_vertex_vtx5mmdist[5], diphoton_vertex_vtx1cmdist[5];
   float diphoton_vertex_nearestvtxdist[5];
   unsigned int diphoton_vertex_tracks[5];
+  tr->SetBranchAddress( "diphoton_vertex_x", diphoton_vertex_x );
+  tr->SetBranchAddress( "diphoton_vertex_y", diphoton_vertex_y );
+  tr->SetBranchAddress( "diphoton_vertex_z", diphoton_vertex_z );
   tr->SetBranchAddress( "diphoton_vertex_vtx1mmdist", diphoton_vertex_vtx1mmdist );
   tr->SetBranchAddress( "diphoton_vertex_vtx2mmdist", diphoton_vertex_vtx2mmdist );
   tr->SetBranchAddress( "diphoton_vertex_vtx5mmdist", diphoton_vertex_vtx5mmdist );
@@ -204,29 +216,43 @@ void tree_reader_fallback( TString file=default_ntp_file )
   //                JW
   // Electron Quantities
   unsigned int num_electron;
-  float electron_pt[10], electron_eta[10], electron_phi[10], electron_energy[10];
+  const unsigned short max_ele = 20;
+  float electron_pt[max_ele], electron_eta[max_ele], electron_phi[max_ele], electron_energy[max_ele];
+  float electron_vtx_x[max_ele], electron_vtx_y[max_ele], electron_vtx_z[max_ele];
   tr->SetBranchAddress( "num_electron", &num_electron );
   tr->SetBranchAddress( "electron_pt", electron_pt );
   tr->SetBranchAddress( "electron_eta", electron_eta );
   tr->SetBranchAddress( "electron_phi", electron_phi );
   tr->SetBranchAddress( "electron_energy", electron_energy );
+  tr->SetBranchAddress( "electron_vtx_x", electron_vtx_x );
+  tr->SetBranchAddress( "electron_vtx_y", electron_vtx_y );
+  tr->SetBranchAddress( "electron_vtx_z", electron_vtx_z );
   // Muon Quantities
   unsigned int num_muon;
-  float muon_pt[10], muon_eta[10], muon_phi[10], muon_energy[10];
-  tr->SetBranchAddress("num_muon",&num_muon );
-  tr->SetBranchAddress("muon_pt", muon_pt );
-  tr->SetBranchAddress("muon_eta",muon_eta );
-  tr->SetBranchAddress("muon_phi",muon_phi );
-  tr->SetBranchAddress("muon_energy", muon_energy );
+  const unsigned short max_mu = 20;
+  float muon_pt[max_mu], muon_eta[max_mu], muon_phi[max_mu], muon_energy[max_mu];
+  float muon_vtx_x[max_mu], muon_vtx_y[max_mu], muon_vtx_z[max_mu];
+  tr->SetBranchAddress( "num_muon",&num_muon );
+  tr->SetBranchAddress( "muon_pt", muon_pt );
+  tr->SetBranchAddress( "muon_eta",muon_eta );
+  tr->SetBranchAddress( "muon_phi",muon_phi );
+  tr->SetBranchAddress( "muon_energy", muon_energy );
+  tr->SetBranchAddress( "muon_vtx_x", muon_vtx_x );
+  tr->SetBranchAddress( "muon_vtx_y", muon_vtx_y );
+  tr->SetBranchAddress( "muon_vtx_z", muon_vtx_z );
   //Jet Quantities
   unsigned int num_jet;
-  float jet_pt[10], jet_eta[10], jet_phi[10], jet_energy[10], jet_mass[10];
-  tr->SetBranchAddress("num_jet",&num_jet );
-  tr->SetBranchAddress("jet_pt", jet_pt );
-  tr->SetBranchAddress("jet_eta",jet_eta );
-  tr->SetBranchAddress("jet_phi",jet_phi );
-  tr->SetBranchAddress("jet_energy", jet_energy );
-  tr->SetBranchAddress("jet_mass", jet_mass );
+  const unsigned short max_jet = 20;
+  float jet_pt[max_jet], jet_eta[max_jet], jet_phi[max_jet], jet_energy[max_jet];
+  float jet_vtx_x[max_jet], jet_vtx_y[max_jet], jet_vtx_z[max_jet];
+  tr->SetBranchAddress( "num_jet", &num_jet );
+  tr->SetBranchAddress( "jet_pt",  jet_pt );
+  tr->SetBranchAddress( "jet_eta", jet_eta );
+  tr->SetBranchAddress( "jet_phi", jet_phi );
+  tr->SetBranchAddress( "jet_energy", jet_energy );
+  tr->SetBranchAddress( "jet_vtx_x", jet_vtx_x );
+  tr->SetBranchAddress( "jet_vtx_y", jet_vtx_y );
+  tr->SetBranchAddress( "jet_vtx_z", jet_vtx_z );
   //
 
   TH1D* h_num_proton = new TH1D( "num_proton", "Number of protons reconstructed in event\\Events", 6, 0., 6. );
@@ -290,7 +316,7 @@ void tree_reader_fallback( TString file=default_ntp_file )
        *h_lep_pt_2tag = (TH1D*)h_lep_pt->Clone( "lep_pt_2tag" );
   TH1D* h_jet_pt = new TH1D("jet_pt", "Jet pT\\Events", 35, 0., 750.),
        *h_jet_pt_1tag = (TH1D*)h_jet_pt->Clone( "jet_pt_1tag" ),
-       *h_jet_pt_1tag = (TH1D*)h_jet_pt->Clone( "jet_pt_2tag" );
+       *h_jet_pt_2tag = (TH1D*)h_jet_pt->Clone( "jet_pt_2tag" );
   //
   TH2D* h_met_vs_pt = new TH2D( "met_vs_pt", "Missing E_{T} (GeV)\\Diphoton p_{T} (GeV)", 40, 0., 400., 40, 0., 400. ),
        *h_met_vs_pt_2tag = (TH2D*)h_met_vs_pt->Clone( "met_vs_pt_2tag" ),
@@ -392,15 +418,6 @@ void tree_reader_fallback( TString file=default_ntp_file )
     //----- leptons+jets retrieval part -----
 
     //          JW
-    for ( unsigned int j=0; j<num_electron; j++ ) {
-      electron.SetPtEtaPhiM( electron_pt[j], electron_eta[j], electron_phi[j], 0.000510998928 );
-    }
-    for ( unsigned int j=0; j<num_muon; j++ ) {
-      muon.SetPtEtaPhiM( muon_pt[j], muon_eta[j], muon_phi[j], .1056583715 );
-    }
-    for ( unsigned int j=0; j<num_jet; j++ ) {
-      jet.SetPtEtaPhiM( jet_pt[j], jet_eta[j], jet_phi[j], jet_mass[j] );
-    }
     //
 
     //----- diphotons retrieval part -----
@@ -414,30 +431,68 @@ void tree_reader_fallback( TString file=default_ntp_file )
                   xi_reco2 = ( diphoton_pt1[j] * exp(  diphoton_eta1[j] ) + diphoton_pt2[j] * exp(  diphoton_eta2[j] ) )/sqrt_s,
                   err_xi_reco1 = sqrt( pow( energy_corr_pho1, 2 ) * exp( -2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp( -2.*diphoton_eta2[j] ) )/sqrt_s,
                   err_xi_reco2 = sqrt( pow( energy_corr_pho1, 2 ) * exp(  2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp(  2.*diphoton_eta2[j] ) )/sqrt_s; //FIXME
-cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << "\t" << err_xi_reco2 << endl;
+//cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << "\t" << err_xi_reco2 << endl;
       const float xi_reco1_withmet = xi_reco1 + met/sqrt_s,
                   xi_reco2_withmet = xi_reco2 + met/sqrt_s;
 
-      //const float met_x = met*cos( met_phi ),
-      //            met_y = met*sin( met_phi );
-      //pho1.SetPtEtaPhiM( diphoton_pt1[j], diphoton_eta1[j], diphoton_phi1[j], 0. );
-      //pho2.SetPtEtaPhiM( diphoton_pt2[j], diphoton_eta2[j], diphoton_phi2[j], 0. );
-      //const TLorentzVector lv_met( Met_x, met_y, 0., met ),
-      //                     dipho_met = pho1+pho2+lv_met;
-      ////cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;
-      //const float diphoton_plus_met_mass = dipho_met.M(),
-      //            diphoton_plus_met_rap = dipho_met.Rapidity();
+      const TVector3 diph_vtx( diphoton_vertex_x[j], diphoton_vertex_y[j], diphoton_vertex_z[j] );
+
+      const float max_dist_vtx = 0.1;
+
+      bool has_ele = false, has_muon = false, has_jet = false;
+
+      TLorentzVector electrons;
+      for ( unsigned int k=0; k<num_electron; k++ ) {
+        TLorentzVector ele;
+        ele.SetPtEtaPhiE( electron_pt[k], electron_eta[k], electron_phi[k], electron_energy[k] );
+        const TVector3 ele_vtx( electron_vtx_x[k], electron_vtx_y[k], electron_vtx_z[k] );
+        if ( ( ele_vtx-diph_vtx ).Mag()<max_dist_vtx ) {
+          electrons += ele;
+          has_ele = true;
+        }
+      }
+
+      TLorentzVector muons;
+      for ( unsigned int k=0; k<num_muon; k++ ) {
+        TLorentzVector mu;
+        mu.SetPtEtaPhiE( muon_pt[k], muon_eta[k], muon_phi[k], muon_energy[k] );
+        const TVector3 mu_vtx( muon_vtx_x[k], muon_vtx_y[k], muon_vtx_z[k] );
+        if ( ( mu_vtx-diph_vtx ).Mag()<max_dist_vtx ) {
+          muons += mu;
+          has_muon = true;
+        }
+      }
+
+      TLorentzVector jets;
+      for ( unsigned int k=0; k<num_jet; k++ ) {
+        TLorentzVector jet;
+        jet.SetPtEtaPhiE( jet_pt[k], jet_eta[k], jet_phi[k], jet_energy[k] );
+        const TVector3 jet_vtx( jet_vtx_x[k], jet_vtx_y[k], jet_vtx_z[k] );
+        if ( ( jet_vtx-diph_vtx ).Mag()<max_dist_vtx ) {
+          jets += jet;
+          has_jet = true;
+        }
+      }
+
+
+///FIXME FIXME FIXME FIXME FIXME
+
+// """exclusivity""" cut
+if ( has_ele || has_muon || has_jet ) continue;
+
+///FIXME FIXME FIXME FIXME FIXME
+
 
       const float met_x = met*cos( met_phi ),
-	met_y = met*sin( met_phi );
+                  met_y = met*sin( met_phi );
       pho1.SetPtEtaPhiM( diphoton_pt1[j], diphoton_eta1[j], diphoton_phi1[j], 0. );
       pho2.SetPtEtaPhiM( diphoton_pt2[j], diphoton_eta2[j], diphoton_phi2[j], 0. );
 
       //                  JW                                                                                                  
       const TLorentzVector lv_met( met_x, met_y, 0., met ),
                            dipho_met = pho1+pho2+lv_met,
-                           dipho_incl = pho1+pho2+electron+muon+jet+lv_met;
-      //cout << dipho_met.M() << " <---> " << diphoton_mass[j] << endl;
+                           dipho_incl = pho1+pho2+electrons+muons+jets+lv_met;
+      //cout << diphoton_mass[j] << "\t" << dipho_met.M() << "\t" << dipho_incl.M() << endl;
       const float diphoton_plus_met_mass = dipho_met.M(),
                   diphoton_plus_met_rap = dipho_met.Rapidity(),
                   diphoton_incl_mass = dipho_incl.M(),
@@ -502,7 +557,7 @@ cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << 
 	
 	//              JW
 	h_lep_pt_1tag->Fill( electron_pt[j] + muon_pt[j] );
-	h_jet_pt_1tag->Fill( jet_pt[j] )
+	h_jet_pt_1tag->Fill( jet_pt[j] );
 	//
       }
       if ( num_2tag>0 ) {
@@ -523,7 +578,7 @@ cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << 
 
 	//              JW                                                                                                                                      
 	h_lep_pt_2tag->Fill( electron_pt[j] + muon_pt[j] );
-	h_jet_pt_2tag->Fill( jet_pt[j] )
+	h_jet_pt_2tag->Fill( jet_pt[j] );
 	//  
 
         h_xi1gg_vs_xi1pp->SetPoint( h_xi1gg_vs_xi1pp->GetN(), xi_reco1, xi_prot1 );
@@ -667,10 +722,10 @@ cout << energy_corr_pho1 << "\t" << energy_corr_pho2 << "\t" << err_xi_reco1 << 
     plot_balances( "xi1_balance_withmet", top_label, "#xi_{1} from diphoton + #slash{E}_{T} system\\Proton #xi_{1}", h_xi1ggmet_vs_xi1pp, 0, 0, 0., 0.45, rel_err_xi );
     plot_balances( "xi2_balance_withmet", top_label, "#xi_{2} from diphoton + #slash{E}_{T} system\\Proton #xi_{2}", h_xi2ggmet_vs_xi2pp, 0, 0, 0., 0.45, rel_err_xi );
 
-    plot_balances_new( "xi1_balance_45n", top_label, "Proton #xi (sector 45 - near pot)\\Diphoton #xi", h_ximatch_45n, 0, 0, 0., 0.45 );
-    plot_balances_new( "xi1_balance_45f", top_label, "Proton #xi (sector 45 - far pot)\\Diphoton #xi", h_ximatch_45f, 0, 0, 0., 0.45 );
-    plot_balances_new( "xi1_balance_56n", top_label, "Proton #xi (sector 56 - near pot)\\Diphoton #xi", h_ximatch_56n, 0, 0, 0., 0.45 );
-    plot_balances_new( "xi1_balance_56f", top_label, "Proton #xi (sector 56 - far pot)\\Diphoton #xi", h_ximatch_56f, 0, 0, 0., 0.45 );
+    plot_balances_new( "xi1_balance_45n", top_label, "Proton #xi (sector 45 - near pot)\\Diphoton #xi", h_ximatch_45n, 0, 0, 0., 0.25, 0.037 );
+    plot_balances_new( "xi1_balance_45f", top_label, "Proton #xi (sector 45 - far pot)\\Diphoton #xi", h_ximatch_45f, 0, 0, 0., 0.25, 0.026 );
+    plot_balances_new( "xi1_balance_56n", top_label, "Proton #xi (sector 56 - near pot)\\Diphoton #xi", h_ximatch_56n, 0, 0, 0., 0.25, 0.048 );
+    plot_balances_new( "xi1_balance_56f", top_label, "Proton #xi (sector 56 - far pot)\\Diphoton #xi", h_ximatch_56f, 0, 0, 0., 0.25, 0.037 );
 
     plot_balances( "diphoton_pt_vs_diproton_mass", top_label, "Diphoton p_{T} (GeV)\\Diproton mass (GeV)", h_ptgg_vs_mpp );
     plot_balances( "diphoton_pt_vs_diphoton_mass", top_label, "Diphoton p_{T} (GeV)\\Diphoton mass (GeV)", h_ptgg_vs_mgg );
