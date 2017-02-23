@@ -134,12 +134,12 @@ void tree_reader( TString file=default_ntp_file )
   tr->SetBranchAddress( "jet_vtx_z", jet_vtx_z );
   //
 
-  TH1D* h_num_proton = new TH1D( "num_proton", "Forward track multiplicity\\Events", 6, 0., 6. );
   TH1D* h_mpp_over_mgg = new TH1D( "mpp_over_mgg", "m_{pp}^{missing} / m_{#gamma#gamma} for double-tag events\\Events\\?.2f", 30, -2., 4. ),
        *h_ypp_minus_ygg = new TH1D( "ypp_minus_ygg", "y_{pp}^{missing} - y_{#gamma#gamma} for double-tag events\\Events\\?.2f", 50, -2.5, 2.5 );
   TH1D* h_met = new TH1D( "met", "Missing E_{T}\\Events\\GeV?.0f", 48, 0., 240. ),
        *h_met_1tag = (TH1D*)h_met->Clone( "met_1tag" ),
        *h_met_2tag = (TH1D*)h_met->Clone( "met_2tag" );
+  // diphoton only
   TH1D* h_diphoton_pt = new TH1D( "diphoton_pt", "Diphoton p_{T}\\Events\\GeV?.0f", 40, 0., 400. ),
        *h_diphoton_pt_1tag = (TH1D*)h_diphoton_pt->Clone( "diphoton_pt_1tag" ),
        *h_diphoton_pt_2tag = (TH1D*)h_diphoton_pt->Clone( "diphoton_pt_2tag" );
@@ -179,6 +179,7 @@ void tree_reader( TString file=default_ntp_file )
   TH1D* h_diphoton_ntrk = new TH1D( "diphoton_ntrk", "Number of tracks on diphoton vertex\\Events\\?.1f", 20, 0., 20. ),
        *h_diphoton_ntrk_1tag = (TH1D*)h_diphoton_ntrk->Clone( "diphoton_ntrk_1tag" ),
        *h_diphoton_ntrk_2tag = (TH1D*)h_diphoton_ntrk->Clone( "diphoton_ntrk_2tag" );
+  // vertexing study
   TH1D* h_num_vtx = new TH1D( "num_vtx", "Number of primary vertices in event\\Events", 40, 0., 40. ),
        *h_num_vtx_1tag = (TH1D*)h_num_vtx->Clone( "num_vtx_1tag" ),
        *h_num_vtx_2tag = (TH1D*)h_num_vtx->Clone( "num_vtx_2tag" );
@@ -228,6 +229,9 @@ void tree_reader( TString file=default_ntp_file )
                *h_ximatch_45f = new TGraphErrors,
                *h_ximatch_56n = new TGraphErrors,
                *h_ximatch_56f = new TGraphErrors;
+  // proton reco study
+  TH1D* h_num_proton = new TH1D( "num_proton", "Forward track multiplicity\\Events", 6, 0., 6. );
+  TGraphErrors h_ximatch_45nf_thr0p1, h_ximatch_45nf_thr0p2, h_ximatch_45nf_thr0p5, h_ximatch_45nf_thr1p0;
 
   ofstream events_list( "events_list.txt" );
 
@@ -304,10 +308,35 @@ void tree_reader( TString file=default_ntp_file )
       }
     }
 
-    const bool has_singletag = ( tracks_45_near.size()>0 || tracks_45_far.size() || tracks_56_near.size() || tracks_56_far.size() ),
-               has_doubletag = ( ( tracks_45_near.size()>0 || tracks_45_far.size() ) && ( tracks_56_near.size() || tracks_56_far.size() ) );
+    const bool has_singletag = ( tracks_45_near.size()>0 || tracks_45_far.size()>0 || tracks_56_near.size()>0 || tracks_56_far.size()>0 ),
+               has_doubletag = ( ( tracks_45_near.size()>0 || tracks_45_far.size()>0 ) && ( tracks_56_near.size()>0 || tracks_56_far.size()>0 ) );
 
 
+    // near-far matching test
+    for ( tracks_map::const_iterator it=tracks_45_near.begin(); it!=tracks_45_near.end(); it++ ) {
+      const unsigned int linked_id = proton_link_id[it->first];
+      if ( linked_id>100 ) continue;
+      if ( proton_link_dist[it->first]<0.1 ) {
+        const unsigned short id = h_ximatch_45nf_thr0p1.GetN();
+        h_ximatch_45nf_thr0p1.SetPoint( id, it->second.first, tracks_45_far[linked_id].first );
+        h_ximatch_45nf_thr0p1.SetPointError( id, it->second.second, tracks_45_far[linked_id].second );
+      }
+      if ( proton_link_dist[it->first]<0.2 ) {
+        const unsigned short id = h_ximatch_45nf_thr0p2.GetN();
+        h_ximatch_45nf_thr0p2.SetPoint( id, it->second.first, tracks_45_far[linked_id].first );
+        h_ximatch_45nf_thr0p2.SetPointError( id, it->second.second, tracks_45_far[linked_id].second );
+      }
+      if ( proton_link_dist[it->first]<0.5 ) {
+        const unsigned short id = h_ximatch_45nf_thr0p5.GetN();
+        h_ximatch_45nf_thr0p5.SetPoint( id, it->second.first, tracks_45_far[linked_id].first );
+        h_ximatch_45nf_thr0p5.SetPointError( id, it->second.second, tracks_45_far[linked_id].second );
+      }
+      if ( proton_link_dist[it->first]<1.0 ) {
+        const unsigned short id = h_ximatch_45nf_thr1p0.GetN();
+        h_ximatch_45nf_thr1p0.SetPoint( id, it->second.first, tracks_45_far[linked_id].first );
+        h_ximatch_45nf_thr1p0.SetPointError( id, it->second.second, tracks_45_far[linked_id].second );
+      }
+    }
     //          JW
     //
 
@@ -617,6 +646,13 @@ cout << "maximal diproton mass: " << max_diproton_mass << " +- " << max_diproton
 
     plt.plot_balances( "diphoton_pt_vs_diproton_mass", "Diphoton p_{T} (GeV)\\Diproton mass (GeV)", h_ptgg_vs_mpp );
     plt.plot_balances( "diphoton_pt_vs_diphoton_mass", "Diphoton p_{T} (GeV)\\Diphoton mass (GeV)", h_ptgg_vs_mgg );
+
+    Plotter::GraphsMap gm_45;
+    gm_45.insert( std::make_pair( "d #geq 0.1 cm", &h_ximatch_45nf_thr0p1 ) );
+    gm_45.insert( std::make_pair( "d #geq 0.2 cm", &h_ximatch_45nf_thr0p2 ) );
+    gm_45.insert( std::make_pair( "d #geq 0.5 cm", &h_ximatch_45nf_thr0p5 ) );
+    gm_45.insert( std::make_pair( "d #geq 1.0 cm", &h_ximatch_45nf_thr1p0 ) );
+    plt.plot_xi_correlations( "45", gm_45 );
   }
 
   {
@@ -708,8 +744,7 @@ cout << "maximal diproton mass: " << max_diproton_mass << " +- " << max_diproton
     h_mpp_over_mgg->SetMarkerStyle( 20 );
     h_mpp_over_mgg->SetLineColor( kBlack );
     c.Prettify( h_mpp_over_mgg );
-    c.Save( "pdf", out_path );
-    c.Save( "png", out_path );
+    c.Save( "pdf,png", out_path );
   }
   {
     Canvas c( "rapidity_difference", top_label );
@@ -718,9 +753,9 @@ cout << "maximal diproton mass: " << max_diproton_mass << " +- " << max_diproton
     h_ypp_minus_ygg->SetMarkerStyle( 20 );
     h_ypp_minus_ygg->SetLineColor( kBlack );
     c.Prettify( h_ypp_minus_ygg );
-    c.Save( "pdf", out_path );
-    c.Save( "png", out_path );
+    c.Save( "pdf,png", out_path );
   }
+  
 
 }
 

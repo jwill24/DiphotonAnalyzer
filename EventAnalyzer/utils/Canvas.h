@@ -126,15 +126,17 @@ class Canvas : public TCanvas
   }
 
   inline void Save(const char* ext, const char* out_dir=".") {
-    if (strstr(ext, "pdf")==NULL) {
-      if (strstr(ext, "png")==NULL) {
-        return;
-      }
-    }
     TCanvas::cd();
     if (fLeg and TCanvas::FindObject(fLeg)==0) fLeg->Draw();
     if (fTopLabel and TCanvas::FindObject(fTopLabel)==0) fTopLabel->Draw();
-    TCanvas::SaveAs(Form("%s/%s.%s", out_dir, TCanvas::GetName(), ext));
+
+    const TString ext_str( ext );
+    TObjArray* tok = TString( ext ).Tokenize( "," );
+    for ( unsigned short i=0; i<tok->GetEntries(); i++ ) {
+      const TString ext_str = ( ( TObjString* )tok->At( i ) )->String();
+      if ( ext_str!="pdf" && ext_str!="png" ) continue;
+      TCanvas::SaveAs( Form( "%s/%s.%s", out_dir, TCanvas::GetName(), ext_str.Data() ) );
+    }
   }
 
  private:

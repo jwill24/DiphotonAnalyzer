@@ -1,3 +1,6 @@
+#ifndef Plotter_h
+#define Plotter_h
+
 #include "Canvas.h"
 #include "TMultiGraph.h"
 #include "TH1.h"
@@ -5,6 +8,10 @@
 
 class Plotter
 {
+  public:
+    typedef std::map<TString, TGraph*> GraphsMap;
+    typedef std::map<TString, TH1*> HistsMap;
+
   public:
     Plotter( const char* out_path, const char* top_label ) : out_path_( out_path ), top_label_( top_label ) {}
     ~Plotter() {}
@@ -133,6 +140,32 @@ class Plotter
       c.Save( "png", out_path_ );
     }
 
+    Canvas* plot_xi_correlations( const char* sector, GraphsMap graphs_map ) const {
+      Canvas* c = new Canvas( Form( "xi_nearfar_corr_%s", sector ), top_label_ );
+      TMultiGraph mg;
+
+      unsigned short i = 0;
+      for ( GraphsMap::iterator it=graphs_map.begin(); it!=graphs_map.end(); it++ ) {
+        TGraph* gr = it->second;
+        mg.Add( gr );
+        gr->SetMarkerStyle( marker_pool_[i] );
+        gr->SetMarkerColor( colour_pool_[i] );
+        c->AddLegendEntry( gr, it->first, "p" );
+        i++;
+      }
+
+      mg.Draw( "ap" );
+      mg.GetXaxis()->SetLimits( 0., 0.2 );
+      mg.GetYaxis()->SetRangeUser( 0., 0.2 );
+      mg.GetHistogram()->SetTitle( Form( "#xi_{%s} (near pot)\\#xi_{%s} (far pot)", sector, sector ) );
+      c->Prettify( mg.GetHistogram() );
+
+      draw_diagonal( 0., 0.2 );
+
+      c->Save( "pdf,png", out_path_ );
+      return c;
+    }
+
   private:
 
     void draw_diagonal( const float& min, const float& max, const float& x_resol=-1., const float& y_resol=-1., bool abs_unc=false) const {
@@ -163,4 +196,15 @@ class Plotter
 
     TString out_path_;
     TString top_label_;
+    static const int* marker_pool_;
+    static const int* colour_pool_;
+
 };
+
+static const int markers[] = { 20, 24, 21, 25, 22, 26, 23, 27, 24, 28 };
+static const int colours[] = { kBlack, kBlue, kRed, kGreen+1, kMagenta, kOrange, kGray };
+
+const int* Plotter::marker_pool_ = markers;
+const int* Plotter::colour_pool_ = colours;
+
+#endif

@@ -59,7 +59,7 @@
 //                               JW
 #define MAX_ELECTRON 10
 #define MAX_MUON 10
-#define MAX_JET 10
+#define MAX_JET 50
 //
 
 class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
@@ -330,6 +330,9 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //           JW
 
     edm::Ptr< std::vector<flashgg::Jet> > jets = jetsColls->ptrAt( i );
+    if ( fJetNum>MAX_JET ) {
+      std::cerr << ">> More jets than expected in this event (" << fJetNum << ">MAX_JET=" << MAX_JET << "). Increase MAX_JET for safety" << std::endl;
+    }
     for ( unsigned int j=0; j<jets->size() && fJetNum<MAX_JET; j++ ) {
       const flashgg::Jet jet = jets->at( j );
       fJetPt[fJetNum]   = jet.pt();
@@ -344,8 +347,6 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       fJetNum++;
     }
 
-    //std::cout << fDiphotonPt1[fDiphotonNum] << " --- " << fDiphotonPt2[fDiphotonNum] << " --- " << fDiphotonM[fDiphotonNum] << std::endl;
-
     fDiphotonNum++;
   }
 
@@ -355,10 +356,12 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
   iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
 
-  xiInterp_->setAlignmentConstants( alignmentLUTHandler_->getAlignmentConstants( fFill ) ); // fill-based alignment corrections
+  const CTPPSAlCa::RPAlignmentConstants align = alignmentLUTHandler_->getAlignmentConstants( fFill ); // fill-based alignment corrections
+  xiInterp_->setAlignmentConstants( align );
   xiInterp_->setCalibrationConstants( fRun ); // run-based calibration parameters
 
-  std::map<unsigned int,const TotemRPLocalTrack&> map_near, map_far;
+  typedef std::pair<unsigned int, const TotemRPLocalTrack&> localtrack_t; // RP id -> local track object
+  std::map<unsigned int,localtrack_t> map_near, map_far;
 
   fProtonTrackNum = 0;
   for ( edm::DetSetVector<TotemRPLocalTrack>::const_iterator it=rpLocalTracks->begin(); it!=rpLocalTracks->end(); it++ ) {
@@ -375,8 +378,8 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       fProtonTrackSide[fProtonTrackNum] = side; // 0 = left ; 1 = right
       fProtonTrackPot[fProtonTrackNum] = pot; // 2 = 210m ; 3 = 220m
       switch ( pot ) {
-        case 2: { map_near.insert( std::pair<unsigned int, const TotemRPLocalTrack&>( fProtonTrackNum, *trk ) ); } break;
-        case 3: { map_far.insert( std::pair<unsigned int, const TotemRPLocalTrack&>( fProtonTrackNum, *trk ) ); } break;
+        case 2: { map_near.insert( std::pair<unsigned int, localtrack_t>( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
+        case 3: { map_far.insert( std::pair<unsigned int, localtrack_t>( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
       }
 
       fProtonTrackNum++;
@@ -384,11 +387,11 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
 
   // second loop to associate near-far tracks
-  for ( std::map<unsigned int,const TotemRPLocalTrack&>::const_iterator it_n=map_near.begin(); it_n!=map_near.end(); it_n++ ) {
+  for ( std::map<unsigned int,localtrack_t>::const_iterator it_n=map_near.begin(); it_n!=map_near.end(); it_n++ ) {
     float min_dist = 9999.9;
     unsigned int cand = 999;
-    for ( std::map<unsigned int,const TotemRPLocalTrack&>::const_iterator it_f=map_far.begin(); it_f!=map_far.end(); it_f++ ) {
-      const float dist = ProtonUtils::tracksDistance( it_n->second, it_f->second );
+    for ( std::map<unsigned int,localtrack_t>::const_iterator it_f=map_far.begin(); it_f!=map_far.end(); it_f++ ) {
+      const float dist = ProtonUtils::tracksDistance( align, it_n->second, it_f->second );
       if ( dist<min_dist ) {
         min_dist = dist;
         cand = it_f->first;
