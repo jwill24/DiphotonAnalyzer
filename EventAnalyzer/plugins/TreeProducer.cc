@@ -327,12 +327,16 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     while ( dphi> TMath::Pi() ) dphi -= 2.*TMath::Pi();
     fDiphotonDphi[fDiphotonNum] = dphi;
 
-    //           JW
+    fDiphotonNum++;
+  }
 
+  if ( fDiphotonNum<1 ) return;
+
+  for ( unsigned int i=0; i<jetsColls->size(); i++ ) {
+    //           JW
     edm::Ptr< std::vector<flashgg::Jet> > jets = jetsColls->ptrAt( i );
-    if ( fJetNum>MAX_JET ) {
-      std::cerr << ">> More jets than expected in this event (" << fJetNum << ">MAX_JET=" << MAX_JET << "). Increase MAX_JET for safety" << std::endl;
-    }
+    if ( fJetNum>MAX_JET ) { std::cerr << ">> More jets than expected in this event (" << fJetNum << ">MAX_JET=" << MAX_JET << "). Increase MAX_JET for safety" << std::endl; }
+
     for ( unsigned int j=0; j<jets->size() && fJetNum<MAX_JET; j++ ) {
       const flashgg::Jet jet = jets->at( j );
       fJetPt[fJetNum]   = jet.pt();
@@ -346,11 +350,7 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       fJetVertexZ[fElectronNum] = jet.vertex().z();
       fJetNum++;
     }
-
-    fDiphotonNum++;
   }
-
-  if ( fDiphotonNum<1 ) return;
 
   // fetch the proton collection from EDM file
   edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;

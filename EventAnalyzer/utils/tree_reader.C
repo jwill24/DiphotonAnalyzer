@@ -121,7 +121,7 @@ void tree_reader( TString file=default_ntp_file )
   tr->SetBranchAddress( "muon_vtx_z", muon_vtx_z );
   //Jet Quantities
   unsigned int num_jet;
-  const unsigned short max_jet = 20;
+  const unsigned short max_jet = 50;
   float jet_pt[max_jet], jet_eta[max_jet], jet_phi[max_jet], jet_energy[max_jet];
   float jet_vtx_x[max_jet], jet_vtx_y[max_jet], jet_vtx_z[max_jet];
   tr->SetBranchAddress( "num_jet", &num_jet );
@@ -648,10 +648,10 @@ cout << "maximal diproton mass: " << max_diproton_mass << " +- " << max_diproton
     plt.plot_balances( "diphoton_pt_vs_diphoton_mass", "Diphoton p_{T} (GeV)\\Diphoton mass (GeV)", h_ptgg_vs_mgg );
 
     Plotter::GraphsMap gm_45;
-    gm_45.insert( std::make_pair( "d #geq 0.1 cm", &h_ximatch_45nf_thr0p1 ) );
-    gm_45.insert( std::make_pair( "d #geq 0.2 cm", &h_ximatch_45nf_thr0p2 ) );
-    gm_45.insert( std::make_pair( "d #geq 0.5 cm", &h_ximatch_45nf_thr0p5 ) );
-    gm_45.insert( std::make_pair( "d #geq 1.0 cm", &h_ximatch_45nf_thr1p0 ) );
+    gm_45.insert( std::make_pair( "d #leq 0.1 cm", &h_ximatch_45nf_thr0p1 ) );
+    gm_45.insert( std::make_pair( "d #leq 0.2 cm", &h_ximatch_45nf_thr0p2 ) );
+    gm_45.insert( std::make_pair( "d #leq 0.5 cm", &h_ximatch_45nf_thr0p5 ) );
+    gm_45.insert( std::make_pair( "d #leq 1.0 cm", &h_ximatch_45nf_thr1p0 ) );
     plt.plot_xi_correlations( "45", gm_45 );
   }
 
