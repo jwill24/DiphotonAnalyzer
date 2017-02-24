@@ -231,7 +231,8 @@ void tree_reader( TString file=default_ntp_file )
                *h_ximatch_56f = new TGraphErrors;
   // proton reco study
   TH1D* h_num_proton = new TH1D( "num_proton", "Forward track multiplicity\\Events", 6, 0., 6. );
-  TGraphErrors h_ximatch_45nf_thr0p1, h_ximatch_45nf_thr0p2, h_ximatch_45nf_thr0p5, h_ximatch_45nf_thr1p0;
+  TGraphErrors h_ximatch_45nf_thr0p1, h_ximatch_45nf_thr0p2, h_ximatch_45nf_thr0p5, h_ximatch_45nf_thr1p0,
+               h_ximatch_56nf_thr0p1, h_ximatch_56nf_thr0p2, h_ximatch_56nf_thr0p5, h_ximatch_56nf_thr1p0;
 
   ofstream events_list( "events_list.txt" );
 
@@ -275,22 +276,6 @@ void tree_reader( TString file=default_ntp_file )
     float max_diproton_mass = -1., max_diproton_mass_error = -1.,
           max_diproton_mass_rap = -999.;
 
-    for ( tracks_map::const_iterator it_45=tracks_45_near.begin(); it_45!=tracks_45_near.end(); it_45++ ) {
-      const unsigned int linked_id = proton_link_id[it_45->first];
-      if ( linked_id<999 && proton_link_dist[it_45->first]<0.1 ) {
-        cout << "--> " << it_45->second.first << " <> " << tracks_45_far[linked_id].first << endl;
-      }
-      /*if ( track )unsigned short j=0; j<tracks_45_near.size(); j++ ) {
-      for ( unsigned short k=0; k<tracks_56_near.size(); k++ ) {
-        const float diproton_mass = sqs*sqrt( tracks_45_near[j].first*tracks_56_near[k].first );
-        if ( diproton_mass>max_diproton_mass ) {
-          max_diproton_mass = diproton_mass;
-          max_diproton_mass_error = sqs*sqs/4./diproton_mass * tracks_45_near[j].second * tracks_56_near[k].second;
-          max_diproton_mass_rap = log( tracks_56_near[k].first/tracks_45_near[j].first )/2.;
-        }
-      }*/
-    }
-
     if ( tracks_45_near.size()>0 && tracks_56_near.size()>0 ) {
       for ( tracks_map::const_iterator it_45=tracks_45_near.begin(); it_45!=tracks_45_near.end(); it_45++ ) {
         const trackparam_t xi45 = it_45->second;
@@ -316,26 +301,20 @@ void tree_reader( TString file=default_ntp_file )
     for ( tracks_map::const_iterator it=tracks_45_near.begin(); it!=tracks_45_near.end(); it++ ) {
       const unsigned int linked_id = proton_link_id[it->first];
       if ( linked_id>100 ) continue;
-      if ( proton_link_dist[it->first]<0.1 ) {
-        const unsigned short id = h_ximatch_45nf_thr0p1.GetN();
-        h_ximatch_45nf_thr0p1.SetPoint( id, it->second.first, tracks_45_far[linked_id].first );
-        h_ximatch_45nf_thr0p1.SetPointError( id, it->second.second, tracks_45_far[linked_id].second );
-      }
-      if ( proton_link_dist[it->first]<0.2 ) {
-        const unsigned short id = h_ximatch_45nf_thr0p2.GetN();
-        h_ximatch_45nf_thr0p2.SetPoint( id, it->second.first, tracks_45_far[linked_id].first );
-        h_ximatch_45nf_thr0p2.SetPointError( id, it->second.second, tracks_45_far[linked_id].second );
-      }
-      if ( proton_link_dist[it->first]<0.5 ) {
-        const unsigned short id = h_ximatch_45nf_thr0p5.GetN();
-        h_ximatch_45nf_thr0p5.SetPoint( id, it->second.first, tracks_45_far[linked_id].first );
-        h_ximatch_45nf_thr0p5.SetPointError( id, it->second.second, tracks_45_far[linked_id].second );
-      }
-      if ( proton_link_dist[it->first]<1.0 ) {
-        const unsigned short id = h_ximatch_45nf_thr1p0.GetN();
-        h_ximatch_45nf_thr1p0.SetPoint( id, it->second.first, tracks_45_far[linked_id].first );
-        h_ximatch_45nf_thr1p0.SetPointError( id, it->second.second, tracks_45_far[linked_id].second );
-      }
+cout << ">> 45: " << proton_link_dist[it->first] << endl;
+      if ( proton_link_dist[it->first]<0.1 ) { int id = h_ximatch_45nf_thr0p1.GetN(); h_ximatch_45nf_thr0p1.SetPoint( id, it->second.first, tracks_45_far[linked_id].first ); h_ximatch_45nf_thr0p1.SetPointError( id, it->second.second, tracks_45_far[linked_id].second ); }
+      if ( proton_link_dist[it->first]<0.2 ) { int id = h_ximatch_45nf_thr0p2.GetN(); h_ximatch_45nf_thr0p2.SetPoint( id, it->second.first, tracks_45_far[linked_id].first ); h_ximatch_45nf_thr0p2.SetPointError( id, it->second.second, tracks_45_far[linked_id].second ); }
+      if ( proton_link_dist[it->first]<0.5 ) { int id = h_ximatch_45nf_thr0p5.GetN(); h_ximatch_45nf_thr0p5.SetPoint( id, it->second.first, tracks_45_far[linked_id].first ); h_ximatch_45nf_thr0p5.SetPointError( id, it->second.second, tracks_45_far[linked_id].second ); }
+      if ( proton_link_dist[it->first]<1.0 ) { int id = h_ximatch_45nf_thr1p0.GetN(); h_ximatch_45nf_thr1p0.SetPoint( id, it->second.first, tracks_45_far[linked_id].first ); h_ximatch_45nf_thr1p0.SetPointError( id, it->second.second, tracks_45_far[linked_id].second ); }
+    }
+    for ( tracks_map::const_iterator it=tracks_56_near.begin(); it!=tracks_56_near.end(); it++ ) {
+      const unsigned int linked_id = proton_link_id[it->first];
+      if ( linked_id>100 ) continue;
+cout << ">> 56: " << proton_link_dist[it->first] << endl;
+      if ( proton_link_dist[it->first]<0.1 ) { int id = h_ximatch_56nf_thr0p1.GetN(); h_ximatch_56nf_thr0p1.SetPoint( id, it->second.first, tracks_56_far[linked_id].first ); h_ximatch_56nf_thr0p1.SetPointError( id, it->second.second, tracks_56_far[linked_id].second ); }
+      if ( proton_link_dist[it->first]<0.2 ) { int id = h_ximatch_56nf_thr0p2.GetN(); h_ximatch_56nf_thr0p2.SetPoint( id, it->second.first, tracks_56_far[linked_id].first ); h_ximatch_56nf_thr0p2.SetPointError( id, it->second.second, tracks_56_far[linked_id].second ); }
+      if ( proton_link_dist[it->first]<0.5 ) { int id = h_ximatch_56nf_thr0p5.GetN(); h_ximatch_56nf_thr0p5.SetPoint( id, it->second.first, tracks_56_far[linked_id].first ); h_ximatch_56nf_thr0p5.SetPointError( id, it->second.second, tracks_56_far[linked_id].second ); }
+      if ( proton_link_dist[it->first]<1.0 ) { int id = h_ximatch_56nf_thr1p0.GetN(); h_ximatch_56nf_thr1p0.SetPoint( id, it->second.first, tracks_56_far[linked_id].first ); h_ximatch_56nf_thr1p0.SetPointError( id, it->second.second, tracks_56_far[linked_id].second ); }
     }
     //          JW
     //
@@ -647,12 +626,20 @@ cout << "maximal diproton mass: " << max_diproton_mass << " +- " << max_diproton
     plt.plot_balances( "diphoton_pt_vs_diproton_mass", "Diphoton p_{T} (GeV)\\Diproton mass (GeV)", h_ptgg_vs_mpp );
     plt.plot_balances( "diphoton_pt_vs_diphoton_mass", "Diphoton p_{T} (GeV)\\Diphoton mass (GeV)", h_ptgg_vs_mgg );
 
+    // sector 45
     Plotter::GraphsMap gm_45;
     gm_45.insert( std::make_pair( "d #leq 0.1 cm", &h_ximatch_45nf_thr0p1 ) );
     gm_45.insert( std::make_pair( "d #leq 0.2 cm", &h_ximatch_45nf_thr0p2 ) );
     gm_45.insert( std::make_pair( "d #leq 0.5 cm", &h_ximatch_45nf_thr0p5 ) );
     gm_45.insert( std::make_pair( "d #leq 1.0 cm", &h_ximatch_45nf_thr1p0 ) );
     plt.plot_xi_correlations( "45", gm_45 );
+    // sector 56
+    Plotter::GraphsMap gm_56;
+    gm_56.insert( std::make_pair( "d #leq 0.1 cm", &h_ximatch_56nf_thr0p1 ) );
+    gm_56.insert( std::make_pair( "d #leq 0.2 cm", &h_ximatch_56nf_thr0p2 ) );
+    gm_56.insert( std::make_pair( "d #leq 0.5 cm", &h_ximatch_56nf_thr0p5 ) );
+    gm_56.insert( std::make_pair( "d #leq 1.0 cm", &h_ximatch_56nf_thr1p0 ) );
+    plt.plot_xi_correlations( "56", gm_56 );
   }
 
   {

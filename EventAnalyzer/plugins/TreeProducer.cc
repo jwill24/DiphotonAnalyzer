@@ -361,7 +361,7 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   xiInterp_->setCalibrationConstants( fRun ); // run-based calibration parameters
 
   typedef std::pair<unsigned int, const TotemRPLocalTrack&> localtrack_t; // RP id -> local track object
-  std::map<unsigned int,localtrack_t> map_near, map_far;
+  std::map<unsigned int,localtrack_t> map_near, map_far; // local track id in the tree -> localtrack_t object
 
   fProtonTrackNum = 0;
   for ( edm::DetSetVector<TotemRPLocalTrack>::const_iterator it=rpLocalTracks->begin(); it!=rpLocalTracks->end(); it++ ) {
@@ -378,8 +378,8 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       fProtonTrackSide[fProtonTrackNum] = side; // 0 = left ; 1 = right
       fProtonTrackPot[fProtonTrackNum] = pot; // 2 = 210m ; 3 = 220m
       switch ( pot ) {
-        case 2: { map_near.insert( std::pair<unsigned int, localtrack_t>( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
-        case 3: { map_far.insert( std::pair<unsigned int, localtrack_t>( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
+        case 2: { map_near.insert( std::make_pair( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
+        case 3: { map_far.insert( std::make_pair( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
       }
 
       fProtonTrackNum++;
@@ -388,10 +388,11 @@ TreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // second loop to associate near-far tracks
   for ( std::map<unsigned int,localtrack_t>::const_iterator it_n=map_near.begin(); it_n!=map_near.end(); it_n++ ) {
-    float min_dist = 9999.9;
+    float min_dist = 999.999;
     unsigned int cand = 999;
     for ( std::map<unsigned int,localtrack_t>::const_iterator it_f=map_far.begin(); it_f!=map_far.end(); it_f++ ) {
-      const float dist = ProtonUtils::tracksDistance( align, it_n->second, it_f->second );
+      const float dist = ProtonUtils::tracksDistance( align, it_n->second, it_f->second ); // in cm
+      if ( dist<0. ) continue; // skip the comparison if opposite side tracks
       if ( dist<min_dist ) {
         min_dist = dist;
         cand = it_f->first;
