@@ -9,21 +9,22 @@
 
 namespace CTPPSAlCa
 {
-    class AlignmentLUTHandler
-    {
-      public:
-        AlignmentLUTHandler( const char* file );
+  class AlignmentLUTHandler
+  {
+    public:
+      AlignmentLUTHandler( const char* file );
 
-        RPAlignmentConstants getAlignmentConstants( const unsigned short& fill_num ) const;
-        inline bool isValid() const { return valid_; }
+      RPAlignmentConstants getAlignmentConstants( const unsigned short& fill_num ) const;
+      inline bool isValid() const { return valid_; }
 
-      private:
-        // FIXME to be replaced by a DB handler!
-        void loadConstants( const char* file );
+    private:
+      // FIXME to be replaced by a DB handler!
+      void loadConstants( const char* file );
 
-        bool valid_;
-        std::map<unsigned int,RPAlignmentConstants> align_map_; // fill# -> parameters
-    };
+      bool valid_;
+      std::map<unsigned int,RPAlignmentConstants> align_map_; // fill# -> parameters
+      std::regex rgx_hdr_, rgx_algn_;
+  };
 }
 
 #endif
