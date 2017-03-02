@@ -11,14 +11,14 @@
 class Plotter
 {
   public:
-    typedef std::map<TString, TGraph*> GraphsMap;
+    typedef std::vector< std::pair<TString, TGraph*> > GraphsMap;
     typedef std::vector< std::pair<TString, TH1*> > HistsMap;
 
   public:
     Plotter( const char* out_path, const char* top_label ) : out_path_( out_path ), top_label_( top_label ) {}
     ~Plotter() {}
 
-    void plot_3hists( const char* name, TH1* h, TH1* h_1tag=0, TH1* h_2tag=0 ) const {
+    Canvas* plot_3hists( const char* name, TH1* h, TH1* h_1tag=0, TH1* h_2tag=0 ) const {
       Canvas c( name, top_label_, true );
       h->Draw();
       h->SetLineColor( kBlack );
@@ -49,17 +49,19 @@ class Plotter
       }
       h->SetMinimum( min );
       c.Prettify( h );
-      if ( h_1tag && h_2tag )c .RatioPlot( h, h_1tag, h_2tag, 0., 0.55 );
-      c.Save( "png,pdf", out_path_ );
+      if ( h_1tag && h_2tag ) c.RatioPlot( h, h_1tag, h_2tag, 0., 0.55 );
+      c.Save( "pdf,png", out_path_ );
+      return ( Canvas* )c.Clone();
     }
 
-    void plot_balances( const char* name, const char* title,
+    Canvas* plot_balances( const char* name, const char* title,
                         TGraphErrors* h2, TGraphErrors* h2_mtag=0, TGraphErrors* h2_ytag=0,
                         const float& min_xy=-1., const float& max_xy=-1., const float& rp_acc=-1. ) const {
       Canvas c( name, top_label_ );
       c.DrawFrame( min_xy, min_xy, max_xy, max_xy );
 
       TMultiGraph mg;
+      
       h2->SetMarkerStyle( 24 );
       //c.SetLegendY1( 0.18 );
       if ( h2_mtag || h2_ytag ) c.AddLegendEntry( h2, "All candidates", "p" );
@@ -98,12 +100,11 @@ class Plotter
         //acc->SetFillColor( kGray );
         acc->Draw( "same" );
       }
-
-
       c.Save( "pdf,png", out_path_ );
+      return ( Canvas* )c.Clone();
     }
 
-    void plot_balances_old( const char* name, const char* title,
+    Canvas* plot_balances_old( const char* name, const char* title,
                             TGraphErrors* h2, TGraphErrors* h2_mtag=0, TGraphErrors* h2_ytag=0,
                             const float& min_xy=-1., const float& max_xy=-1., const float& mass_resol=-1., bool abs_unc=false ) const {
       Canvas c( name, top_label_ );
@@ -145,9 +146,10 @@ class Plotter
       mg.GetHistogram()->SetTitle( title );
       c.Prettify( mg.GetHistogram() );
       c.Save( "pdf,png", out_path_ );
+      return ( Canvas* )c.Clone();
     }
 
-    void plot_xi_correlations( const char* sector, GraphsMap graphs_map ) const {
+    Canvas* plot_xi_correlations( const char* sector, GraphsMap graphs_map ) const {
       Canvas c( Form( "xi_nearfar_corr_%s", sector ), top_label_ );
       TMultiGraph mg;
 
@@ -171,11 +173,46 @@ class Plotter
 
       draw_diagonal( 0., 0.2 );
 
-      c.Save( "pdf,png", out_path_ );
       delete gr;
+      c.Save( "pdf,png", out_path_ );
+      return ( Canvas* )c.Clone();
     }
 
-    void draw_multiplot( const char* filename, HistsMap h_map, bool compute_w2=true ) const {
+    Canvas* draw_multigraph( const char* filename, GraphsMap g_map, float lim_min=-1., float lim_max=-1., bool draw_diag=false, float y_limit=-1. ) const {
+      Canvas c( filename, top_label_ );
+
+      TGraph* gr = 0;
+
+      TMultiGraph mg;
+      unsigned short i = 0;
+      for ( GraphsMap::iterator it=g_map.begin(); it!=g_map.end(); it++ ) {
+        gr = ( TGraph* )it->second;
+        mg.Add( gr );
+        gr->SetMarkerStyle( marker_pool_[i] );
+        gr->SetMarkerColor( colour_pool_[i] );
+        c.AddLegendEntry( gr, it->first, "p" );
+        i++;
+      }
+      mg.Draw( "ap" );
+      if ( lim_min>0 || lim_max>0. ) {
+        mg.GetXaxis()->SetLimits( ( lim_min>0 ? lim_min : 0. ), ( lim_max>0 ? lim_max : 500. ) );
+        mg.GetYaxis()->SetRangeUser( ( lim_min>0 ? lim_min : 0. ), ( lim_max>0 ? lim_max : 500. ) );
+      }
+      c.Prettify( mg.GetHistogram() );
+      if ( draw_diag ) draw_diagonal( lim_min, lim_max );
+
+      if ( y_limit>0. && y_limit<lim_max ) {
+        TPave* acc = new TPave( lim_min, lim_min, lim_max, y_limit, 1 );
+        acc->SetLineWidth( 1 );
+        acc->SetLineColor( kBlack );
+        acc->SetFillColorAlpha( kGray, 0.4 );
+        acc->Draw( "same" );
+      }
+      c.Save( "pdf,png", out_path_ );
+      return ( Canvas* )c.Clone();
+    }
+
+    Canvas* draw_multiplot( const char* filename, HistsMap h_map, bool compute_w2=true, bool logy=false ) const {
       Canvas c( filename, top_label_ );
       TH1* hist = 0;
       unsigned short i = 0;
@@ -192,12 +229,18 @@ class Plotter
         i++;
       }
       c.Prettify( h_map.begin()->second );
-      h_map.begin()->second->GetYaxis()->SetRangeUser( 0., max_bin*1.1 );
+      if ( logy ) {
+        h_map.begin()->second->GetYaxis()->SetRangeUser( 0.5, max_bin*3 );
+        c.SetLogy();
+      }
+      else {
+        h_map.begin()->second->GetYaxis()->SetRangeUser( 0., max_bin*1.1 );
+      }
       c.Save( "pdf,png", out_path_ );
-
+      return ( Canvas* )c.Clone();
     }
 
-    void draw_4hitmaps( const char* filename, HistsMap h_map ) const {
+    Canvas* draw_4hitmaps( const char* filename, HistsMap h_map ) const {
       Canvas c( filename, top_label_ );
       c.Divide( 2, 2 );
       TH2* hist = 0;
@@ -208,12 +251,25 @@ class Plotter
         TPad* pad = (TPad*)c.GetPad( i+1 );
         pad->SetTicks();
         pad->SetLeftMargin( 0.15 );
-        pad->SetBottomMargin( 0.15 );
+        pad->SetRightMargin( 0.15 );
+        pad->SetTopMargin( 0.1 );
+        pad->SetBottomMargin( 0.13 );
         c.cd( i+1 );
         hist->Draw( "colz" );
         c.Prettify( hist );
+
+        TPaveText* title = new TPaveText( 0.82, 0.85, 0.82, 0.85, "NDC" );
+        title->SetFillStyle( 0 );
+        title->SetLineColor( 0 );
+        title->SetTextFont( 42 );
+        title->SetTextSize( 0.05 );
+        title->SetTextAlign( kHAlignRight+kVAlignTop );
+        title->AddText( it->first );
+        title->Draw( "same" );
+
         hist->GetXaxis()->SetLabelSize( 12 );
         hist->GetYaxis()->SetLabelSize( 12 );
+        hist->GetZaxis()->SetLabelSize( 0.045 );
         hist->GetXaxis()->SetTitleOffset( 2.0 );
         hist->GetYaxis()->SetTitleOffset( 2.0 );
         hist->GetXaxis()->SetTitleSize( 16 );
@@ -221,6 +277,7 @@ class Plotter
         i++;
       }
       c.Save( "pdf,png", out_path_ );
+      return ( Canvas* )c.Clone();
     }
 
   private:
@@ -258,8 +315,8 @@ class Plotter
 
 };
 
-static const int markers[] = { 20, 24, 21, 25, 22, 26, 23, 27, 24, 28 };
-static const int colours[] = { kBlack, kBlue+1, kRed+1, kGreen+1, kMagenta, kOrange, kGray };
+static const int markers[] = { 24, 20, 21, 25, 22, 26, 23, 27, 24, 28 };
+static const int colours[] = { kBlack, kRed+1, kBlue+1, kGreen+1, kMagenta, kOrange, kGray };
 
 const int* Plotter::marker_pool_ = markers;
 const int* Plotter::colour_pool_ = colours;

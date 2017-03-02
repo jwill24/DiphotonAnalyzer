@@ -17,7 +17,7 @@ class Canvas : public TCanvas
     //TCanvas(name, "", 450, 450),
     TCanvas( name, "", 600, 600 ),
     fTitle( title ), fTopLabel( 0 ),
-    fLeg( 0 ), fLegXSize( 0.3 ), fLegYSize( 0.15 ),
+    fLeg( 0 ), fLegXSize( 0.3 ), fLegYSize( 0.2 ),
     fRatio( ratio )
   {
     Build();
@@ -204,11 +204,11 @@ class Canvas : public TCanvas
   inline void BuildLegend() {
     if ( fLeg ) return;
     if ( fRatio ) TCanvas::cd(1);
-    fLeg = new TLegend( 0.5, 0.75, 0.5+fLegXSize, 0.75+fLegYSize );
+    fLeg = new TLegend( 0.5, 0.72, 0.5+fLegXSize, 0.72+fLegYSize );
     fLeg->SetFillStyle( 0 );
     fLeg->SetLineColor( kWhite );
     fLeg->SetLineWidth( 0 );
-    fLeg->SetTextSize( 0.035 );
+    fLeg->SetTextSize( 0.032 );
   }
   inline float GetBinning( const TH1* h ) {
     return ( h->GetXaxis()->GetXmax() - h->GetXaxis()->GetXmin() ) / h->GetXaxis()->GetNbins();

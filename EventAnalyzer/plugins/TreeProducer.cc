@@ -146,7 +146,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 
     unsigned int fVertexNum;
     float fVertexX[MAX_VERTEX], fVertexY[MAX_VERTEX], fVertexZ[MAX_VERTEX];
-    unsigned int fVertexTracks[MAX_VERTEX];
+    //unsigned int fVertexTracks[MAX_VERTEX], fVertexTracksWght0p75[MAX_VERTEX], fVertexTracksWght0p9[MAX_VERTEX], fVertexTracksWght0p95[MAX_VERTEX];
 };
 
 //
@@ -267,7 +267,7 @@ TreeProducer::clearTree()
   fVertexNum = 0;
   for ( unsigned int i=0; i<MAX_VERTEX; i++ ) {
     fVertexX[i] = fVertexY[i] = fVertexZ[i] = -999.;
-    fVertexTracks[i] = 0;
+    //fVertexTracks[i] = fVertexTracksWght0p75[i] = fVertexTracksWght0p9[i] = fVertexTracksWght0p95[i] = 0;
   }
 
 }
@@ -311,7 +311,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
 
     if ( diphoton->mass()<photonPairMinMass_ ) continue;
 
-    fDiphotonVertexTracks[fDiphotonNum] = diphoton->vtx()->tracksSize();
+    fDiphotonVertexTracks[fDiphotonNum] = diphoton->vtx()->nTracks();
     fDiphotonVertexX[fDiphotonNum] = diphoton->vtx()->x();
     fDiphotonVertexY[fDiphotonNum] = diphoton->vtx()->y();
     fDiphotonVertexZ[fDiphotonNum] = diphoton->vtx()->z();
@@ -495,7 +495,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
 
     // loop over all the diphoton candidates to find the closest vertices
     for ( unsigned int j=0; j<fDiphotonNum; j++ ) {
-      if ( diphoton_vtx[j]->position()!=vtx->position() ) continue; // found the diphoton vertex
+      if ( diphoton_vtx[j]->position()==vtx->position() ) continue; // found the diphoton vertex
       const float vtx_dist = sqrt( pow( diphoton_vtx[j]->x()-vtx->x(), 2 )+pow( diphoton_vtx[j]->y()-vtx->y(), 2 )+pow( diphoton_vtx[j]->z()-vtx->z(), 2 ) );
       if ( vtx_dist<fDiphotonNearestDist[j] ) fDiphotonNearestDist[j] = vtx_dist;
       if ( vtx_dist<=0.1 ) fDiphotonVerticesAt1mmDist[j]++;
@@ -508,7 +508,12 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
     fVertexX[fVertexNum] = vtx->x();
     fVertexY[fVertexNum] = vtx->y();
     fVertexZ[fVertexNum] = vtx->z();
-    fVertexTracks[fVertexNum] = vtx->tracksSize();
+
+    // tracks content not stored in the miniAOD event format...
+    /*fVertexTracks[fVertexNum] = vtx->nTracks();
+    fVertexTracksWght0p75[fVertexNum] = vtx->nTracks( 0.75 );
+    fVertexTracksWght0p9[fVertexNum] = vtx->nTracks( 0.9 );
+    fVertexTracksWght0p95[fVertexNum] = vtx->nTracks( 0.95 );*/
     fVertexNum++;
   }
 
@@ -593,7 +598,10 @@ TreeProducer::beginJob()
   tree_->Branch( "vertex_x", fVertexX, "vertex_x[num_vertex]/F" );
   tree_->Branch( "vertex_y", fVertexY, "vertex_y[num_vertex]/F" );
   tree_->Branch( "vertex_z", fVertexZ, "vertex_z[num_vertex]/F" );
-  tree_->Branch( "vertex_tracks", fVertexTracks, "vertex_tracks[num_vertex]/i" );
+  /*tree_->Branch( "vertex_tracks", fVertexTracks, "vertex_tracks[num_vertex]/i" );
+  tree_->Branch( "vertex_tracks_weight0p75", fVertexTracksWght0p75, "vertex_tracks_weight0p75[num_vertex]/i" );
+  tree_->Branch( "vertex_tracks_weight0p9", fVertexTracksWght0p9, "vertex_tracks_weight0p9[num_vertex]/i" );
+  tree_->Branch( "vertex_tracks_weight0p95", fVertexTracksWght0p95, "vertex_tracks_weight0p95[num_vertex]/i" );*/
 
   tree_->Branch( "met", &fMET );
   tree_->Branch( "met_phi", &fMETPhi );
