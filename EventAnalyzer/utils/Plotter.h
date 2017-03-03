@@ -11,8 +11,8 @@
 class Plotter
 {
   public:
-    typedef std::vector< std::pair<TString, TGraphErrors*> > GraphsMap;
-    typedef std::vector< std::pair<TString, TH1*> > HistsMap;
+    typedef std::vector< std::pair<const char*, TGraphErrors*> > GraphsMap;
+    typedef std::vector< std::pair<const char*, TH1*> > HistsMap;
 
   public:
     Plotter( const char* out_path, const char* top_label ) : out_path_( out_path ), top_label_( top_label ) {}
@@ -58,9 +58,9 @@ class Plotter
     }
 
     void plot_balances( const char* name, const char* title, GraphsMap gr_map,
-                           const float& min_xy=-999., const float& max_xy=-999., const float& rp_acc=-1. ) const {
+                        const float& min_xy=-999., const float& max_xy=-999., const float& rp_acc=-1. ) const {
       Canvas c( name, top_label_ );
-      c.DrawFrame( min_xy, min_xy, max_xy, max_xy );
+      //c.DrawFrame( min_xy, min_xy, max_xy, max_xy );
 
       TMultiGraph mg;
       TGraphErrors* gr = 0;
@@ -68,19 +68,19 @@ class Plotter
       unsigned short i = 0;
       for ( GraphsMap::iterator it=gr_map.begin(); it!=gr_map.end(); it++ ) {
         gr = ( TGraphErrors* )it->second;
+        mg.Add( gr, "ep" );
         gr->SetMarkerStyle( marker_pool_[i] );
         gr->SetMarkerColor( colour_pool_[i] );
         //c.SetLegendY1( 0.18 );
-        if ( gr_map.size()>0 && !it->first.IsNull() ) c.AddLegendEntry( gr, it->first, "p" );
-        mg.Add( gr, "ep" );
+        if ( gr_map.size()>0 && strcmp( it->first, "" )!=0 ) c.AddLegendEntry( gr, it->first, "p" );
         i++;
       }
 
-      mg.GetHistogram()->SetTitle( title );
 
-      draw_diagonal( min_xy, max_xy, 0. );
-      mg.Draw();
+      mg.Draw( "ap" );
+      mg.GetHistogram()->SetTitle( title );
       c.Prettify( mg.GetHistogram() );
+      draw_diagonal( min_xy, max_xy, 0. );
       if ( min_xy!=-999. and max_xy!=-999. ) {
         mg.GetXaxis()->SetLimits( min_xy, max_xy );
         mg.GetYaxis()->SetRangeUser( min_xy, max_xy );
@@ -98,7 +98,7 @@ class Plotter
     }
 
     void plot_balances( const char* name, const char* title, TGraphErrors* gr, const float& min_xy=-999., const float& max_xy=-999., const float& rp_acc=-1. ) const {
-      GraphsMap gm; gm.push_back( std::make_pair( gr->GetTitle(), gr ) );
+      GraphsMap gm; gm.push_back( std::pair<const char*, TGraphErrors*>( gr->GetTitle(), gr ) );
       return plot_balances( name, title, gm, min_xy, max_xy, rp_acc );
     }
 
@@ -110,30 +110,30 @@ class Plotter
 
       unsigned short i = 0;
       for ( GraphsMap::iterator it=graphs_map.begin(); it!=graphs_map.end(); it++ ) {
-        gr = ( TGraphErrors* )it->second->Clone();
+        gr = ( TGraphErrors* )it->second;
         mg.Add( gr );
         gr->SetMarkerStyle( marker_pool_[i] );
         gr->SetMarkerColor( colour_pool_[i] );
-        if ( !it->first.IsNull() ) c.AddLegendEntry( gr, it->first, "p" );
+        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( gr, it->first, "p" );
         i++;
       }
 
-      draw_diagonal( 0., 0.2 );
       mg.Draw( "ap" );
+      mg.GetHistogram()->SetTitle( Form( "#xi_{%s} (near pot)\\#xi_{%s} (far pot)", sector, sector ) );
+
       c.Prettify( mg.GetHistogram() );
+      draw_diagonal( 0., 0.2 );
 
       mg.GetXaxis()->SetLimits( 0., 0.2 );
       mg.GetYaxis()->SetRangeUser( 0., 0.2 );
-      mg.GetHistogram()->SetTitle( Form( "#xi_{%s} (near pot)\\#xi_{%s} (far pot)", sector, sector ) );
 
-      delete gr;
       c.Save( "pdf,png", out_path_ );
     }
 
     void draw_multigraph( const char* filename, GraphsMap g_map, float lim_min=-999., float lim_max=-999., bool draw_diag=false, float y_limit=-1. ) const {
       Canvas c( filename, top_label_ );
-      if ( lim_min!=-999. && lim_max!=-999. )
-        c.DrawFrame( lim_min, lim_min, lim_max, lim_max );
+      //if ( lim_min!=-999. && lim_max!=-999. )
+      //  c.DrawFrame( lim_min, lim_min, lim_max, lim_max );
 
       TGraphErrors* gr = 0;
 
@@ -144,13 +144,13 @@ class Plotter
         mg.Add( gr );
         gr->SetMarkerStyle( marker_pool_[i] );
         gr->SetMarkerColor( colour_pool_[i] );
-        if ( !it->first.IsNull() ) c.AddLegendEntry( gr, it->first, "p" );
+        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( gr, it->first, "p" );
         i++;
       }
 
-      if ( draw_diag ) draw_diagonal( lim_min, lim_max );
-      mg.Draw( "p" );
+      mg.Draw( "ap" );
       c.Prettify( mg.GetHistogram() );
+      if ( draw_diag ) draw_diagonal( lim_min, lim_max );
 
       if ( lim_min>0 || lim_max>0. ) {
         mg.GetXaxis()->SetLimits( ( lim_min>0 ? lim_min : 0. ), ( lim_max>0 ? lim_max : 500. ) );
@@ -179,7 +179,7 @@ class Plotter
         hist->SetMarkerStyle( marker_pool_[i] );
         hist->SetMarkerColor( colour_pool_[i] );
         hist->SetLineColor( kBlack );
-        if ( !it->first.IsNull() ) c.AddLegendEntry( hist, it->first, ( compute_w2 ) ? "elp" : "lp" );
+        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( hist, it->first, ( compute_w2 ) ? "elp" : "lp" );
         max_bin = TMath::Max( max_bin, hist->GetMaximum() );
         i++;
       }

@@ -40,6 +40,7 @@
 #include "flashgg/DataFormats/interface/Muon.h"
 #include "flashgg/DataFormats/interface/Jet.h"
 //
+#include "flashgg/DataFormats/interface/Met.h"
 
 #include "DiphotonAnalyzer/EventAnalyzer/interface/SelectionUtils.h"
 #include "DiphotonAnalyzer/EventAnalyzer/interface/XiInterpolator.h"
@@ -83,7 +84,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     
     edm::EDGetTokenT< edm::DetSetVector<TotemRPLocalTrack> > totemRPTracksToken_;
     edm::EDGetTokenT< edm::View<flashgg::DiPhotonCandidate> > diphotonToken_;
-    edm::EDGetTokenT< edm::View<pat::MET> > metToken_;
+    edm::EDGetTokenT< edm::View<flashgg::Met> > metToken_;
     edm::EDGetTokenT< edm::View<reco::Vertex> > vtxToken_;
 //                                 JW
     edm::EDGetTokenT< edm::View<flashgg::Electron> > electronToken_;
@@ -161,13 +162,13 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 // constructors and destructor
 //
 TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
-  totemRPTracksToken_( mayConsume< edm::DetSetVector<TotemRPLocalTrack> >( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
+  totemRPTracksToken_( consumes< edm::DetSetVector<TotemRPLocalTrack> >  ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
   diphotonToken_     ( consumes< edm::View<flashgg::DiPhotonCandidate> > ( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
-  metToken_          ( mayConsume< edm::View<pat::MET> >                 ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
-  vtxToken_          ( mayConsume< edm::View<reco::Vertex> >             ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
+  metToken_          ( consumes< edm::View<flashgg::Met> >               ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
+  vtxToken_          ( consumes< edm::View<reco::Vertex> >               ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
 //                               JW
-  electronToken_     ( mayConsume< edm::View<flashgg::Electron> >        ( iConfig.getParameter<edm::InputTag>( "electronLabel") ) ),
-  muonToken_         ( mayConsume< edm::View<flashgg::Muon> >            ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
+  electronToken_     ( consumes< edm::View<flashgg::Electron> >          ( iConfig.getParameter<edm::InputTag>( "electronLabel") ) ),
+  muonToken_         ( consumes< edm::View<flashgg::Muon> >              ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
   jetToken_          ( consumes< edm::View< std::vector<flashgg::Jet> > >( iConfig.getParameter<edm::InputTag>( "jetLabel") ) ),
 //
   sqrtS_             ( iConfig.getParameter<double>     ( "sqrtS")),
@@ -475,11 +476,11 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
 
   std::cout << "# found " << fDiphotonNum << " diphoton candidate(s) with " << fProtonTrackNum << " proton track(s) (all pots)!" << std::endl;
   // retrieve the missing ET
-  edm::Handle< edm::View<pat::MET> > mets;
+  edm::Handle< edm::View<flashgg::Met> > mets;
   iEvent.getByToken( metToken_, mets );
 
-  const edm::View<pat::MET>* metColl = mets.product();
-  edm::View<pat::MET>::const_iterator met = metColl->begin();
+  const edm::View<flashgg::Met>* metColl = mets.product();
+  edm::View<flashgg::Met>::const_iterator met = metColl->begin();
   fMET = met->sumEt();
   fMETPhi = met->phi();
 
