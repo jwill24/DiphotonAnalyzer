@@ -481,7 +481,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
 
   const edm::View<flashgg::Met>* metColl = mets.product();
   edm::View<flashgg::Met>::const_iterator met = metColl->begin();
-  fMET = met->sumEt();
+  fMET = met->pt();
   fMETPhi = met->phi();
 
   //----- vertexing information -----

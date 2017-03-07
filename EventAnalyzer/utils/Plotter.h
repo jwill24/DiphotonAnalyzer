@@ -18,43 +18,52 @@ class Plotter
     Plotter( const char* out_path, const char* top_label ) : out_path_( out_path ), top_label_( top_label ) {}
     ~Plotter() {}
 
-    void plot_3hists( const char* name, TH1D* h, TH1D* h_1tag=0, TH1D* h_2tag=0 ) const {
-      Canvas c( name, top_label_, true );
-      h->Draw();
-      h->SetLineColor( kBlack );
-      double min = TMath::Min( 0.001, h->GetMinimum() ),
-             max = h->GetMaximum();
-      //h->SetMarkerStyle( 20 );
-      if ( h_1tag ) {
-        h_1tag->Sumw2();
-        h_1tag->Draw("e1 same");
-        h_1tag->SetLineColor( kBlack );
-        h_1tag->SetMarkerStyle( 20 );
-        h_1tag->SetMarkerColor( kRed+1 );
-        min = TMath::Min( min, h_1tag->GetMinimum() );
-        max = TMath::Max( max, h_1tag->GetMaximum() );
+    void plot_multihists( const char* name, HistsMap hm, float min_ratio_y=0., float max_ratio_y=0.55, bool draw_overflow=true ) const {
+      if ( hm.size()==0 ) return;
+
+      Canvas c( name, top_label_, hm.size()>1 );
+      TH1* hist = 0;
+
+      unsigned short i = 0;
+      double min = 0.001,
+             max = -1.;
+      HistsMap hm2;
+      for ( HistsMap::iterator it=hm.begin(); it!=hm.end(); it++ ) {
+        hist = dynamic_cast<TH1*>( ( draw_overflow ) ? WithOverflow( it->second ) : it->second );
+        hm2.push_back( std::make_pair( it->first, hist ) );
+        if ( i>0 ) {
+          if ( !draw_overflow ) hist->Sumw2();
+          hist->SetMarkerStyle( marker_pool_[i] );
+          hist->SetMarkerColor( colour_pool_[i] );
+        }
+        //hist->Draw( ( i==0 ) ? "" : "e1 same" );
+        hist->Draw( ( i==0 ) ? "hist" : "same" );
+        hist->SetLineColor( kBlack );
+        //h->SetMarkerStyle( 20 );
+        min = TMath::Min( min, hist->GetMinimum() );
+        max = TMath::Max( max, hist->GetMaximum() );
+        if ( i>2 ) hist->SetFillStyle( 3005 );
+        if ( hm.size()>1 ) {
+          c.AddLegendEntry( hist, it->first, ( i==0 ) ? "f" : "ep" );
+        }
+        i++;
       }
-      if ( h_2tag ) {
-        h_2tag->Sumw2();
-        h_2tag->Draw("e1 same");
-        h_2tag->SetLineColor( kBlack );
-        h_2tag->SetMarkerStyle( 24 );
-        h_2tag->SetMarkerColor( kGreen+2 );
-        h_2tag->SetFillStyle( 3005 );
-        h_2tag->SetFillColor( kGreen+2 );
-        min = TMath::Min( min, h_2tag->GetMinimum() );
-        max = TMath::Max( max, h_2tag->GetMaximum() );
-      }
-      if ( h_1tag && h_2tag ) {
-        c.AddLegendEntry( h, "All diphotons", "f" );
-        if ( h_1tag ) c.AddLegendEntry( h_1tag, "track(s) in 1 arm", "ep" );
-        if ( h_2tag ) c.AddLegendEntry( h_2tag, "track(s) in 2 arms", "ep" );
-      }
-      h->SetMinimum( min );
-      h->SetMaximum( max*1.5 );
-      c.Prettify( h );
-      if ( h_1tag && h_2tag ) c.RatioPlot( h, h_1tag, h_2tag, 0., 0.55 );
+      hist = dynamic_cast<TH1*>( hm.begin()->second );
+      hist->SetMinimum( min );
+      hist->SetMaximum( max*1.1 );
+      c.Prettify( hist );
+      /*if ( hm.size()==2 ) c.RatioPlot( hm[0].second, hm[1].second, 0, min_ratio_y, max_ratio_y );
+      if ( hm.size()>2 ) c.RatioPlot( hm[0].second, hm[1].second, hm[2].second, min_ratio_y, max_ratio_y );*/
+      c.RatioPlot( hm2, min_ratio_y, max_ratio_y );
       c.Save( "pdf,png", out_path_ );
+    }
+
+    void plot_3hists( const char* name, TH1D* h, TH1D* h_1tag=0, TH1D* h_2tag=0, bool draw_overflow=true ) const {
+      HistsMap hm;
+      hm.push_back( std::make_pair( "All diphotons", h ) );
+      hm.push_back( std::make_pair( "track(s) in 1 arm", h_1tag ) );
+      hm.push_back( std::make_pair( "track(s) in 2 arms", h_2tag ) );
+      plot_multihists( name, hm, 0., 0.55, draw_overflow );
     }
 
     void plot_balances( const char* name, const char* title, GraphsMap gr_map,
@@ -269,7 +278,7 @@ class Plotter
 };
 
 static const int markers[] = { 24, 20, 25, 21, 26, 22, 27, 23, 28, 24 };
-static const int colours[] = { kBlack, kRed+1, kBlue+1, kGreen+2, kMagenta+1, kOrange+1, kGray };
+static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray };
 
 const int* Plotter::marker_pool_ = markers;
 const int* Plotter::colour_pool_ = colours;

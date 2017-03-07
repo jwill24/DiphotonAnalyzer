@@ -76,37 +76,27 @@ class Canvas : public TCanvas
     }
   }
 
-  inline void RatioPlot( TH1* obj1, const TH1* obj2, const TH1* obj3, float ymin=-999., float ymax=-999. ) {
+  typedef std::vector< std::pair<const char*,TH1*> > HistsMap;
+  inline void RatioPlot( HistsMap hm, float ymin=-999., float ymax=-999. ) {
     if ( !fRatio ) return;
-    TH1* ratio1 = dynamic_cast<TH1*>( obj2->Clone() ),
-        *ratio2 = dynamic_cast<TH1*>( obj3->Clone() );
-    //ratio1->Sumw2(); ratio2->Sumw2();
-    ratio1->Divide( obj1 );
-    ratio2->Divide( obj1 );
+    TH1* denom = hm.begin()->second,
+        *numer = 0;
+    denom->GetXaxis()->SetTitle( "" );
     TCanvas::cd( 2 );
-    ratio1->Draw( "p" );
-    ratio2->Draw( "p same" );
-    obj1->GetXaxis()->SetTitle( "" );
-    if ( ymin!=ymax ) {
-      ratio1->GetYaxis()->SetRangeUser( ymin, ymax );
+    unsigned short i = 0;
+    for ( HistsMap::const_iterator it=hm.begin()+1; it!=hm.end(); it++ ) {
+      numer = dynamic_cast<TH1*>( it->second->Clone() );
+      //ratio1->Sumw2(); ratio2->Sumw2();
+      numer->Divide( denom );
+      numer->Draw( ( i==0 ) ? "p" : "p same" );
+      if ( ymin!=ymax ) {
+        numer->GetYaxis()->SetRangeUser( ymin, ymax );
+      }
+      Prettify( numer );
+      numer->GetYaxis()->SetTitle( "Ratios" );
+      i++;
     }
-    Prettify( ratio1 );
-    ratio1->GetYaxis()->SetTitle( "Ratios" );
-    TCanvas::cd();
-  }
-
-  inline void RatioPlot( TH1* obj1, const TH1* obj2, float ymin=-999., float ymax=-999. ) {
-    if ( !fRatio ) return;
-    TH1* ratio = dynamic_cast<TH1*>( obj2->Clone() );
-    ratio->Divide( obj1 );
-    TCanvas::cd( 2 );
-    ratio->Draw( "p" );
-    obj1->GetXaxis()->SetTitle( "" );
-    if ( ymin!=ymax ) {
-      ratio->GetYaxis()->SetRangeUser( ymin, ymax );
-    }
-    Prettify( ratio );
-    ratio->GetYaxis()->SetTitle( "Ratio" );
+    Prettify( denom );
     TCanvas::cd();
   }
 
@@ -221,5 +211,28 @@ class Canvas : public TCanvas
   double fLegXSize, fLegYSize;
   bool fRatio;
 };
+
+TH1*
+WithOverflow( TH1* h )
+{
+  //function to paint the histogram h with an extra bin for overflows
+  unsigned short nx = h->GetNbinsX()+1;
+  double* xbins = new double[nx+1];
+  for ( unsigned short i=0; i<nx; i++ ) { xbins[i] = h->GetBinLowEdge( i+1 ); }
+  xbins[nx] = xbins[nx-1] + h->GetBinWidth( nx );
+  //book a temporary histogram having extra bins for overflows
+  TH1D* htmp = new TH1D( Form( "%s_withoverflow", h->GetName() ), h->GetTitle(), nx, xbins );
+  htmp->Sumw2();
+  //fill the new histogram including the overflows
+  for ( unsigned short i=1; i<=nx; i++ ) {
+    htmp->SetBinContent( htmp->FindBin( htmp->GetBinCenter( i ) ), h->GetBinContent( i ) );
+    htmp->SetBinError( htmp->FindBin( htmp->GetBinCenter( i ) ), h->GetBinError( i ) );
+  }
+  htmp->SetBinContent( htmp->FindBin( h->GetBinLowEdge( 1 )-1 ), h->GetBinContent( 0 ) );
+  htmp->SetBinError( htmp->FindBin( h->GetBinLowEdge( 1 )-1 ), h->GetBinError( 0 ) );
+  // Restore the number of entries
+  htmp->SetEntries( h->GetEffectiveEntries() );
+  return htmp;
+}
 
 #endif
