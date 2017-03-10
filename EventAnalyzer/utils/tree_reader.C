@@ -708,19 +708,18 @@ void tree_reader( TString file=default_ntp_file )
               //dipr_rapidity = log( xi_56[l]/xi_45[k] ) / 2.;
               err_dipr_rapidity = sqrt( pow( err_xi_45[k]/xi_45[k], 2 ) + pow( err_xi_56[l]/xi_56[l], 2 ) ) / 2.;
               miss_mass = miss_mass_pair;
-if ( miss_mass>1800. ) cout << miss_mass << endl;
-        h_diproton_mass->Fill( miss_mass );
+              h_diproton_mass->Fill( miss_mass );
             }
           }
         }
         if ( miss_mass<=0. ) continue;
 
-        bool mass_match = ( fabs( diphoton_mass[j]-miss_mass )<=1.0*err_miss_mass ),
-             rap_match = ( fabs( diphoton_rapidity[j]-dipr_rapidity )<=1.0*err_dipr_rapidity ),
-             mass_match_withmet = ( fabs( diphoton_plus_met_mass-miss_mass )<=1.0*err_miss_mass ),
-             rap_match_withmet = ( fabs( diphoton_plus_met_rap-dipr_rapidity )<=1.0*err_dipr_rapidity ),
-             mass_match_incl = ( fabs( diphoton_incl_mass-miss_mass )<=1.0*err_miss_mass ),
-             rap_match_incl = ( fabs( diphoton_incl_rap-dipr_rapidity )<=1.0*err_dipr_rapidity );
+        bool mass_match = ( fabs( diphoton_mass[j]-miss_mass )<=n_sigma*err_miss_mass ),
+             rap_match = ( fabs( diphoton_rapidity[j]-dipr_rapidity )<=n_sigma*err_dipr_rapidity ),
+             mass_match_withmet = ( fabs( diphoton_plus_met_mass-miss_mass )<=n_sigma*err_miss_mass ),
+             rap_match_withmet = ( fabs( diphoton_plus_met_rap-dipr_rapidity )<=n_sigma*err_dipr_rapidity ),
+             mass_match_incl = ( fabs( diphoton_incl_mass-miss_mass )<=n_sigma*err_miss_mass ),
+             rap_match_incl = ( fabs( diphoton_incl_rap-dipr_rapidity )<=n_sigma*err_dipr_rapidity );
 
         //----- matching (diphoton only) -----
         h_mgg_vs_mpp.SetPoint( cand_2tag_id, diphoton_mass[j], miss_mass );
@@ -741,6 +740,21 @@ if ( miss_mass>1800. ) cout << miss_mass << endl;
 
         if ( mass_match && rap_match ) {
           cout << "--------> matching!!!!!" << endl;
+          cout << " >>> " << diphoton_mass[j] << "/" << miss_mass << " && " << diphoton_rapidity[j] << "/" << dipr_rapidity << endl;
+          cout << "     " << run_id << ":" << lumisection << ":" << event_number << "\t" << "pt=" << dipho_incl.Pt() << endl;
+          cout << " computed with:" << endl;
+          cout << num_ele_included << " electron(s)" << endl;
+          for ( size_t k=0; k<electrons_list.size(); k++ ) {
+            cout << "  ---> " << "electron " << k << ": pt=" << electrons_list[k].second.Pt() << ", eta=" << electrons_list[k].second.Eta() << ", vtx distance(diph vtx)=" << electrons_list[k].first << " cm" << endl;
+          }
+          cout << num_mu_included << " muon(s)" << endl;
+          for ( size_t k=0; k<muons_list.size(); k++ ) {
+            cout << "  ---> " << "muon " << k << ": pt=" << muons_list[k].second.Pt() << ", eta=" << muons_list[k].second.Eta() << ", vtx distance(diph vtx)=" << muons_list[k].first << " cm" << endl;
+          }
+          cout << num_jet_included << " jet(s)" << endl;
+          for ( size_t k=0; k<jets_list.size(); k++ ) {
+            cout << "  ---> " << "jet " << k << ": pt=" << jets_list[k].second.Pt() << ", eta=" << jets_list[k].second.Eta() << ", vtx distance(diph vtx)=" << jets_list[k].first << " cm" << endl;
+          }
         }
 
         //----- matching (diphoton+MET) -----

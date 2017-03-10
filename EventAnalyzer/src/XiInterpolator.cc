@@ -121,7 +121,6 @@ namespace ProtonUtils
 
     // apply the alignment
     const float x_corr = ( trk.getX0() + ac.x ) * 1.e-3; // convert to m
-std::cout << trk.getX0()*1.e-3 << " >> " << x_corr << std::endl;
 
     xi = interp->Eval( x_corr );
 
