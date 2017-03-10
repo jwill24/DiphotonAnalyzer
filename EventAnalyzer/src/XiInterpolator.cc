@@ -3,12 +3,10 @@
 namespace ProtonUtils
 {
   XiInterpolator::XiInterpolator() :
-    igLF_(0), igLN_(0), igRF_(0), igRN_(0),
     isLF_(0), isLN_(0), isRF_(0), isRN_(0)
   {}
 
   XiInterpolator::XiInterpolator( const char* filename ) :
-    igLF_(0), igLN_(0), igRF_(0), igRN_(0),
     isLF_(0), isLN_(0), isRF_(0), isRN_(0)
   {
     loadInterpolationGraphs( filename );
@@ -28,21 +26,22 @@ namespace ProtonUtils
 
     if ( conversion ) {
       // in case one works with Frici's input
-      extractSpline( (TGraph*)f.Get("XRPH_C6R5_B1"), "x_to_xi_R_1_N", igRN_, isRN_ );
-      extractSpline( (TGraph*)f.Get("XRPH_D6R5_B1"), "x_to_xi_R_1_F", igRF_, isRF_ );
-      extractSpline( (TGraph*)f.Get("XRPH_C6L5_B2"), "x_to_xi_L_1_N", igLN_, isLN_ );
-      extractSpline( (TGraph*)f.Get("XRPH_D6L5_B2"), "x_to_xi_L_1_F", igLF_, isLF_ );
-      return;
+      TGraph* igRN = (TGraph*)f.Get("g_x_to_xi_R_1_N"),
+             *igRF = (TGraph*)f.Get("g_x_to_xi_R_1_F"),
+             *igLN = (TGraph*)f.Get("g_x_to_xi_L_1_N"),
+             *igLF = (TGraph*)f.Get("g_x_to_xi_L_1_F");
+      extractSpline( (TGraph*)f.Get("XRPH_C6R5_B1"), "x_to_xi_R_1_N", igRN, isRN_ );
+      extractSpline( (TGraph*)f.Get("XRPH_D6R5_B1"), "x_to_xi_R_1_F", igRF, isRF_ );
+      extractSpline( (TGraph*)f.Get("XRPH_C6L5_B2"), "x_to_xi_L_1_N", igLN, isLN_ );
+      extractSpline( (TGraph*)f.Get("XRPH_D6L5_B2"), "x_to_xi_L_1_F", igLF, isLF_ );
     }
-    // already "processed" curves
-    igRN_ = (TGraph*)f.Get("g_x_to_xi_R_1_N");
-    igRF_ = (TGraph*)f.Get("g_x_to_xi_R_1_F");
-    igLN_ = (TGraph*)f.Get("g_x_to_xi_L_1_N");
-    igLF_ = (TGraph*)f.Get("g_x_to_xi_L_1_F");
-    isRN_ = (TSpline3*)f.Get("s_x_to_xi_R_1_N");
-    isRF_ = (TSpline3*)f.Get("s_x_to_xi_R_1_F");
-    isLN_ = (TSpline3*)f.Get("s_x_to_xi_L_1_N");
-    isLF_ = (TSpline3*)f.Get("s_x_to_xi_L_1_F");
+    else {
+      // already "processed" curves
+      isRN_ = (TSpline3*)f.Get("s_x_to_xi_R_1_N");
+      isRF_ = (TSpline3*)f.Get("s_x_to_xi_R_1_F");
+      isLN_ = (TSpline3*)f.Get("s_x_to_xi_L_1_N");
+      isLF_ = (TSpline3*)f.Get("s_x_to_xi_L_1_F");
+    }
 
     edm::LogInfo("XiInterpolator") << "Interpolation graphs successfully loaded from file " << filename;
   }
@@ -51,7 +50,7 @@ namespace ProtonUtils
   XiInterpolator::setCalibrationConstants( const edm::RunNumber_t& run_id )
   {
     calib_ = CTPPSAlCa::getCalibrationConstants( run_id );
-    edm::LogInfo("ProtonReco")
+    edm::LogInfo("XiInterpolator")
         << "Calibration constants loaded: " << calib_.x_disp_l_f << ":" << calib_.x_disp_l_n << " / "
                                             << calib_.x_disp_r_f << ":" << calib_.x_disp_r_n;
   }
@@ -64,7 +63,7 @@ namespace ProtonUtils
     if ( !trk.isValid() ) return;
 
     // retrieve the alignment parameters
-    const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rawId() );
+    const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rpCopyNumber() );
 
     // retrieve the proper dispersion constants
     float dx_n, dx_f;
@@ -100,18 +99,18 @@ namespace ProtonUtils
     if ( !trk.isValid() ) return;
 
     // retrieve the alignment parameters
-    const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rawId() );
+    const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rpCopyNumber() );
 
     // retrieve the proper interpolation curve
     TSpline3 *interp = 0;
     switch ( detid.arm() ) { // 0 = sector 45, 1 = sector 56
       case 0: {
-        if ( detid.romanPot()==3 ) interp = isLF_;
         if ( detid.romanPot()==2 ) interp = isLN_;
+        if ( detid.romanPot()==3 ) interp = isLF_;
       } break;
       case 1: {
-        if ( detid.romanPot()==3 ) interp = isRF_;
         if ( detid.romanPot()==2 ) interp = isRN_;
+        if ( detid.romanPot()==3 ) interp = isRF_;
       } break;
       default: return;
     }
@@ -121,7 +120,8 @@ namespace ProtonUtils
                 de_rel_dx = 0.1;
 
     // apply the alignment
-    const float x_corr = ( trk.getX0() + ac.x ) * 1.e-3;
+    const float x_corr = ( trk.getX0() + ac.x ) * 1.e-3; // convert to m
+std::cout << trk.getX0()*1.e-3 << " >> " << x_corr << std::endl;
 
     xi = interp->Eval( x_corr );
 

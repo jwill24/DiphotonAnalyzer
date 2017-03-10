@@ -9,21 +9,40 @@ namespace CTPPSAlCa
   class RPAlignmentConstants
   {
     public:
-      typedef struct Quantities {
-        Quantities() : x( 0. ), err_x( 0. ), y( 0. ), err_y( 0. ) {}
-        float x, err_x, y, err_y;
-        friend std::ostream& operator<<( std::ostream&, const Quantities& );
-      } Quantities;
+      class Quantities
+      {
+        public:
+          Quantities() : x( 0. ), err_x( 0. ), y( 0. ), err_y( 0. ) {}
+
+          bool operator==( const Quantities& rhs ) const {
+            return ( x==rhs.x && err_x==rhs.err_x
+                  && y==rhs.y && err_y==rhs.err_y );
+          }
+          void operator=( const Quantities& rhs ) {
+            x = rhs.x; err_x = rhs.err_x;
+            y = rhs.y; err_y = rhs.err_y;
+          }
+          friend std::ostream& operator<<( std::ostream&, const Quantities& );
+
+        public:
+          float x, err_x, y, err_y;
+      };
+      typedef std::map<unsigned short, Quantities> Map;
 
     public:
       RPAlignmentConstants();
       friend std::ostream& operator<<( std::ostream&, const RPAlignmentConstants& );
+      bool operator==( const RPAlignmentConstants& ) const;
+      void operator=( const RPAlignmentConstants& );
 
-      void setQuantities( unsigned int detid, const Quantities& quant );
-      const Quantities quantities( unsigned int detid ) const;
+      Map::const_iterator begin() const { return map_.begin(); }
+      Map::const_iterator end() const { return map_.end(); }
+
+      void setQuantities( unsigned short detid, const Quantities& quant );
+      const Quantities quantities( unsigned short detid ) const;
 
     private:
-      std::map<unsigned int,Quantities> map_;
+      Map map_;
   };
 }
 

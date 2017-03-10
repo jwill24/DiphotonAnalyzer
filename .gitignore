@@ -6,3 +6,9 @@
 *.root
 *.log
 *.txt
+# lxbatch submission
+tmp_filelist_*
+2016*/
+# routines compilation
+*_C.d
+*_rdict.pcm

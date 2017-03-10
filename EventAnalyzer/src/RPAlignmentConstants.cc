@@ -10,25 +10,38 @@ namespace CTPPSAlCa
     map_[103] = Quantities();
   }
 
+  bool
+  RPAlignmentConstants::operator==( const RPAlignmentConstants& rhs ) const
+  {
+    return ( map_==rhs.map_ );
+  }
+
   void
-  RPAlignmentConstants::setQuantities( unsigned int detid, const Quantities& quant )
+  RPAlignmentConstants::operator=( const RPAlignmentConstants& rhs )
+  {
+    map_ = rhs.map_;
+  }
+
+  void
+  RPAlignmentConstants::setQuantities( unsigned short detid, const Quantities& quant )
   {
     if ( map_.find( detid )==map_.end() ) return; //FIXME
     map_[detid] = quant;
   }
 
   const RPAlignmentConstants::Quantities
-  RPAlignmentConstants::quantities( unsigned int detid ) const
+  RPAlignmentConstants::quantities( unsigned short detid ) const
   {
-    std::map<unsigned int,Quantities>::const_iterator it = map_.find( detid );
-    if ( it==map_.end() ) return Quantities();
-    return it->second;
+    Map::const_iterator it = map_.find( detid );
+    if ( it!=map_.end() ) return it->second;
+    std::cerr << "WARNING failed to retrieve quantities for RP with DetId " << detid << std::endl;
+    return Quantities();
   }
 
   std::ostream&
   operator<<( std::ostream& os, const RPAlignmentConstants& align )
   {
-    for ( std::map<unsigned int,RPAlignmentConstants::Quantities>::const_iterator it=align.map_.begin(); it!=align.map_.end(); ++it ) {
+    for ( RPAlignmentConstants::Map::const_iterator it=align.map_.begin(); it!=align.map_.end(); ++it ) {
       os << "DetId = " << it->first << ": " << it->second << std::endl;
     }
     return os;

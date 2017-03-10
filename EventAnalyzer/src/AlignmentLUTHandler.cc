@@ -1,7 +1,5 @@
 #include "DiphotonAnalyzer/EventAnalyzer/interface/AlignmentLUTHandler.h"
 
-#include <iostream>
-
 namespace CTPPSAlCa
 {
   AlignmentLUTHandler::AlignmentLUTHandler( const char* file ) :
@@ -11,14 +9,21 @@ namespace CTPPSAlCa
   {
     // load the alignment constants from external file
     loadConstants( file );
-    valid_ = true;
   }
 
-  RPAlignmentConstants
-  AlignmentLUTHandler::getAlignmentConstants( const unsigned short& fill_num ) const
+  RPAlignmentConstants&
+  AlignmentLUTHandler::retrieveConstants( const fill_t& fill_num )
   {
-    if ( !valid_ ) return RPAlignmentConstants();
-    std::map<unsigned int,RPAlignmentConstants>::const_iterator it = align_map_.find( fill_num );
+    LUT::iterator it = align_map_.find( fill_num );
+    if ( it!=align_map_.end() ) return it->second;
+    throw cms::Exception( "NoFillInfo" ) << "Failed to retrieve the alignment parameters for fill " << fill_num;
+  }
+
+  const RPAlignmentConstants
+  AlignmentLUTHandler::getAlignmentConstants( const fill_t& fill_num ) const
+  {
+    if ( !valid_ ) throw cms::Exception( "InvalidLUT" ) << "Invalid look-up table";
+    LUT::const_iterator it = align_map_.find( fill_num );
     if ( it!=align_map_.end() ) return it->second;
 
     if ( fill_num<align_map_.begin()->first ) {
@@ -36,19 +41,17 @@ namespace CTPPSAlCa
     std::ifstream f( file );
     if ( !f.is_open() ) return;
     std::string ss;
-    unsigned short fill_num = 0;
+    fill_t fill_num = 0;
 
     std::smatch match;
-
-    RPAlignmentConstants ac;
 
     while ( f >> ss ) {
       if ( std::regex_match( ss, match, rgx_hdr_ ) and match.size()==2 ) { // new fill information
         fill_num = atoi( match[1].str().c_str() );
-        align_map_.insert( std::pair<unsigned int,RPAlignmentConstants>( fill_num, ac ) );
-        ac = RPAlignmentConstants(); // reset the constants list
+        align_map_.insert( std::make_pair( fill_num, RPAlignmentConstants() ) );
       }
       else if ( std::regex_match( ss, match, rgx_algn_ ) and match.size()>0 ) { // new alignment parameters
+        RPAlignmentConstants& align = retrieveConstants( fill_num );
         const unsigned short rp_id = atoi( match[1].str().c_str() );
         const float align_x = atof( match[2].str().c_str() );
         float err_align_x = 0., align_y = 0., err_align_y = 0.;
@@ -62,8 +65,13 @@ namespace CTPPSAlCa
         quant.err_x = err_align_x;
         quant.y = align_y;
         quant.err_y = err_align_y;
-        ac.setQuantities( rp_id, quant );
+        align.setQuantities( rp_id, quant );
+      }
+      else {
+        throw cms::Exception( "InvalidLine" ) << "Failed to process line:\n\t" << ss;
+        return;
       }
     }
+    valid_ = true;
   }
 }

@@ -37,7 +37,6 @@ namespace ProtonUtils
     private:
       void extractSpline( const TGraph* gr_in, const char* name_out, TGraph* gr_out, TSpline3* sp_out );
 
-      TGraph *igLF_, *igLN_, *igRF_, *igRN_;
       TSpline3 *isLF_, *isLN_, *isRF_, *isRN_;
       CTPPSAlCa::RPAlignmentConstants align_;
       CTPPSAlCa::RPCalibrationConstants calib_;     

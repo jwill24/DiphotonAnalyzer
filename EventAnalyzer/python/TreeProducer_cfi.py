@@ -23,7 +23,7 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     # totem RP information extraction
     totemRPTracksLabel = cms.InputTag('totemRPLocalTrackFitter'),
     useXiInterpolation = cms.bool(True),
-    xiInterpolationFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/ctpps_optics_v1.root'),
-    fillNumLUTFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/fill_run_lut.dat'),
+    xiInterpolationFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/ctpps_optics_9mar2017.root'),
+    fillNumLUTFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/fill_run_lut_v2.dat'),
     alignmentLUTFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/alignment_collection_v2.out'),
 )

@@ -143,7 +143,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     float fDiphotonVertexX[MAX_DIPHOTON], fDiphotonVertexY[MAX_DIPHOTON], fDiphotonVertexZ[MAX_DIPHOTON];
     float fDiphotonNearestDist[MAX_DIPHOTON];
 
-    float fMET, fMETPhi;
+    float fMET, fMETPhi, fMETsignif;
 
     unsigned int fVertexNum;
     float fVertexX[MAX_VERTEX], fVertexY[MAX_VERTEX], fVertexZ[MAX_VERTEX];
@@ -263,7 +263,7 @@ TreeProducer::clearTree()
     fJetVertexX[i] = fJetVertexY[i] = fJetVertexZ[i] = -1.;
   }
 
-  fMET = fMETPhi = -1.;
+  fMET = fMETPhi = fMETsignif = -1.;
 
   fVertexNum = 0;
   for ( unsigned int i=0; i<MAX_VERTEX; i++ ) {
@@ -481,8 +481,9 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
 
   const edm::View<flashgg::Met>* metColl = mets.product();
   edm::View<flashgg::Met>::const_iterator met = metColl->begin();
-  fMET = met->pt();
+  fMET = met->et();
   fMETPhi = met->phi();
+  fMETsignif = met->significance();
 
   //----- vertexing information -----
 
@@ -604,8 +605,9 @@ TreeProducer::beginJob()
   tree_->Branch( "vertex_tracks_weight0p9", fVertexTracksWght0p9, "vertex_tracks_weight0p9[num_vertex]/i" );
   tree_->Branch( "vertex_tracks_weight0p95", fVertexTracksWght0p95, "vertex_tracks_weight0p95[num_vertex]/i" );*/
 
-  tree_->Branch( "met", &fMET );
-  tree_->Branch( "met_phi", &fMETPhi );
+  tree_->Branch( "met", &fMET, "met/F" );
+  tree_->Branch( "met_phi", &fMETPhi, "met_phi/F" );
+  tree_->Branch( "met_significance", &fMETsignif, "met_significance/F" );
 
 }
 

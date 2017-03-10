@@ -2,6 +2,7 @@
 #define RecoCTPPS_ProtonProducer_AlignmentLUTHandler_h
 
 #include "DataFormats/Provenance/interface/RunID.h"
+#include "FWCore/Utilities/interface/Exception.h"
 #include "DiphotonAnalyzer/EventAnalyzer/interface/RPAlignmentConstants.h"
 
 #include <regex>
@@ -12,17 +13,24 @@ namespace CTPPSAlCa
   class AlignmentLUTHandler
   {
     public:
+      typedef unsigned short fill_t;
+      typedef std::map<fill_t,RPAlignmentConstants> LUT;
+    public:
       AlignmentLUTHandler( const char* file );
 
-      RPAlignmentConstants getAlignmentConstants( const unsigned short& fill_num ) const;
+      LUT::const_iterator begin() const { return align_map_.begin(); }
+      LUT::const_iterator end() const { return align_map_.end(); }
+
+      const RPAlignmentConstants getAlignmentConstants( const fill_t& fill_num ) const;
       inline bool isValid() const { return valid_; }
 
     private:
       // FIXME to be replaced by a DB handler!
       void loadConstants( const char* file );
+      RPAlignmentConstants& retrieveConstants( const fill_t& fill_num );
 
       bool valid_;
-      std::map<unsigned int,RPAlignmentConstants> align_map_; // fill# -> parameters
+      LUT align_map_; // fill# -> parameters
       std::regex rgx_hdr_, rgx_algn_;
   };
 }

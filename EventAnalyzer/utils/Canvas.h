@@ -7,6 +7,8 @@
 #include "TH1.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
+#include "TObjArray.h"
+#include "TObjString.h"
 
 #include <string.h>
 
@@ -111,17 +113,17 @@ class Canvas : public TCanvas
 
   inline TLegend* GetLegend() { return fLeg; }
   inline void SetLegendX1( double x ) {
-    if ( !fLeg ) BuildLegend();
+    if ( !fLeg ) CreateLegend();
     fLeg->SetX1NDC( x );
     fLeg->SetX2NDC( x+fLegXSize );
   }
   inline void SetLegendY1( double y ) {
-    if ( !fLeg ) BuildLegend();
+    if ( !fLeg ) CreateLegend();
     fLeg->SetY1NDC( y );
     fLeg->SetY2NDC( y+fLegYSize );
   }
   inline void AddLegendEntry( const TObject* obj, const char* title, Option_t* option="lpf" ) {
-    if ( !fLeg ) BuildLegend();
+    if ( !fLeg ) CreateLegend();
     fLeg->AddEntry( obj, title, option );
     if ( fLeg->GetNRows()>4 ) {
       fLegYSize += 0.08;
@@ -191,7 +193,7 @@ class Canvas : public TCanvas
     fTopLabel->SetTextAlign( kHAlignRight+kVAlignBottom );
   }
 
-  inline void BuildLegend() {
+  inline void CreateLegend() {
     if ( fLeg ) return;
     if ( fRatio ) TCanvas::cd(1);
     fLeg = new TLegend( 0.5, 0.75, 0.5+fLegXSize, 0.75+fLegYSize );

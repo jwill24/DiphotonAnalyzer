@@ -14,7 +14,9 @@
 //#define default_ntp_file "output_Run2016B_mgg-ov-500.root"
 //#define default_ntp_file "output_Run2016BC_looseCuts.root"
 //#define default_ntp_file "output_Run2016BCG_looseCuts_prelim.root"
-#define default_ntp_file "output_Run2016BC_looseCuts_7mar.root"
+//#define default_ntp_file "output_Run2016BC_looseCuts_7mar.root"
+//#define default_ntp_file "output_Run2016BC_looseCuts_9mar_xifix.root"
+#define default_ntp_file "test.root"
 
 float photon_rel_energy_scale( const float& pt, const float& eta, const float& r9 );
 
@@ -623,6 +625,11 @@ void tree_reader( TString file=default_ntp_file )
 
       //----- forward tracks retrieval part -----
 
+      vector<float> xi_45n, err_xi_45n,
+                    xi_45f, err_xi_45f,
+                    xi_56n, err_xi_56n,
+                    xi_56f, err_xi_56f;
+
       vector<float> xi_45, err_xi_45,
                     xi_56, err_xi_56;
       int id_45 = -1, id_56 = -1;
@@ -633,76 +640,40 @@ void tree_reader( TString file=default_ntp_file )
       for ( unsigned short k=0; k<num_proton; k++ ) {
         if ( proton_side[k]==sector45 ) {
           if ( proton_pot[k]==farPot ) {
-            const unsigned short id = h_ximatch_45f.GetN();
-
-            if ( fabs( proton_xi[k]-xip_reco )<n_sigma*proton_xi_error[k] && xip_reco>lim_45f ) {
-              compat_45f = true;
-              h_ximatch_45f_matched.SetPoint( id, proton_xi[k], xip_reco );
-            }
-
-            h_ximatch_45f.SetPoint( id, proton_xi[k], xip_reco );
-            h_ximatch_45f.SetPointError( id, proton_xi_error[k], err_xip_reco );
-            h_ximatch_45f_withmet.SetPoint( id, proton_xi[k], xip_reco_withmet );
-            h_ximatch_45f_withmet.SetPointError( id, proton_xi_error[k], err_xip_reco_withmet );
-            {
-              xi_45.push_back( proton_xi[k] );
-              err_xi_45.push_back( proton_xi_error[k] );
-              id_45 = k;
-            }
+            if ( fabs( proton_xi[k]-xip_reco )<n_sigma*proton_xi_error[k] && xip_reco>lim_45f ) { compat_45f = true; }
+            xi_45.push_back( proton_xi[k] );
+            err_xi_45.push_back( proton_xi_error[k] );
+            xi_45f.push_back( proton_xi[k] );
+            err_xi_45f.push_back( proton_xi_error[k] );
+            id_45 = k;
           }
           if ( proton_pot[k]==nearPot ) {
-            const unsigned short id = h_ximatch_45n.GetN();
-
-            if ( fabs( proton_xi[k]-xip_reco )<n_sigma*proton_xi_error[k] && xip_reco>lim_45n ) {
-              compat_45n = true;
-              h_ximatch_45n_matched.SetPoint( id, proton_xi[k], xip_reco );
-            }
-
-            h_ximatch_45n.SetPoint( id, proton_xi[k], xip_reco );
-            h_ximatch_45n.SetPointError( id, proton_xi_error[k], err_xip_reco );
-            h_ximatch_45n_withmet.SetPoint( id, proton_xi[k], xip_reco_withmet );
-            h_ximatch_45n_withmet.SetPointError( id, proton_xi_error[k], err_xip_reco_withmet );
+            if ( fabs( proton_xi[k]-xip_reco )<n_sigma*proton_xi_error[k] && xip_reco>lim_45n ) { compat_45n = true; }
             if ( xi_45.size()==0 ) { // no far pot info retrieved
               xi_45.push_back( proton_xi[k] );
               err_xi_45.push_back( proton_xi_error[k] );
+              xi_45n.push_back( proton_xi[k] );
+              err_xi_45n.push_back( proton_xi_error[k] );
               id_45 = k;
             }
           }
         }
         if ( proton_side[k]==sector56 ) {
           if ( proton_pot[k]==farPot ) {
-            const unsigned short id = h_ximatch_56f.GetN();
-
-            if ( fabs( proton_xi[k]-xim_reco )<n_sigma*proton_xi_error[k] && xim_reco>lim_56f ) {
-              compat_56f = true;
-              h_ximatch_56f_matched.SetPoint( id, proton_xi[k], xim_reco );
-            }
-
-            h_ximatch_56f.SetPoint( id, proton_xi[k], xim_reco );
-            h_ximatch_56f.SetPointError( id, proton_xi_error[k], err_xim_reco );
-            h_ximatch_56f_withmet.SetPoint( id, proton_xi[k], xim_reco_withmet );
-            h_ximatch_56f_withmet.SetPointError( id, proton_xi_error[k], err_xim_reco_withmet );
-            {
-              xi_56.push_back( proton_xi[k] );
-              err_xi_56.push_back( proton_xi_error[k] );
-              id_56 = k;
-            }
+            if ( fabs( proton_xi[k]-xip_reco )<n_sigma*proton_xi_error[k] && xip_reco>lim_56f ) { compat_56f = true; }
+            xi_56.push_back( proton_xi[k] );
+            err_xi_56.push_back( proton_xi_error[k] );
+            xi_56f.push_back( proton_xi[k] );
+            err_xi_56f.push_back( proton_xi_error[k] );
+            id_56 = k;
           }
           if ( proton_pot[k]==nearPot ) {
-            const unsigned short id = h_ximatch_56n.GetN();
-
-            if ( fabs( proton_xi[k]-xim_reco )<n_sigma*proton_xi_error[k] && xim_reco>lim_56n ) {
-              compat_56n = true;
-              h_ximatch_56n_matched.SetPoint( id, proton_xi[k], xim_reco );
-            }
-
-            h_ximatch_56n.SetPoint( id, proton_xi[k], xim_reco );
-            h_ximatch_56n.SetPointError( id, proton_xi_error[k], err_xim_reco );
-            h_ximatch_56n_withmet.SetPoint( id, proton_xi[k], xim_reco_withmet );
-            h_ximatch_56n_withmet.SetPointError( id, proton_xi_error[k], err_xim_reco_withmet );
+            if ( fabs( proton_xi[k]-xip_reco )<n_sigma*proton_xi_error[k] && xip_reco>lim_56n ) { compat_56n = true; }
             if ( xi_56.size()==0 ) { // no far pot info retrieved
               xi_56.push_back( proton_xi[k] );
               err_xi_56.push_back( proton_xi_error[k] );
+              xi_56n.push_back( proton_xi[k] );
+              err_xi_56n.push_back( proton_xi_error[k] );
               id_56 = k;
             }
           }
@@ -737,6 +708,7 @@ void tree_reader( TString file=default_ntp_file )
               //dipr_rapidity = log( xi_56[l]/xi_45[k] ) / 2.;
               err_dipr_rapidity = sqrt( pow( err_xi_45[k]/xi_45[k], 2 ) + pow( err_xi_56[l]/xi_56[l], 2 ) ) / 2.;
               miss_mass = miss_mass_pair;
+if ( miss_mass>1800. ) cout << miss_mass << endl;
         h_diproton_mass->Fill( miss_mass );
             }
           }
@@ -863,6 +835,37 @@ void tree_reader( TString file=default_ntp_file )
 
       else if ( xi_45.size()>0 || xi_56.size()>0 ) { // single tag
         cand_1tag_id++;
+      }
+
+      //----- exclusivity cuts -----
+
+      if ( has_ele || has_muon || has_jet ) continue; //FIXME FIXME FIXME FIXME FIXME
+      if ( diphoton_pt[j]>max_pt_diphoton ) continue;
+      if ( acopl>max_acopl ) continue;
+
+      //----- FROM THAT POINT ON, EXCLUSIVE DIPHOTON CANDIDATE -----
+
+      for ( unsigned short k=0; k<xi_45f.size(); k++ ) {
+        const unsigned short id = h_ximatch_45f.GetN();
+
+        if ( fabs( xi_45f[k]-xip_reco )<n_sigma*err_xi_45f[k] && xip_reco>lim_45f ) {
+          h_ximatch_45f_matched.SetPoint( h_ximatch_45f_matched.GetN(), proton_xi[k], xip_reco );
+        }
+        h_ximatch_45f.SetPoint( id, xi_45f[k], xip_reco );
+        h_ximatch_45f.SetPointError( id, err_xi_45f[k], err_xip_reco );
+        h_ximatch_45f_withmet.SetPoint( id, xi_45f[k], xip_reco_withmet );
+        h_ximatch_45f_withmet.SetPointError( id, err_xi_45f[k], err_xip_reco_withmet );
+      }
+      for ( unsigned short k=0; k<xi_45n.size(); k++ ) {
+        const unsigned short id = h_ximatch_45n.GetN();
+
+        if ( fabs( xi_45n[k]-xip_reco )<n_sigma*err_xi_45n[k] && xip_reco>lim_45n ) {
+          h_ximatch_45n_matched.SetPoint( h_ximatch_45f_matched.GetN(), proton_xi[k], xip_reco );
+        }
+        h_ximatch_45n.SetPoint( id, xi_45n[k], xip_reco );
+        h_ximatch_45n.SetPointError( id, err_xi_45n[k], err_xip_reco );
+        h_ximatch_45n_withmet.SetPoint( id, xi_45n[k], xip_reco_withmet );
+        h_ximatch_45n_withmet.SetPointError( id, err_xi_45n[k], err_xip_reco_withmet );
       }
 
     } // loop over diphotons
