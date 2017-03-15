@@ -4,7 +4,9 @@
 #include "Canvas.h"
 #include "TMultiGraph.h"
 #include "TH1.h"
+#include "THStack.h"
 #include "TStyle.h"
+
 #include <map>
 #include <vector>
 
@@ -173,6 +175,51 @@ class Plotter
         acc->SetFillColorAlpha( kGray, 0.4 );
         acc->Draw( "same" );
       }
+      c.Save( "pdf,png", out_path_ );
+    }
+
+    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, bool logy=false ) const {
+      Canvas c( filename, top_label_ );
+      TH1D* hist = 0;
+      double max_bin = -1.;
+      unsigned short i = 0;
+      THStack hs_mc, hs_data;
+      for ( HistsMap::iterator it=h_map_data.begin(); it!=h_map_data.end(); it++ ) {
+        hist = ( TH1D* )it->second;
+        // draw the data distributions unstacked
+        hist->Sumw2();
+        hist->SetMarkerStyle( 20+i );
+        hist->SetMarkerColor( kBlack );
+        hist->SetLineColor( kBlack );
+        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( hist, it->first, "lp" );
+        max_bin = TMath::Max( max_bin, hist->GetMaximum() );
+        hs_data.Add( hist );
+        i++;
+      }
+      i = 0;
+      for ( HistsMap::iterator it=h_map_mc.begin(); it!=h_map_mc.end(); it++ ) {
+        hist = ( TH1D* )it->second;
+        hist->SetFillColor( colour_pool_[i+1] );
+        hist->SetFillStyle( 3002 );
+        hist->SetLineColor( kBlack );
+        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( hist, it->first, "f" );
+        hs_mc.Add( hist );
+        if ( i==0 ) hs_mc.SetTitle( hist->GetTitle() );
+        i++;
+      }
+      hs_mc.Draw();
+      hs_data.Draw( "same nostack" );
+      hist = ( TH1D* )hs_mc.GetHistogram();
+      max_bin = TMath::Max( hist->GetMaximum(), max_bin );
+      if ( logy ) {
+        hist->GetYaxis()->SetRangeUser( 0.5, max_bin*3 );
+        c.SetLogy();
+      }
+      else {
+        hist->GetYaxis()->SetRangeUser( 0., max_bin*1.1 );
+      }
+      c.Prettify( hist );
+      hs_mc.SetTitle( "" );
       c.Save( "pdf,png", out_path_ );
     }
 

@@ -12,7 +12,7 @@ typedef struct track_t
 typedef pair<track_t,track_t> candidate_t;
 
 void
-xi_cutter( TString file="output_Run2016BCG_looseCuts_prelim.root" )
+xi_cutter( TString file="output_Run2016BCG_looseCuts_10mar_xifix.root" )
 {
   const char* out_path = "/afs/cern.ch/user/l/lforthom/www/private/twophoton/xi_study";
 
@@ -50,7 +50,7 @@ xi_cutter( TString file="output_Run2016BCG_looseCuts_prelim.root" )
       h_per_pot_hitmap_cut[j][i] = dynamic_cast<TH2D*>( h_per_pot_hitmap[i]->Clone( Form( "per_pot_hm_cut%d_%s", j, potName[i].Data() ) ) );
     }
   }
-  TH2D* h_corr_x_45 = new TH2D( "corr_nf_45", "Track x position (near pot)\\Track x position (far pot)", 100, 0., 3., 100, 0., 3. ),
+  TH2D* h_corr_x_45 = new TH2D( "corr_nf_45", "Track x position (near pot)\\Track x position (far pot)", 100, 0., 2.5, 100, 0., 2.5 ),
        *h_corr_x_56 = dynamic_cast<TH2D*>( h_corr_x_45->Clone( "corr_nf_56" ) );
   TH1D* h_diff_x_45 = new TH1D( "diff_nf_45", "Near track x - far track x\\Events\\cm", 100, -1., 1. ),
        *h_diff_x_56 = dynamic_cast<TH1D*>( h_diff_x_45->Clone( "diff_nf_56" ) );

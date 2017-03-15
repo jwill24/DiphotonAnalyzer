@@ -91,7 +91,8 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     edm::EDGetTokenT< edm::View<flashgg::Muon> > muonToken_; 
     edm::EDGetTokenT< edm::View<vector<flashgg::Jet> > >  jetToken_; 
 //
-    
+
+    bool isData_;    
     double sqrtS_;
     double singlePhotonMinPt_, singlePhotonMaxEta_, singlePhotonMinR9_;
     double photonPairMinMass_;
@@ -171,7 +172,8 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   muonToken_         ( consumes< edm::View<flashgg::Muon> >              ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
   jetToken_          ( consumes< edm::View< std::vector<flashgg::Jet> > >( iConfig.getParameter<edm::InputTag>( "jetLabel") ) ),
 //
-  sqrtS_             ( iConfig.getParameter<double>     ( "sqrtS")),
+  isData_            ( iConfig.getParameter<bool>       ( "isData" ) ),
+  sqrtS_             ( iConfig.getParameter<double>     ( "sqrtS" ) ),
   singlePhotonMinPt_ ( iConfig.getParameter<double>     ( "minPtSinglePhoton" ) ),
   singlePhotonMaxEta_( iConfig.getParameter<double>     ( "maxEtaSinglePhoton" ) ),
   singlePhotonMinR9_ ( iConfig.getParameter<double>     ( "minR9SinglePhoton" ) ),
@@ -179,15 +181,19 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   filename_          ( iConfig.getParameter<std::string>( "outputFilename" ) ),
   useXiInterp_       ( iConfig.getParameter<bool>       ( "useXiInterpolation" ) ),
   xiInterp_( 0 ),
+  fillLUTHandler_( 0 ),
+  alignmentLUTHandler_( 0 ),
   file_( 0 ), tree_( 0 )
 
 {
-  xiInterp_ = new ProtonUtils::XiInterpolator;
-  if ( useXiInterp_ ) {
-    xiInterp_->loadInterpolationGraphs( iConfig.getParameter<edm::FileInPath>( "xiInterpolationFile" ).fullPath().c_str() );
+  if ( isData_ ) {
+    xiInterp_ = new ProtonUtils::XiInterpolator;
+    if ( useXiInterp_ ) {
+      xiInterp_->loadInterpolationGraphs( iConfig.getParameter<edm::FileInPath>( "xiInterpolationFile" ).fullPath().c_str() );
+    }
+    alignmentLUTHandler_ = new CTPPSAlCa::AlignmentLUTHandler( iConfig.getParameter<edm::FileInPath>( "alignmentLUTFile" ).fullPath().c_str() );
   }
   fillLUTHandler_ = new CTPPSAlCa::FillNumberLUTHandler( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() );
-  alignmentLUTHandler_ = new CTPPSAlCa::AlignmentLUTHandler( iConfig.getParameter<edm::FileInPath>( "alignmentLUTFile" ).fullPath().c_str() );
 
   file_ = new TFile( filename_.c_str(), "recreate" );
   file_->cd();
@@ -372,66 +378,67 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
 
   //----- forward RP tracks -----
 
-  edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
-  iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
+  if ( isData_ ) {
+    edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
+    iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
 
-  const CTPPSAlCa::RPAlignmentConstants align = alignmentLUTHandler_->getAlignmentConstants( fFill ); // fill-based alignment corrections
-  xiInterp_->setAlignmentConstants( align );
-  xiInterp_->setCalibrationConstants( fRun ); // run-based calibration parameters
+    const CTPPSAlCa::RPAlignmentConstants align = alignmentLUTHandler_->getAlignmentConstants( fFill ); // fill-based alignment corrections
+    xiInterp_->setAlignmentConstants( align );
+    xiInterp_->setCalibrationConstants( fRun ); // run-based calibration parameters
 
-  typedef std::pair<unsigned int, const TotemRPLocalTrack&> localtrack_t; // RP id -> local track object
-  std::map<unsigned int,localtrack_t> map_near, map_far; // local track id in the tree -> localtrack_t object
+    typedef std::pair<unsigned int, const TotemRPLocalTrack&> localtrack_t; // RP id -> local track object
+    std::map<unsigned int,localtrack_t> map_near, map_far; // local track id in the tree -> localtrack_t object
 
-  fProtonTrackNum = 0;
-  for ( edm::DetSetVector<TotemRPLocalTrack>::const_iterator it=rpLocalTracks->begin(); it!=rpLocalTracks->end(); it++ ) {
-    const TotemRPDetId detid( TotemRPDetId::decToRawId( it->detId()*10 ) );
-    const unsigned short side = detid.arm(),
-                         pot = detid.romanPot();
-    const CTPPSAlCa::RPAlignmentConstants::Quantities align_quant = align.quantities( it->detId() );
+    fProtonTrackNum = 0;
+    for ( edm::DetSetVector<TotemRPLocalTrack>::const_iterator it=rpLocalTracks->begin(); it!=rpLocalTracks->end(); it++ ) {
+      const TotemRPDetId detid( TotemRPDetId::decToRawId( it->detId()*10 ) );
+      const unsigned short side = detid.arm(),
+                           pot = detid.romanPot();
+      const CTPPSAlCa::RPAlignmentConstants::Quantities align_quant = align.quantities( it->detId() );
 
-    for ( edm::DetSet<TotemRPLocalTrack>::const_iterator trk=it->begin(); trk!=it->end(); trk++ ) {
-      if ( !trk->isValid() ) { continue; }
+      for ( edm::DetSet<TotemRPLocalTrack>::const_iterator trk=it->begin(); trk!=it->end(); trk++ ) {
+        if ( !trk->isValid() ) { continue; }
 
-      fProtonTrackX[fProtonTrackNum] = ( trk->getX0() + align_quant.x ) * 1.e-3; // store in m
-      fProtonTrackY[fProtonTrackNum] = ( trk->getY0() - align_quant.y ) * 1.e-3; // store in m
-      fProtonTrackSide[fProtonTrackNum] = side; // 0 = left (45) ; 1 = right (56)
-      fProtonTrackPot[fProtonTrackNum] = pot; // 2 = 210m ; 3 = 220m
+        fProtonTrackX[fProtonTrackNum] = ( trk->getX0() + align_quant.x ) * 1.e-3; // store in m
+        fProtonTrackY[fProtonTrackNum] = ( trk->getY0() - align_quant.y ) * 1.e-3; // store in m
+        fProtonTrackSide[fProtonTrackNum] = side; // 0 = left (45) ; 1 = right (56)
+        fProtonTrackPot[fProtonTrackNum] = pot; // 2 = 210m ; 3 = 220m
 
-      // x-to-xi interpolation
-      float xi = -1., err_xi = -1.;
-      if ( useXiInterp_ ) { xiInterp_->computeXiSpline( detid, *trk, xi, err_xi ); }
-      else                { xiInterp_->computeXiLinear( detid, *trk, xi, err_xi ); }
-      fProtonTrackXi[fProtonTrackNum] = xi;
-      fProtonTrackXiError[fProtonTrackNum] = err_xi;
+        // x-to-xi interpolation
+        float xi = -1., err_xi = -1.;
+        if ( useXiInterp_ ) { xiInterp_->computeXiSpline( detid, *trk, xi, err_xi ); }
+        else                { xiInterp_->computeXiLinear( detid, *trk, xi, err_xi ); }
+        fProtonTrackXi[fProtonTrackNum] = xi;
+        fProtonTrackXiError[fProtonTrackNum] = err_xi;
 
-      switch ( pot ) {
-        case 2: { map_near.insert( std::make_pair( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
-        case 3: {  map_far.insert( std::make_pair( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
-      }
+        switch ( pot ) {
+          case 2: { map_near.insert( std::make_pair( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
+          case 3: {  map_far.insert( std::make_pair( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
+        }
 
-      fProtonTrackNum++;
-    }
-  }
-
-  // second loop to associate near-far tracks
-  for ( std::map<unsigned int,localtrack_t>::const_iterator it_n=map_near.begin(); it_n!=map_near.end(); it_n++ ) {
-    float min_dist = 999.999;
-    unsigned int cand = 999;
-    for ( std::map<unsigned int,localtrack_t>::const_iterator it_f=map_far.begin(); it_f!=map_far.end(); it_f++ ) {
-      const float dist = ProtonUtils::tracksDistance( align, it_n->second, it_f->second ); // in cm
-      if ( dist<0. ) continue; // skip the comparison if opposite side tracks
-      if ( dist<min_dist ) {
-        min_dist = dist;
-        cand = it_f->first;
+        fProtonTrackNum++;
       }
     }
-    if ( cand!=999 ) { // near-far match found
-      fProtonTrackLinkNF[it_n->first] = cand;
-      fProtonTrackLinkNF[cand] = it_n->first;
-      fProtonTrackMinLinkDist[it_n->first] = fProtonTrackMinLinkDist[cand] = min_dist;
+
+    // second loop to associate near-far tracks
+    for ( std::map<unsigned int,localtrack_t>::const_iterator it_n=map_near.begin(); it_n!=map_near.end(); it_n++ ) {
+      float min_dist = 999.999;
+      unsigned int cand = 999;
+      for ( std::map<unsigned int,localtrack_t>::const_iterator it_f=map_far.begin(); it_f!=map_far.end(); it_f++ ) {
+        const float dist = ProtonUtils::tracksDistance( align, it_n->second, it_f->second ); // in cm
+        if ( dist<0. ) continue; // skip the comparison if opposite side tracks
+        if ( dist<min_dist ) {
+          min_dist = dist;
+          cand = it_f->first;
+        }
+      }
+      if ( cand!=999 ) { // near-far match found
+        fProtonTrackLinkNF[it_n->first] = cand;
+        fProtonTrackLinkNF[cand] = it_n->first;
+        fProtonTrackMinLinkDist[it_n->first] = fProtonTrackMinLinkDist[cand] = min_dist;
+      }
     }
-  }
- 
+  } 
   //                               JW
  
   //----- electrons collection -----
@@ -533,15 +540,17 @@ TreeProducer::beginJob()
   tree_->Branch( "bunch_crossing", &fBX, "bunch_crossing/i");
   tree_->Branch( "event_number", &fEventNum, "event_number/l");
 
-  tree_->Branch( "num_proton_track", &fProtonTrackNum, "num_proton_track/i" );
-  tree_->Branch( "proton_track_x", fProtonTrackX, "proton_track_x[num_proton_track]/F" );
-  tree_->Branch( "proton_track_y", fProtonTrackY, "proton_track_y[num_proton_track]/F" );
-  tree_->Branch( "proton_track_xi", fProtonTrackXi, "proton_track_xi[num_proton_track]/F" );
-  tree_->Branch( "proton_track_xi_error", fProtonTrackXiError, "proton_track_xi_error[num_proton_track]/F" );
-  tree_->Branch( "proton_track_side", fProtonTrackSide, "proton_track_side[num_proton_track]/i" );
-  tree_->Branch( "proton_track_pot", fProtonTrackPot, "proton_track_pot[num_proton_track]/i" );
-  tree_->Branch( "proton_track_link_nearfar", fProtonTrackLinkNF, "proton_track_link_nearfar[num_proton_track]/i" );
-  tree_->Branch( "proton_track_link_mindist", fProtonTrackMinLinkDist, "proton_track_link_mindist[num_proton_track]/F" );
+  if ( isData_ ) {
+    tree_->Branch( "num_proton_track", &fProtonTrackNum, "num_proton_track/i" );
+    tree_->Branch( "proton_track_x", fProtonTrackX, "proton_track_x[num_proton_track]/F" );
+    tree_->Branch( "proton_track_y", fProtonTrackY, "proton_track_y[num_proton_track]/F" );
+    tree_->Branch( "proton_track_xi", fProtonTrackXi, "proton_track_xi[num_proton_track]/F" );
+    tree_->Branch( "proton_track_xi_error", fProtonTrackXiError, "proton_track_xi_error[num_proton_track]/F" );
+    tree_->Branch( "proton_track_side", fProtonTrackSide, "proton_track_side[num_proton_track]/i" );
+    tree_->Branch( "proton_track_pot", fProtonTrackPot, "proton_track_pot[num_proton_track]/i" );
+    tree_->Branch( "proton_track_link_nearfar", fProtonTrackLinkNF, "proton_track_link_nearfar[num_proton_track]/i" );
+    tree_->Branch( "proton_track_link_mindist", fProtonTrackMinLinkDist, "proton_track_link_mindist[num_proton_track]/F" );
+  }
 
   tree_->Branch( "num_diphoton", &fDiphotonNum, "num_diphoton/i" );
   tree_->Branch( "diphoton_pt1", fDiphotonPt1, "diphoton_pt1[num_diphoton]/F" );

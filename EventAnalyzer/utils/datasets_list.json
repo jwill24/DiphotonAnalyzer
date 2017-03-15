@@ -1,0 +1,25 @@
+{
+  "datasets": [
+    {
+      "type": "data",
+      "name": "Data",
+      "path": "output_Run2016BCG_looseCuts_10mar_xifix.root",
+      "cross_section": 1.0,
+      "num_events": 0
+    },
+    {
+      "type": "background",
+      "name": "Inclusive #gamma#gamma",
+      "path": "output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v1_part01_partial.root",
+      "cross_section": 84.0,
+      "num_events": 14481055 // 57924220/4
+    },
+    {
+      "type": "background",
+      "name": "VBF H(125) #rightarrow #gamma#gamma",
+      "path": "output_VBFHToGG_M125_13TeV_amcatnlo_pythia8.root",
+      "cross_section": 0.00858514, //3.7820*0.00227,
+      "num_events": 1193600
+    }
+  ]
+}
