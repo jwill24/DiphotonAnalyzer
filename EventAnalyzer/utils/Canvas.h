@@ -79,7 +79,7 @@ class Canvas : public TCanvas
   }
 
   typedef std::vector< std::pair<const char*,TH1*> > HistsMap;
-  inline void RatioPlot( HistsMap hm, float ymin=-999., float ymax=-999. ) {
+  inline void RatioPlot( HistsMap hm, float ymin=-999., float ymax=-999., float xline=-999. ) {
     if ( !fRatio ) return;
     TH1* denom = hm.begin()->second,
         *numer = 0;
@@ -91,12 +91,19 @@ class Canvas : public TCanvas
       //ratio1->Sumw2(); ratio2->Sumw2();
       numer->Divide( denom );
       numer->Draw( ( i==0 ) ? "p" : "p same" );
+      //numer->Draw( "p same" );
       if ( ymin!=ymax ) {
         numer->GetYaxis()->SetRangeUser( ymin, ymax );
       }
       Prettify( numer );
-      numer->GetYaxis()->SetTitle( "Ratios" );
+      numer->GetYaxis()->SetTitle( Form( "Ratio%s", ( hm.size()>2 ) ? "s" : "" ) );
       i++;
+    }
+    if ( xline!=-999. ) {
+      TLine* l = new TLine( denom->GetXaxis()->GetXmin(), xline, denom->GetXaxis()->GetXmax(), xline );
+      l->SetLineColor( kRed );
+      l->SetLineWidth( 1 );
+      l->Draw();
     }
     Prettify( denom );
     TCanvas::cd();

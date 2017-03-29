@@ -29,6 +29,8 @@ process.treeProducer.minPtSinglePhoton = cms.double(50.)
 process.treeProducer.minMassDiPhoton = cms.double(350.)
 process.treeProducer.minR9SinglePhoton = cms.double(0.85)
 process.treeProducer.outputFilename = cms.string('output_XXX_NAME_XXX.root')
+process.treeProducer.pileupMCFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/pileup_mc.root')
+process.treeProducer.pileupDataFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/pileup_data16BCG_PPSruns.root')
 
 process.p = cms.Path(
     process.hltHighLevel*

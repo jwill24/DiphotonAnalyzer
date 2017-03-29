@@ -41,7 +41,8 @@ void tree_reader( TString file=default_ntp_file )
 
   const float max_dist_vtx_inclobjects = 2.0, // in cm
               min_pt_photon = 50.,
-              min_r9_photon = 0.94,
+              //min_r9_photon = 0.94,
+              min_r9_photon = 0.85, //FIXME
               max_eta_photon = 2.5,
               min_etaveto_photon = 1.4442,
               max_etaveto_photon = 1.566,
@@ -50,7 +51,7 @@ void tree_reader( TString file=default_ntp_file )
               max_acopl = 0.01;
   const float oth_obj_minpt = 150.;
   const float n_sigma = 1.0, // xi matching sigma number
-              n_sigma_massrap = 2.0;
+              n_sigma_massrap = 1.0;
 
   /*210-N (beam 1): 0.0334862
     210-N (beam 2): 0.0496449
@@ -177,10 +178,12 @@ void tree_reader( TString file=default_ntp_file )
   tr->SetBranchAddress( "jet_vtx_z", jet_vtx_z );
   //
 
-  TH1D* h_match_mpp_over_mgg = new TH1D( "mpp_over_mgg", "m_{pp}^{missing} / m_{#gamma#gamma} for double-tag events\\Events\\?.2f", 30, -2., 4. ),
-       *h_match_ypp_minus_ygg = new TH1D( "ypp_minus_ygg", "y_{pp}^{missing} - y_{#gamma#gamma} for double-tag events\\Events\\?.2f", 50, -2.5, 2.5 ),
-       *h_match_mpair = new TH1D( "mpair_2dmatch", "Diphoton mass (2D matching)\\Events\\GeV", 17, 300., 2000. ),
-       *h_match_ptpair = new TH1D( "ptpair_2dmatch", "Diphoton p_{T} (2D matching)\\Events\\GeV", 10, 0., 200. );
+  TH1D* h_2dmatch_mpp_over_mgg = new TH1D( "mpp_over_mgg", "m_{pp}^{missing} / m_{#gamma#gamma} for double-tag events\\Events\\?.2f", 30, -2., 4. ),
+       *h_2dmatch_ypp_minus_ygg = new TH1D( "ypp_minus_ygg", "y_{pp}^{missing} - y_{#gamma#gamma} for double-tag events\\Events\\?.2f", 50, -2.5, 2.5 ),
+       *h_2dmatch_mpair = new TH1D( "mpair_2dmatch", "Diphoton mass (2D matching)\\Events\\GeV", 17, 300., 2000. ),
+       *h_2dmatch_ptpair = new TH1D( "ptpair_2dmatch", "Diphoton p_{T} (2D matching)\\Events\\GeV", 10, 0., 200. ),
+       *h_2dmatch_r9single_leadpho = new TH1D( "r9single_2dmatch_leadpho", "Single photon r_{9}\\Events\\?.2f", 25, 0.75, 1. ),
+       *h_2dmatch_r9single_subleadpho = (TH1D*)h_2dmatch_r9single_leadpho->Clone( "r9single_2dmatch_subleadpho" );
   TH1D* h_met = new TH1D( "met", "Missing E_{T}\\Events\\GeV?.0f", 50, 0., 200. ),
        *h_met_1tag = (TH1D*)h_met->Clone( "met_1tag" ),
        *h_met_2tag = (TH1D*)h_met->Clone( "met_2tag" );
@@ -305,6 +308,7 @@ void tree_reader( TString file=default_ntp_file )
                h_ximatch_45n_matched, h_ximatch_45f_matched, h_ximatch_56n_matched, h_ximatch_56f_matched,
                h_ximatch_45n_withmet, h_ximatch_45f_withmet, h_ximatch_56n_withmet, h_ximatch_56f_withmet,
                h_ximatch_45n_withmet_matched, h_ximatch_45f_withmet_matched, h_ximatch_56n_withmet_matched, h_ximatch_56f_withmet_matched;
+  TGraphErrors h_2dmatch_withmet_metvspt;
   // proton reco study
   TH1D* h_num_proton = new TH1D( "num_proton", "Forward track multiplicity\\Events", 6, 0., 6. ),
        *h_num_proton_45 = (TH1D*)h_num_proton->Clone( "num_proton_45" ),
@@ -334,6 +338,7 @@ void tree_reader( TString file=default_ntp_file )
   TLorentzVector pho1, pho2, electron, muon, jet;
 
   unsigned short cand_1tag_id = 0, cand_2tag_id = 0;
+  unsigned int num_match_diph = 0, num_match_withmet = 0, num_match_incl = 0;
 
   // tree readout stage
   for ( unsigned int i=0; i<tr->GetEntries(); i++ ) {
@@ -750,26 +755,17 @@ void tree_reader( TString file=default_ntp_file )
         }
 
         if ( mass_match && rap_match ) {
+          num_match_diph++;
           cout << "--------> matching!!!!!" << endl;
           cout << " >>> " << diphoton_mass[j] << "/" << miss_mass << " && " << diphoton_rapidity[j] << "/" << dipr_rapidity << endl;
-          cout << "     " << run_id << ":" << lumisection << ":" << event_number << "\t" << "pt=" << dipho_incl.Pt() << endl;
-          cout << " computed with:" << endl;
-          cout << num_ele_included << " electron(s)" << endl;
-          for ( size_t k=0; k<electrons_list.size(); k++ ) {
-            cout << "  ---> " << "electron " << k << ": pt=" << electrons_list[k].second.Pt() << ", eta=" << electrons_list[k].second.Eta() << ", vtx distance(diph vtx)=" << electrons_list[k].first << " cm" << endl;
-          }
-          cout << num_mu_included << " muon(s)" << endl;
-          for ( size_t k=0; k<muons_list.size(); k++ ) {
-            cout << "  ---> " << "muon " << k << ": pt=" << muons_list[k].second.Pt() << ", eta=" << muons_list[k].second.Eta() << ", vtx distance(diph vtx)=" << muons_list[k].first << " cm" << endl;
-          }
-          cout << num_jet_included << " jet(s)" << endl;
-          for ( size_t k=0; k<jets_list.size(); k++ ) {
-            cout << "  ---> " << "jet " << k << ": pt=" << jets_list[k].second.Pt() << ", eta=" << jets_list[k].second.Eta() << ", vtx distance(diph vtx)=" << jets_list[k].first << " cm" << endl;
-          }
-          h_match_mpair->Fill( diphoton_mass[j] );
-          h_match_ptpair->Fill( diphoton_pt[j] );
-          h_match_mpp_over_mgg->Fill( miss_mass/diphoton_mass[j] );
-          h_match_ypp_minus_ygg->Fill( dipr_rapidity - diphoton_rapidity[j] );
+          cout << "     " << run_id << ":" << lumisection << ":" << event_number << "\t" << "pt=" << diphoton_pt[j] << endl;
+          cout << "  diphoton vertex: " << diphoton_vertex_x[j] << ", " << diphoton_vertex_y[j] << ", " << diphoton_vertex_z[j] << endl;
+          h_2dmatch_mpair->Fill( diphoton_mass[j] );
+          h_2dmatch_ptpair->Fill( diphoton_pt[j] );
+          h_2dmatch_mpp_over_mgg->Fill( miss_mass/diphoton_mass[j] );
+          h_2dmatch_ypp_minus_ygg->Fill( dipr_rapidity - diphoton_rapidity[j] );
+          h_2dmatch_r9single_leadpho->Fill( diphoton_r9_1[j] );
+          h_2dmatch_r9single_subleadpho->Fill( diphoton_r9_2[j] );
           //events_list << "2\t" << diphoton_mass[j] << "\t" << diphoton_rapidity[j] << endl;
         }
 
@@ -791,6 +787,10 @@ void tree_reader( TString file=default_ntp_file )
 
         if ( mass_match_withmet && rap_match_withmet ) {
           cout << "--------> matching with met!!!!!" << endl;
+          cout << "     " << run_id << ":" << lumisection << ":" << event_number << "\t" << "pt=" << diphoton_pt[j] << ", " << "MET=" << met << endl;
+          cout << "      r9: " << diphoton_r9_1[j] << " / " << diphoton_r9_2[j] << endl;
+          h_2dmatch_withmet_metvspt.SetPoint( h_2dmatch_withmet_metvspt.GetN(), diphoton_pt[j], met );
+          num_match_withmet++;
         }
 
         //----- matching (diphoton+other objects) -----
@@ -816,8 +816,9 @@ void tree_reader( TString file=default_ntp_file )
         }
 
         if ( mass_match_incl && rap_match_incl ) {
+          num_match_incl++;
           cout << "--------> matching with other objects!!!!!" << endl;
-          cout << " >>> " << diphoton_incl_mass << "/" << miss_mass << " && " << diphoton_incl_rap << "/" << dipr_rapidity << endl;
+          /*cout << " >>> " << diphoton_incl_mass << "/" << miss_mass << " && " << diphoton_incl_rap << "/" << dipr_rapidity << endl;
           cout << "     " << run_id << ":" << lumisection << ":" << event_number << "\t" << "pt=" << dipho_incl.Pt() << endl;
           cout << " computed with:" << endl;
           cout << num_ele_included << " electron(s)" << endl;
@@ -831,7 +832,7 @@ void tree_reader( TString file=default_ntp_file )
           cout << num_jet_included << " jet(s)" << endl;
           for ( size_t k=0; k<jets_list.size(); k++ ) {
             cout << "  ---> " << "jet " << k << ": pt=" << jets_list[k].second.Pt() << ", eta=" << jets_list[k].second.Eta() << ", vtx distance(diph vtx)=" << jets_list[k].first << " cm" << endl;
-          }
+          }*/
         }
 /*          }
         }*/
@@ -979,6 +980,12 @@ void tree_reader( TString file=default_ntp_file )
     h_num_proton_56->Fill( num_proton_56 );
 
   }
+
+  cout << "===== SUMMARY =====" << endl;
+  cout << " --> match with diphoton only: " << num_match_diph << endl;
+  cout << " --> match with diphoton+MET:  " << num_match_withmet << endl;
+  cout << " --> match with diphoton+obj:  " << num_match_incl << endl;
+
 
   // plotting stage
   cout << "events: " << num_evts_notag << ", with tag: " << num_evts_with_tag << endl;
@@ -1295,43 +1302,63 @@ void tree_reader( TString file=default_ntp_file )
     c.Save( "png", out_path );
   }*/
   {
+    Canvas c( "match2d_singlephoton_r9", top_label );
+    h_2dmatch_r9single_leadpho->Sumw2();
+    h_2dmatch_r9single_leadpho->Draw();
+    h_2dmatch_r9single_leadpho->SetMarkerStyle( 20 );
+    h_2dmatch_r9single_leadpho->SetLineColor( kBlack );
+    h_2dmatch_r9single_subleadpho->Sumw2();
+    h_2dmatch_r9single_subleadpho->Draw( "same" );
+    h_2dmatch_r9single_subleadpho->SetMarkerStyle( 24 );
+    c.AddLegendEntry( h_2dmatch_r9single_leadpho, "Leading photon" );
+    c.AddLegendEntry( h_2dmatch_r9single_subleadpho, "Subleading photon" );
+    h_2dmatch_r9single_subleadpho->SetLineColor( kBlack );
+    c.Prettify( h_2dmatch_r9single_leadpho );
+    c.Save( "pdf,png", out_path );
+  }
+  {
     Canvas c( "match2d_diphoton_pt", top_label );
-    h_match_ptpair->Sumw2();
-    h_match_ptpair->Draw();
-    h_match_ptpair->SetMarkerStyle( 20 );
-    h_match_ptpair->SetLineColor( kBlack );
-    c.Prettify( h_match_ptpair );
+    h_2dmatch_ptpair->Sumw2();
+    h_2dmatch_ptpair->Draw();
+    h_2dmatch_ptpair->SetMarkerStyle( 20 );
+    h_2dmatch_ptpair->SetLineColor( kBlack );
+    c.Prettify( h_2dmatch_ptpair );
     c.Save( "pdf,png", out_path );
   }
   {
     Canvas c( "match2d_diphoton_mass", top_label );
-    h_match_mpair->Sumw2();
-    h_match_mpair->Draw();
-    h_match_mpair->SetMarkerStyle( 20 );
-    h_match_mpair->SetLineColor( kBlack );
-    c.Prettify( h_match_mpair );
+    h_2dmatch_mpair->Sumw2();
+    h_2dmatch_mpair->Draw();
+    h_2dmatch_mpair->SetMarkerStyle( 20 );
+    h_2dmatch_mpair->SetLineColor( kBlack );
+    c.Prettify( h_2dmatch_mpair );
     c.Save( "pdf,png", out_path );
   }
   {
     Canvas c( "match2d_mass_ratio", top_label );
-    h_match_mpp_over_mgg->Sumw2();
-    h_match_mpp_over_mgg->Draw();
-    h_match_mpp_over_mgg->SetMarkerStyle( 20 );
-    h_match_mpp_over_mgg->SetLineColor( kBlack );
-    c.Prettify( h_match_mpp_over_mgg );
+    h_2dmatch_mpp_over_mgg->Sumw2();
+    h_2dmatch_mpp_over_mgg->Draw();
+    h_2dmatch_mpp_over_mgg->SetMarkerStyle( 20 );
+    h_2dmatch_mpp_over_mgg->SetLineColor( kBlack );
+    c.Prettify( h_2dmatch_mpp_over_mgg );
     c.Save( "pdf,png", out_path );
   }
   {
     Canvas c( "match2d_rapidity_difference", top_label );
-    h_match_ypp_minus_ygg->Sumw2();
-    h_match_ypp_minus_ygg->Draw();
-    h_match_ypp_minus_ygg->SetMarkerStyle( 20 );
-    h_match_ypp_minus_ygg->SetLineColor( kBlack );
-    c.Prettify( h_match_ypp_minus_ygg );
+    h_2dmatch_ypp_minus_ygg->Sumw2();
+    h_2dmatch_ypp_minus_ygg->Draw();
+    h_2dmatch_ypp_minus_ygg->SetMarkerStyle( 20 );
+    h_2dmatch_ypp_minus_ygg->SetLineColor( kBlack );
+    c.Prettify( h_2dmatch_ypp_minus_ygg );
     c.Save( "pdf,png", out_path );
   }
   {
-    Canvas c( "pt_incl_evts", top_label );
+    Plotter::GraphsMap gm; gm.push_back( make_pair( "Matching with #slash{E}_{T}", &h_2dmatch_withmet_metvspt ) );
+    //plt.plot_balances( "match2d_withmet_ptvsmetbalance", "Diphoton p_{T} (GeV)\\#slash{E}_{T} (GeV)", &h_2dmatch_withmet_metvspt, 0., 150. );
+    plt.plot_balances( "match2d_withmet_ptvsmetbalance", "Diphoton p_{T} (GeV)\\#slash{E}_{T} (GeV)", gm, 0., 150. );
+  }
+  {
+    Canvas c( "match2d_inclusive_ptpair", top_label );
     h_pt_incl->Draw();
     c.Prettify( h_pt_incl );
     c.Save( "pdf,png", out_path );

@@ -153,6 +153,7 @@ class Plotter
       for ( GraphsMap::iterator it=g_map.begin(); it!=g_map.end(); it++ ) {
         gr = ( TGraphErrors* )it->second;
         mg.Add( gr );
+        if ( strcmp( gr->GetTitle(), "" )!=0 ) mg.SetTitle( gr->GetTitle() );
         gr->SetMarkerStyle( marker_pool_[i] );
         gr->SetMarkerColor( colour_pool_[i] );
         if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( gr, it->first, "p" );
@@ -179,13 +180,16 @@ class Plotter
     }
 
     void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, bool logy=false ) const {
-      Canvas c( filename, top_label_ );
+      Canvas c( filename, top_label_, true );
       TH1D* hist = 0;
+      TH1D* h_data, *h_mc = 0;
       double max_bin = -1.;
       unsigned short i = 0;
       THStack hs_mc, hs_data;
       for ( HistsMap::iterator it=h_map_data.begin(); it!=h_map_data.end(); it++ ) {
         hist = ( TH1D* )it->second;
+        if ( i==0 ) h_data = dynamic_cast<TH1D*>( hist );
+        else h_data->Add( hist );
         // draw the data distributions unstacked
         hist->Sumw2();
         hist->SetMarkerStyle( 20+i );
@@ -198,28 +202,39 @@ class Plotter
       }
       i = 0;
       for ( HistsMap::iterator it=h_map_mc.begin(); it!=h_map_mc.end(); it++ ) {
-        hist = ( TH1D* )it->second;
-        hist->SetFillColor( colour_pool_[i+1] );
-        hist->SetFillStyle( 3002 );
+        hist = dynamic_cast<TH1D*>( it->second );
+        if ( i==0 ) h_mc = dynamic_cast<TH1D*>( hist->Clone() );
+        else { h_mc->Add( hist ); }
+        hist->SetFillColorAlpha( colour_pool_[i+1], 0.5 );
+        //hist->SetFillStyle( 3002 );
         hist->SetLineColor( kBlack );
-        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( hist, it->first, "f" );
+        if ( strcmp( it->first, "" )!=0 ) { c.AddLegendEntry( hist, it->first, "f" ); }
         hs_mc.Add( hist );
         if ( i==0 ) hs_mc.SetTitle( hist->GetTitle() );
         i++;
       }
-      hs_mc.Draw();
+      hs_mc.Draw( "hist" );
       hs_data.Draw( "same nostack" );
+      if ( h_mc ) {
+        h_mc->Draw( "e2 same" );
+        h_mc->SetFillColor( kBlack );
+        h_mc->SetFillStyle( 3004 );
+      }
       hist = ( TH1D* )hs_mc.GetHistogram();
       max_bin = TMath::Max( hist->GetMaximum(), max_bin );
       if ( logy ) {
-        hist->GetYaxis()->SetRangeUser( 0.5, max_bin*3 );
-        c.SetLogy();
+        hs_mc.SetMaximum( max_bin*5. );
+        if ( hs_mc.GetMinimum()==0. ) hs_mc.SetMinimum( 0.1 );
       }
-      else {
-        hist->GetYaxis()->SetRangeUser( 0., max_bin*1.1 );
-      }
+      else { hs_mc.SetMaximum( max_bin*1.4 ); }
       c.Prettify( hist );
+      HistsMap hm;
+      hm.push_back( std::make_pair( "mc", h_mc ) );
+      hm.push_back( std::make_pair( "data", h_data ) );
       hs_mc.SetTitle( "" );
+      c.RatioPlot( hm, -0.4, 2.4, 1.0 );
+      c.cd( 1 );
+      if ( logy ) dynamic_cast<TPad*>( c.GetPad( 1 ) )->SetLogy();
       c.Save( "pdf,png", out_path_ );
     }
 

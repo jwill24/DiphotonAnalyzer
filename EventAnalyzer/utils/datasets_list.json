@@ -8,18 +8,54 @@
       "num_events": 0
     },
     {
+      "type": "signal",
+      "name": "Exclusive #gamma#gamma #rightarrow #gamma#gamma",
+      "path": "output_GammaGammaToGammaGamma_fpmc.root",
+      //"cross_section": 1.0342e-1, // +- 1.6516e-6
+      "cross_section": 2.0684e-4, // +- 1.6516e-6
+      "num_events": 100000
+    },
+    /*{
       "type": "background",
-      "name": "Inclusive #gamma#gamma",
-      "path": "output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v1_part01_partial.root",
-      "cross_section": 84.0,
-      "num_events": 14481055 // 57924220/4
+      "name": "Inclusive #gamma#gamma + jet",
+      "path": "output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v2.root",
+      "cross_section": 84.4,
+      "num_events": 57924220 // 57924220/4
+    },*/
+    {
+      "type": "background",
+      "name": "Inclusive #gamma#gamma + jet",
+      "path": "output_DiPhotonJets_MGG-80toInf_amcatnlo_v2.root",
+      "cross_section": 135.1,
+      "num_events": 35617475
     },
     {
+      "type": "background",
+      "name": "Inclusive Z#gamma",
+      "path": "output_ZGTo2LG_13TeV_amcatnlo_pythia8.root",
+      "cross_section": 117.864,
+      "num_events": 14372682
+    },
+    {
+      "type": "background",
+      "name": "Inclusive #gamma + jet",
+      "path": "output_GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8.root",
+      "cross_section": 863.109, //16792*0.0514,
+      "num_events": 72342882
+    },
+    {
+      "type": "background",
+      "name": "QCD (e-#gamma enriched)",
+      "path": "output_QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8.root",
+      "cross_section": 113400.0,
+      "num_events": 20632076
+    },
+    /*{
       "type": "background",
       "name": "VBF H(125) #rightarrow #gamma#gamma",
       "path": "output_VBFHToGG_M125_13TeV_amcatnlo_pythia8.root",
       "cross_section": 0.00858514, //3.7820*0.00227,
       "num_events": 1193600
-    }
+    }*/
   ]
 }

@@ -29,6 +29,9 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+
 #include "flashgg/DataFormats/interface/DiPhotonCandidate.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
@@ -91,18 +94,22 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     edm::EDGetTokenT< edm::View<flashgg::Muon> > muonToken_; 
     edm::EDGetTokenT< edm::View<vector<flashgg::Jet> > >  jetToken_; 
 //
+    edm::EDGetTokenT< edm::View<PileupSummaryInfo> > pileupToken_;
 
     bool isData_;    
     double sqrtS_;
     double singlePhotonMinPt_, singlePhotonMaxEta_, singlePhotonMinR9_;
     double photonPairMinMass_;
     std::string filename_;
+    edm::FileInPath puMCfile_, puDatafile_;
+    std::string puMCpath_, puDatapath_;
 
     bool useXiInterp_;
     ProtonUtils::XiInterpolator* xiInterp_;
 
     CTPPSAlCa::FillNumberLUTHandler* fillLUTHandler_;
     CTPPSAlCa::AlignmentLUTHandler* alignmentLUTHandler_;
+    edm::LumiReWeighting* lumiReweighter_;
 
     TFile* file_;
     TTree* tree_;
@@ -149,6 +156,8 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     unsigned int fVertexNum;
     float fVertexX[MAX_VERTEX], fVertexY[MAX_VERTEX], fVertexZ[MAX_VERTEX];
     //unsigned int fVertexTracks[MAX_VERTEX], fVertexTracksWght0p75[MAX_VERTEX], fVertexTracksWght0p9[MAX_VERTEX], fVertexTracksWght0p95[MAX_VERTEX];
+
+    float fPileupWeight;
 };
 
 //
@@ -172,6 +181,7 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   muonToken_         ( consumes< edm::View<flashgg::Muon> >              ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
   jetToken_          ( consumes< edm::View< std::vector<flashgg::Jet> > >( iConfig.getParameter<edm::InputTag>( "jetLabel") ) ),
 //
+  pileupToken_       ( consumes< edm::View<PileupSummaryInfo> >          ( iConfig.getUntrackedParameter<edm::InputTag>( "pileupLabel", edm::InputTag( "slimmedAddPileupInfo" ) ) ) ),
   isData_            ( iConfig.getParameter<bool>       ( "isData" ) ),
   sqrtS_             ( iConfig.getParameter<double>     ( "sqrtS" ) ),
   singlePhotonMinPt_ ( iConfig.getParameter<double>     ( "minPtSinglePhoton" ) ),
@@ -179,10 +189,13 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   singlePhotonMinR9_ ( iConfig.getParameter<double>     ( "minR9SinglePhoton" ) ),
   photonPairMinMass_ ( iConfig.getParameter<double>     ( "minMassDiPhoton" ) ),
   filename_          ( iConfig.getParameter<std::string>( "outputFilename" ) ),
+  puMCpath_          ( iConfig.getUntrackedParameter<std::string>( "pileupMCPath", "pileup" ) ),
+  puDatapath_        ( iConfig.getUntrackedParameter<std::string>( "pileupDataPath", "pileup" ) ),
   useXiInterp_       ( iConfig.getParameter<bool>       ( "useXiInterpolation" ) ),
   xiInterp_( 0 ),
   fillLUTHandler_( 0 ),
   alignmentLUTHandler_( 0 ),
+  lumiReweighter_( 0 ),
   file_( 0 ), tree_( 0 )
 
 {
@@ -193,7 +206,15 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
     }
     alignmentLUTHandler_ = new CTPPSAlCa::AlignmentLUTHandler( iConfig.getParameter<edm::FileInPath>( "alignmentLUTFile" ).fullPath().c_str() );
   }
-  fillLUTHandler_ = new CTPPSAlCa::FillNumberLUTHandler( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() );
+  if ( !isData_ ) {
+    puMCfile_ =iConfig.getParameter<edm::FileInPath>( "pileupMCFile" );
+    puDatafile_ = iConfig.getParameter<edm::FileInPath>( "pileupDataFile" );
+    std::cout << ">> Pileup reweighting will be used with files:\n\t" << puMCfile_.fullPath() << " for MC ;\n\t" << puDatafile_.fullPath() << " for data" << std::endl;
+    lumiReweighter_ = new edm::LumiReWeighting( puMCfile_.fullPath(), puDatafile_.fullPath(), puMCpath_, puDatapath_ );
+  }
+  else {
+    fillLUTHandler_ = new CTPPSAlCa::FillNumberLUTHandler( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() );
+  }
 
   file_ = new TFile( filename_.c_str(), "recreate" );
   file_->cd();
@@ -217,6 +238,7 @@ TreeProducer::~TreeProducer()
   if ( xiInterp_ ) delete xiInterp_;
   if ( fillLUTHandler_ ) delete fillLUTHandler_;
   if ( alignmentLUTHandler_ ) delete alignmentLUTHandler_;
+  if ( lumiReweighter_ ) delete lumiReweighter_;
 }
 
 
@@ -277,6 +299,7 @@ TreeProducer::clearTree()
     //fVertexTracks[i] = fVertexTracksWght0p75[i] = fVertexTracksWght0p9[i] = fVertexTracksWght0p95[i] = 0;
   }
 
+  fPileupWeight = 1.;
 }
 
 // ------------ method called for each event  ------------
@@ -294,7 +317,10 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
   fEventNum = iEvent.id().event();
 
   // get the fill number from the run id <-> fill number LUT
-  fFill = fillLUTHandler_->getFillNumber( iEvent.id().run() );
+  if ( fillLUTHandler_ ) {
+    fFill = fillLUTHandler_->getFillNumber( iEvent.id().run() );
+  }
+  else fFill = 1;
 
   //----- diphoton candidates -----
 
@@ -359,7 +385,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
   for ( unsigned int i=0; i<jetsColls->size(); i++ ) {
     //           JW
     edm::Ptr< std::vector<flashgg::Jet> > jets = jetsColls->ptrAt( i );
-    if ( fJetNum>MAX_JET ) { std::cerr << ">> More jets than expected in this event (" << fJetNum << ">MAX_JET=" << MAX_JET << "). Increase MAX_JET for safety" << std::endl; }
+    if ( fJetNum>=MAX_JET ) { std::cerr << ">> More jets than expected in this event (" << fJetNum << ">MAX_JET=" << MAX_JET << "). Increase MAX_JET for safety" << std::endl; }
 
     for ( unsigned int j=0; j<jets->size() && fJetNum<MAX_JET; j++ ) {
       const flashgg::Jet jet = jets->at( j );
@@ -449,6 +475,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
   fElectronNum=0;
   for ( unsigned int i=0; i<electrons->size() && fElectronNum<MAX_ELECTRON; i++ ) {
     const edm::Ptr<flashgg::Electron> electron = electrons->ptrAt( i );
+    if ( fElectronNum>=MAX_ELECTRON ) { std::cerr << ">> More electrons than expected in this event (" << fElectronNum << ">MAX_ELECTRON=" << MAX_ELECTRON << "). Increase MAX_ELECTRON for safety" << std::endl; }
+
     fElectronPt[fElectronNum] = electron->pt();
     fElectronEta[fElectronNum] = electron->eta();
     fElectronPhi[fElectronNum] = electron->phi();
@@ -468,6 +496,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
   fMuonNum=0;
   for ( unsigned int i=0; i<muons->size() && fMuonNum<MAX_MUON; i++ ) {
     const edm::Ptr<flashgg::Muon> muon = muons->ptrAt( i );
+    if ( fMuonNum>=MAX_MUON ) { std::cerr << ">> More muons than expected in this event (" << fMuonNum << ">MAX_MUON=" << MAX_MUON << "). Increase MAX_MUON for safety" << std::endl; }
+
     fMuonPt[fMuonNum] = muon->pt();
     fMuonEta[fMuonNum] = muon->eta();
     fMuonPhi[fMuonNum] = muon->phi();
@@ -492,14 +522,29 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
   fMETPhi = met->phi();
   fMETsignif = met->significance();
 
+  //--- pileup information ---
+  if ( !isData_ and lumiReweighter_ ) {
+    edm::Handle< edm::View<PileupSummaryInfo> > pileupInfo;
+    iEvent.getByToken( pileupToken_, pileupInfo );
+    int npv0true = 0;
+    for ( unsigned int i=0; i<pileupInfo->size(); i++ ) {
+      const edm::Ptr<PileupSummaryInfo> PVI = pileupInfo->ptrAt( i );
+      const int beamXing = PVI->getBunchCrossing(),
+                npvtrue = PVI->getTrueNumInteractions();
+      if ( beamXing==0 ) { npv0true += npvtrue; }
+    }
+    fPileupWeight = lumiReweighter_->weight( npv0true );
+  }
+
   //----- vertexing information -----
 
   edm::Handle< edm::View<reco::Vertex> > vertices;
   iEvent.getByToken( vtxToken_, vertices );
 
   fVertexNum = 0;
-  for ( unsigned int i=0; i<vertices->size(); i++ ) {
-    edm::Ptr<reco::Vertex> vtx = vertices->ptrAt( i );
+  for ( unsigned int i=0; i<vertices->size() && i<MAX_VERTEX; i++ ) {
+    const edm::Ptr<reco::Vertex> vtx = vertices->ptrAt( i );
+    if ( fVertexNum>=MAX_VERTEX ) { std::cerr << ">> More vertices than expected in this event (" << fVertexNum << ">MAX_VERTEX=" << MAX_VERTEX << "). Increase MAX_VERTEX for safety" << std::endl; }
     if ( !vtx->isValid() ) continue;
 
     // loop over all the diphoton candidates to find the closest vertices
@@ -618,6 +663,7 @@ TreeProducer::beginJob()
   tree_->Branch( "met_phi", &fMETPhi, "met_phi/F" );
   tree_->Branch( "met_significance", &fMETsignif, "met_significance/F" );
 
+  tree_->Branch( "pileup_weight", &fPileupWeight, "pileup_weight/F" );
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

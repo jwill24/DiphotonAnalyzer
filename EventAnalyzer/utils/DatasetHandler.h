@@ -4,6 +4,8 @@
 #include "TTree.h"
 #include "TFile.h"
 #include "TSystem.h"
+#include "TColor.h"
+#include "TROOT.h"
 
 #include <fstream>
 #include <vector>
@@ -23,9 +25,9 @@ class Sample
     } SampleType;
 
   public:
-    Sample() : name_( "[no name]" ), type_( kInvalidType ), tree_( 0 ), xsection_( -1. ), nevts_( 0 ) {}
-    Sample( const char* name, SampleType type, TTree* tree, float xsection, unsigned int nevts ) :
-      name_( name ), type_( type ), tree_( tree ), xsection_( xsection ), nevts_( nevts ) {}
+    Sample() : name_( "[no name]" ), type_( kInvalidType ), tree_( 0 ), xsection_( -1. ), nevts_( 0 ), colour_( static_cast<TColor>( *gROOT->GetColor( kWhite ) ) ) {}
+    Sample( const char* name, SampleType type, TTree* tree, float xsection, unsigned int nevts, const TColor& col ) :
+      name_( name ), type_( type ), tree_( tree ), xsection_( xsection ), nevts_( nevts ), colour_( col ) {}
     ~Sample() {}
 
     const char* name() const { return name_.c_str(); }
@@ -33,6 +35,7 @@ class Sample
     TTree* tree() { return tree_; }
     float cross_section() const { return xsection_; }
     unsigned int num_events() const { return nevts_; }
+    TColor colour() const { return colour_; }
 
   private:
     std::string name_;
@@ -40,6 +43,7 @@ class Sample
     TTree* tree_;
     float xsection_;
     unsigned int nevts_;
+    TColor colour_;
 };
 
 class DatasetHandler
@@ -88,6 +92,12 @@ class DatasetHandler
           nevts = ds["num_events"].asUInt();
         }
 
+        // retrieve the sample plotting colour
+        TColor col( static_cast<TColor>( *gROOT->GetColor( kWhite ) ) );
+        if ( ds.isMember( "colour" ) ) {
+          col = static_cast<TColor>( *gROOT->GetColor( ds["colour"].asUInt() ) );
+        }
+
         // retrieve the sample type
         if ( ds.isMember( "type" ) && ds["type"].isString() ) {
           const std::string type = ds["type"].asString();
@@ -95,7 +105,7 @@ class DatasetHandler
           else if ( type=="signal" || type=="sig" ) { ds_type = Sample::kSignal; }
           else if ( type=="background" || type=="bck" ) { ds_type = Sample::kBackground; }
         }
-        samples_.push_back( Sample( name.c_str(), ds_type, dynamic_cast<TTree*>( file->Get( "ntp" ) ), xsec, nevts ) );
+        samples_.emplace_back( name.c_str(), ds_type, dynamic_cast<TTree*>( file->Get( "ntp" ) ), xsec, nevts, col );
       }
     }
     ~DatasetHandler() {
