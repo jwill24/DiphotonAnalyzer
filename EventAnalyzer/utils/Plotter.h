@@ -179,13 +179,13 @@ class Plotter
       c.Save( "pdf,png", out_path_ );
     }
 
-    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, bool logy=false ) const {
+    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, bool logy=false ) const {
       Canvas c( filename, top_label_, true );
       TH1D* hist = 0;
       TH1D* h_data, *h_mc = 0;
       double max_bin = -1.;
       unsigned short i = 0;
-      THStack hs_mc, hs_data;
+      THStack hs_mc, hs_data, hs_sig;
       for ( HistsMap::iterator it=h_map_data.begin(); it!=h_map_data.end(); it++ ) {
         hist = ( TH1D* )it->second;
         if ( i==0 ) h_data = dynamic_cast<TH1D*>( hist );
@@ -213,8 +213,20 @@ class Plotter
         if ( i==0 ) hs_mc.SetTitle( hist->GetTitle() );
         i++;
       }
+      i = 0;
+      for ( HistsMap::iterator it=h_map_sig.begin(); it!=h_map_sig.end(); it++ ) {
+        hist = dynamic_cast<TH1D*>( it->second );
+        hist->SetLineColor( kGreen );
+        hist->SetLineWidth( 3 );
+        hist->SetLineStyle( i );
+        if ( strcmp( it->first, "" )!=0 ) { c.AddLegendEntry( hist, it->first, "l" ); }
+        hs_sig.Add( hist );
+        if ( i==0 ) hs_sig.SetTitle( hist->GetTitle() );
+        i++;
+      }
       hs_mc.Draw( "hist" );
       hs_data.Draw( "same nostack" );
+      hs_sig.Draw( "hist same nostack" );
       if ( h_mc ) {
         h_mc->Draw( "e2 same" );
         h_mc->SetFillColor( kBlack );

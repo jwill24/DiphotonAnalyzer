@@ -15,20 +15,6 @@
       "cross_section": 2.0684e-4, // +- 1.6516e-6
       "num_events": 100000
     },
-    /*{
-      "type": "background",
-      "name": "Inclusive #gamma#gamma + jet",
-      "path": "output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v2.root",
-      "cross_section": 84.4,
-      "num_events": 57924220 // 57924220/4
-    },*/
-    {
-      "type": "background",
-      "name": "Inclusive #gamma#gamma + jet",
-      "path": "output_DiPhotonJets_MGG-80toInf_amcatnlo_v2.root",
-      "cross_section": 135.1,
-      "num_events": 35617475
-    },
     {
       "type": "background",
       "name": "Inclusive Z#gamma",
@@ -43,11 +29,26 @@
       "cross_section": 863.109, //16792*0.0514,
       "num_events": 72342882
     },
+    /*{
+      "type": "background",
+      "name": "Inclusive #gamma#gamma + jet",
+      "path": "output_DiPhotonJets_MGG-80toInf_amcatnlo_v2.root",
+      "cross_section": 135.1,
+      "num_events": 35617475
+    },*/
+    {
+      "type": "background",
+      "name": "Inclusive #gamma#gamma + jet",
+      "path": "output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v2.root",
+      "cross_section": 84.4,
+      "num_events": 57924220 // 57924220/4
+    },
     {
       "type": "background",
       "name": "QCD (e-#gamma enriched)",
       "path": "output_QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8.root",
-      "cross_section": 113400.0,
+      //"cross_section": 113400.0,
+      "cross_section": 108240.0, // https://twiki.cern.ch/twiki/bin/viewauth/CMS/SummaryTable1G25ns
       "num_events": 20632076
     },
     /*{

@@ -66,6 +66,8 @@
 #define MAX_JET 50
 //
 #define MAX_VERTEX 100
+#define MAX_GEN_PHOTON 10
+#define MAX_GEN_PART 20
 
 class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 {
@@ -92,8 +94,10 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 //                                 JW
     edm::EDGetTokenT< edm::View<flashgg::Electron> > electronToken_;
     edm::EDGetTokenT< edm::View<flashgg::Muon> > muonToken_; 
-    edm::EDGetTokenT< edm::View<vector<flashgg::Jet> > >  jetToken_; 
+    edm::EDGetTokenT< edm::View<vector<flashgg::Jet> > > jetToken_;
 //
+    edm::EDGetTokenT< edm::View<reco::GenParticle> > genPartToken_;
+    edm::EDGetTokenT< edm::View<pat::PackedGenParticle> > genPhoToken_;
     edm::EDGetTokenT< edm::View<PileupSummaryInfo> > pileupToken_;
 
     bool isData_;    
@@ -136,6 +140,15 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     unsigned int fJetNum;
     float fJetPt[MAX_JET], fJetEta[MAX_JET], fJetPhi[MAX_JET], fJetE[MAX_JET], fJetMass[MAX_JET];
     float fJetVertexX[MAX_JET], fJetVertexY[MAX_JET], fJetVertexZ[MAX_JET];
+
+    unsigned int fGenPhotonNum;
+    float fGenPhotonPt[MAX_GEN_PHOTON], fGenPhotonEta[MAX_GEN_PHOTON], fGenPhotonPhi[MAX_GEN_PHOTON], fGenPhotonE[MAX_GEN_PHOTON];
+    float fGenPhotonVertexX[MAX_GEN_PHOTON], fGenPhotonVertexY[MAX_GEN_PHOTON], fGenPhotonVertexZ[MAX_GEN_PHOTON];
+
+    unsigned int fGenPartNum;
+    int fGenPartPDGId[MAX_GEN_PART];
+    float fGenPartPt[MAX_GEN_PART], fGenPartEta[MAX_GEN_PART], fGenPartPhi[MAX_GEN_PART], fGenPartE[MAX_GEN_PART];
+    float fGenPartVertexX[MAX_GEN_PART], fGenPartVertexY[MAX_GEN_PART], fGenPartVertexZ[MAX_GEN_PART];
 
     unsigned int fDiphotonNum;
     float fDiphotonPt1[MAX_DIPHOTON], fDiphotonPt2[MAX_DIPHOTON];
@@ -181,6 +194,8 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   muonToken_         ( consumes< edm::View<flashgg::Muon> >              ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
   jetToken_          ( consumes< edm::View< std::vector<flashgg::Jet> > >( iConfig.getParameter<edm::InputTag>( "jetLabel") ) ),
 //
+  genPartToken_      ( consumes< edm::View<reco::GenParticle> >          ( iConfig.getParameter<edm::InputTag>( "genPartLabel" ) ) ),
+  genPhoToken_       ( consumes< edm::View<pat::PackedGenParticle> >     ( iConfig.getParameter<edm::InputTag>( "genPhoLabel" ) ) ),
   pileupToken_       ( consumes< edm::View<PileupSummaryInfo> >          ( iConfig.getUntrackedParameter<edm::InputTag>( "pileupLabel", edm::InputTag( "slimmedAddPileupInfo" ) ) ) ),
   isData_            ( iConfig.getParameter<bool>       ( "isData" ) ),
   sqrtS_             ( iConfig.getParameter<double>     ( "sqrtS" ) ),
@@ -291,6 +306,19 @@ TreeProducer::clearTree()
     fJetVertexX[i] = fJetVertexY[i] = fJetVertexZ[i] = -1.;
   }
 
+  fGenPhotonNum = 0;
+  for ( unsigned int i=0; i<MAX_GEN_PHOTON; i++ ) {
+    fGenPhotonPt[i] = fGenPhotonEta[i] = fGenPhotonPhi[i] = fGenPhotonE[i] = -1.;
+    fGenPhotonVertexX[i] = fGenPhotonVertexY[i] = fGenPhotonVertexZ[i] = -999.;
+  }
+
+  fGenPartNum = 0;
+  for ( unsigned int i=0; i<MAX_GEN_PART; i++ ) {
+    fGenPartPDGId[i] = 0;
+    fGenPartPt[i] = fGenPartEta[i] = fGenPartPhi[i] = fGenPartE[i] = -1.;
+    fGenPartVertexX[i] = fGenPartVertexY[i] = fGenPartVertexZ[i] = -999.;
+  }
+
   fMET = fMETPhi = fMETsignif = -1.;
 
   fVertexNum = 0;
@@ -322,15 +350,58 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
   }
   else fFill = 1;
 
+  //----- gen-level information -----
+
+  if ( !isData_ ) {
+    edm::Handle< edm::View<pat::PackedGenParticle> > genPhotons;
+    iEvent.getByToken( genPhoToken_, genPhotons );
+    for ( unsigned int i=0; i<genPhotons->size() && fGenPhotonNum<MAX_GEN_PHOTON; i++ ) {
+      const edm::Ptr<pat::PackedGenParticle> genPho = genPhotons->ptrAt( i );
+
+      if ( genPho->pdgId()!=22 ) continue; // only keep gen-level photons
+
+      fGenPhotonPt[fGenPhotonNum] = genPho->pt();
+      fGenPhotonEta[fGenPhotonNum] = genPho->eta();
+      fGenPhotonPhi[fGenPhotonNum] = genPho->phi();
+      fGenPhotonE[fGenPhotonNum] = genPho->energy();
+
+      fGenPhotonVertexX[fGenPhotonNum] = genPho->vx();
+      fGenPhotonVertexY[fGenPhotonNum] = genPho->vy();
+      fGenPhotonVertexZ[fGenPhotonNum] = genPho->vz();
+
+      fGenPhotonNum++;
+    }
+
+    edm::Handle< edm::View<reco::GenParticle> > genParts;
+    iEvent.getByToken( genPartToken_, genParts );
+    for ( unsigned int i=0; i<genParts->size() && fGenPartNum<MAX_GEN_PART; i++ ) {
+      const edm::Ptr<reco::GenParticle> genPart = genParts->ptrAt( i );
+
+      fGenPartPDGId[i] = genPart->pdgId();
+
+      fGenPartPt[i] = genPart->pt();
+      fGenPartEta[i] = genPart->eta();
+      fGenPartPhi[i] = genPart->phi();
+      fGenPartE[i] = genPart->energy();
+
+      fGenPartVertexX[i] = genPart->vx();
+      fGenPartVertexY[i] = genPart->vy();
+      fGenPartVertexZ[i] = genPart->vz();
+
+      fGenPartNum++;
+    }
+
+  }
+
   //----- diphoton candidates -----
 
   edm::Handle< edm::View<flashgg::DiPhotonCandidate> > diphotons;
-  iEvent.getByToken(diphotonToken_, diphotons);
+  iEvent.getByToken( diphotonToken_, diphotons );
 
   fDiphotonNum = 0;
   edm::Ptr<reco::Vertex> diphoton_vtx[MAX_DIPHOTON];
   for ( unsigned int i=0; i<diphotons->size() && fDiphotonNum<MAX_DIPHOTON; i++ ) {
-    edm::Ptr<flashgg::DiPhotonCandidate> diphoton = diphotons->ptrAt( i );
+    const edm::Ptr<flashgg::DiPhotonCandidate> diphoton = diphotons->ptrAt( i );
 
     if ( diphoton->leadPhotonId()<-0.9 ) continue;
     if ( diphoton->subLeadPhotonId()<-0.9 ) continue;
@@ -595,6 +666,26 @@ TreeProducer::beginJob()
     tree_->Branch( "proton_track_pot", fProtonTrackPot, "proton_track_pot[num_proton_track]/i" );
     tree_->Branch( "proton_track_link_nearfar", fProtonTrackLinkNF, "proton_track_link_nearfar[num_proton_track]/i" );
     tree_->Branch( "proton_track_link_mindist", fProtonTrackMinLinkDist, "proton_track_link_mindist[num_proton_track]/F" );
+  }
+  if ( !isData_ ) {
+    tree_->Branch( "num_gen_photon", &fGenPhotonNum, "num_gen_photon/i" );
+    tree_->Branch( "gen_photon_pt", fGenPhotonPt, "gen_photon_pt[num_gen_photon]/F" );
+    tree_->Branch( "gen_photon_eta", fGenPhotonEta, "gen_photon_eta[num_gen_photon]/F" );
+    tree_->Branch( "gen_photon_phi", fGenPhotonPhi, "gen_photon_phi[num_gen_photon]/F" );
+    tree_->Branch( "gen_photon_energy", fGenPhotonE, "gen_photon_energy[num_gen_photon]/F" );
+    tree_->Branch( "gen_photon_vertex_x", fGenPhotonVertexX, "gen_photon_vertex_x[num_gen_photon]/F" );
+    tree_->Branch( "gen_photon_vertex_y", fGenPhotonVertexY, "gen_photon_vertex_y[num_gen_photon]/F" );
+    tree_->Branch( "gen_photon_vertex_z", fGenPhotonVertexZ, "gen_photon_vertex_z[num_gen_photon]/F" );
+
+    tree_->Branch( "num_gen_part", &fGenPartNum, "num_gen_part/i" );
+    tree_->Branch( "gen_part_pdgid", fGenPartPDGId, "gen_part_pdgid[num_gen_part]/I" );
+    tree_->Branch( "gen_part_pt", fGenPartPt, "gen_part_pt[num_gen_part]/F" );
+    tree_->Branch( "gen_part_eta", fGenPartEta, "gen_part_eta[num_gen_part]/F" );
+    tree_->Branch( "gen_part_phi", fGenPartPhi, "gen_part_phi[num_gen_part]/F" );
+    tree_->Branch( "gen_part_energy", fGenPartE, "gen_part_energy[num_gen_part]/F" );
+    tree_->Branch( "gen_part_vertex_x", fGenPartVertexX, "gen_part_vertex_x[num_gen_part]/F" );
+    tree_->Branch( "gen_part_vertex_y", fGenPartVertexY, "gen_part_vertex_y[num_gen_part]/F" );
+    tree_->Branch( "gen_part_vertex_z", fGenPartVertexZ, "gen_part_vertex_z[num_gen_part]/F" );
   }
 
   tree_->Branch( "num_diphoton", &fDiphotonNum, "num_diphoton/i" );
