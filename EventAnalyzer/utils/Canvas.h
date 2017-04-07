@@ -37,12 +37,14 @@ class Canvas : public TCanvas
       Build();
     }
     /// Copy constructor
-    inline Canvas( const Canvas& c, const char* name="" ) :
+    inline Canvas( const Canvas* c, const char* name="" ) :
       //TCanvas( name, c.fTitle, c.GetWw(), c.GetWh() ),
-      TCanvas( ( strcmp( name, "" )!=0 ) ? name : c.GetName(), c.fTitle, c.GetWw(), c.GetWh() ),
-      fTitle( c.fTitle ), fTopLabel( c.fTopLabel ),
-      fLeg( c.fLeg ), fLegXSize( c.fLegXSize ), fLegYSize( c.fLegYSize ),
-      fRatio( c.fRatio )
+      TCanvas( ( strcmp( name, "" )!=0 ) ? name : c->GetName(), c->fTitle, c->GetWw(), c->GetWh() ),
+      fTitle( c->fTitle ),
+      fTopLabel( ( c->fTopLabel ) ? dynamic_cast<TPaveText*>( c->fTopLabel->Clone( name ) ) : 0 ),
+      fLeg( ( c->fLeg ) ? dynamic_cast<TLegend*>( c->fLeg->Clone( name ) ) : 0 ),
+      fLegXSize( c->fLegXSize ), fLegYSize( c->fLegYSize ),
+      fRatio( c->fRatio )
     {
       Build();
     }
@@ -53,7 +55,7 @@ cout << __PRETTY_FUNCTION__ << " for " << GetName() << endl;
       if ( fTopLabel ) delete fTopLabel;
     }
 
-    inline Canvas* Clone( const char* name ) const { return new Canvas( *this, name ); }
+    inline Canvas* Clone( const char* name ) const { return new Canvas( this, name ); }
 
     void SetRatioPlot()
     {

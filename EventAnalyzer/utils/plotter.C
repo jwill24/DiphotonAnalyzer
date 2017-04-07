@@ -356,6 +356,7 @@ plotter()
   Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/mc_comparison", "CMS Preliminary 2016, #sqrt{s} = 13 TeV" );
   for ( unsigned short i=0; i<num_regions; i++ ) {
     plt.draw_multiplot( Form( "%s_diphoton_mult", kin_regions[i].c_str() ), hm_ndiph[i][0], hm_ndiph[i][1], hm_ndiph[i][2], true );
+cout << "finished the first plot" << endl;
     plt.draw_multiplot( Form( "%s_diphoton_mass", kin_regions[i].c_str() ), hm_mass[i][0], hm_mass[i][1], hm_mass[i][2], false );
     plt.draw_multiplot( Form( "%s_diphoton_mass_logscale", kin_regions[i].c_str() ), hm_mass[i][0], hm_mass[i][1], hm_mass[i][2], true );
     plt.draw_multiplot( Form( "%s_diphoton_ptpair", kin_regions[i].c_str() ), hm_ptpair[i][0], hm_ptpair[i][1], hm_ptpair[i][2], false );

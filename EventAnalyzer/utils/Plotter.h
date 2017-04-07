@@ -38,7 +38,7 @@ cout << "canv tmpl del" << endl;
     {
       if ( hm.size()==0 ) return;
 
-      Canvas* c = new Canvas( *canv_, name );
+      Canvas* c = new Canvas( canv_, name );
       if ( hm.size()>1 ) c->SetRatioPlot();
 
       TH1* hist = 0;
@@ -62,9 +62,7 @@ cout << "canv tmpl del" << endl;
         min = TMath::Min( min, hist->GetMinimum() );
         max = TMath::Max( max, hist->GetMaximum() );
         if ( i>2 ) hist->SetFillStyle( 3005 );
-        if ( hm.size()>1 ) {
-          c->AddLegendEntry( hist, it->first, ( i==0 ) ? "f" : "ep" );
-        }
+        if ( hm.size()>1 ) c->AddLegendEntry( hist, it->first, ( i==0 ) ? "f" : "ep" ); // skip the legend if one single data set
         i++;
       }
       hist = dynamic_cast<TH1*>( hm.begin()->second );
@@ -91,7 +89,7 @@ cout << "canv tmpl del" << endl;
     void plot_balances( const char* name, const char* title, GraphsMap gr_map,
                         const float& min_xy=-999., const float& max_xy=-999., const float& rp_acc=-1. )
     {
-      Canvas* c = new Canvas( *canv_, name );
+      Canvas* c = new Canvas( canv_, name );
       //c->DrawFrame( min_xy, min_xy, max_xy, max_xy );
 
       TMultiGraph mg;
@@ -139,7 +137,7 @@ cout << "canv tmpl del" << endl;
 
     void plot_xi_correlations( const char* sector, GraphsMap graphs_map )
     {
-      Canvas* c = new Canvas( *canv_, Form( "xi_nearfar_corr_%s", sector ) );
+      Canvas* c = new Canvas( canv_, Form( "xi_nearfar_corr_%s", sector ) );
       TMultiGraph mg;
 
       TGraphErrors* gr = 0;
@@ -170,7 +168,7 @@ cout << "canv tmpl del" << endl;
 
     void draw_multigraph( const char* name, GraphsMap g_map, float lim_min=-999., float lim_max=-999., bool draw_diag=false, float y_limit=-1. )
     {
-      Canvas* c = dynamic_cast<Canvas*>( canv_->Clone( name ) );
+      Canvas* c = new Canvas( canv_, name );
       //if ( lim_min!=-999. && lim_max!=-999. )
       //  c->DrawFrame( lim_min, lim_min, lim_max, lim_max );
 
@@ -211,7 +209,7 @@ cout << "canv tmpl del" << endl;
 
     void draw_multiplot( const char* name, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, bool logy=false )
     {
-      Canvas* c = new Canvas( *canv_, name );
+      Canvas* c = new Canvas( canv_, name );
       c->SetRatioPlot();
       TH1D* hist = 0;
       TH1D* h_data, *h_mc = 0;
@@ -287,7 +285,7 @@ cout << "canv tmpl del" << endl;
 
     void draw_multiplot( const char* name, HistsMap h_map, bool compute_w2=true, bool logy=false )
     {
-      Canvas* c = new Canvas( *canv_, name );
+      Canvas* c = new Canvas( canv_, name );
       TH1D* hist = 0;
       unsigned short i = 0;
       double max_bin = 0.;
@@ -320,7 +318,7 @@ cout << "canv tmpl del" << endl;
 
     void draw_4plots( const char* name, HistsMap h_map, Option_t* draw_style="colz" )
     {
-      Canvas* c = new Canvas( *canv_, name );
+      Canvas* c = new Canvas( canv_, name );
       c->Divide( 2, 2 );
       TH1D* hist = 0;
       unsigned int i = 0;
@@ -370,7 +368,7 @@ cout << "mid0>>>" << endl;
       if ( canv_ ) delete canv_;
 
 cout << "mid>>>" << endl;
-      canv_ = new Canvas( *canv_template_, "" );
+      canv_ = new Canvas( canv_template_, "" );
       //*canv_ = *canv_template_;
 cout << "end>>>" << endl;
     }
