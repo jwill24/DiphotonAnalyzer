@@ -157,6 +157,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     float fDiphotonR91[MAX_DIPHOTON], fDiphotonR92[MAX_DIPHOTON];
     float fDiphotonM[MAX_DIPHOTON], fDiphotonY[MAX_DIPHOTON];
     float fDiphotonPt[MAX_DIPHOTON], fDiphotonDphi[MAX_DIPHOTON];
+    int fDiphotonGenLevelPho1[MAX_DIPHOTON], fDiphotonGenLevelPho2[MAX_DIPHOTON];
 
     int fDiphotonVertex[MAX_DIPHOTON];
     unsigned int fDiphotonVertexTracks[MAX_DIPHOTON];
@@ -168,6 +169,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 
     unsigned int fVertexNum;
     float fVertexX[MAX_VERTEX], fVertexY[MAX_VERTEX], fVertexZ[MAX_VERTEX];
+    int fJetDiphoMatch[MAX_VERTEX];
     //unsigned int fVertexTracks[MAX_VERTEX], fVertexTracksWght0p75[MAX_VERTEX], fVertexTracksWght0p9[MAX_VERTEX], fVertexTracksWght0p95[MAX_VERTEX];
 
     float fPileupWeight;
@@ -286,6 +288,7 @@ TreeProducer::clearTree()
     fDiphotonVerticesAt1mmDist[i] = fDiphotonVerticesAt2mmDist[i] = fDiphotonVerticesAt5mmDist[i] = fDiphotonVerticesAt1cmDist[i] = 0;
     fDiphotonVertexX[i] = fDiphotonVertexY[i] = fDiphotonVertexZ[i] = -1.;
     fDiphotonNearestDist[i] = 999.;
+    fDiphotonGenLevelPho1[i] = fDiphotonGenLevelPho2[i] = -1;
   }
 
   fElectronNum = 0;
@@ -398,7 +401,11 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
   edm::Handle< edm::View<flashgg::DiPhotonCandidate> > diphotons;
   iEvent.getByToken( diphotonToken_, diphotons );
 
+  edm::Handle< edm::View< std::vector<flashgg::Jet> > > jetsColls;
+  iEvent.getByToken( jetToken_, jetsColls );
+
   fDiphotonNum = 0;
+  fJetNum = 0;
   edm::Ptr<reco::Vertex> diphoton_vtx[MAX_DIPHOTON];
   for ( unsigned int i=0; i<diphotons->size() && fDiphotonNum<MAX_DIPHOTON; i++ ) {
     const edm::Ptr<flashgg::DiPhotonCandidate> diphoton = diphotons->ptrAt( i );
@@ -406,12 +413,14 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
     if ( diphoton->leadPhotonId()<-0.9 ) continue;
     if ( diphoton->subLeadPhotonId()<-0.9 ) continue;
 
-    if ( !passSinglePhotonCuts( diphoton->leadingPhoton() ) ) continue;
-    if ( !passSinglePhotonCuts( diphoton->subLeadingPhoton() ) ) continue;
+    const flashgg::Photon* lead_pho = diphoton->leadingPhoton(),
+                          *sublead_pho = diphoton->subLeadingPhoton();
+    if ( !passSinglePhotonCuts( lead_pho ) ) continue;
+    if ( !passSinglePhotonCuts( sublead_pho ) ) continue;
 
-    if ( fabs( diphoton->leadingPhoton()->eta() )>=singlePhotonMaxEta_ or fabs( diphoton->subLeadingPhoton()->eta() )>=singlePhotonMaxEta_ ) continue;
-    if ( diphoton->leadingPhoton()->pt()<singlePhotonMinPt_ or diphoton->subLeadingPhoton()->pt()<singlePhotonMinPt_ ) continue;
-    if ( diphoton->leadingPhoton()->full5x5_r9()<singlePhotonMinR9_ or diphoton->subLeadingPhoton()->full5x5_r9()<singlePhotonMinR9_ ) continue;
+    if ( fabs( lead_pho->eta() )>=singlePhotonMaxEta_ or fabs( sublead_pho->eta() )>=singlePhotonMaxEta_ ) continue;
+    if ( lead_pho->pt()<singlePhotonMinPt_ or sublead_pho->pt()<singlePhotonMinPt_ ) continue;
+    if ( lead_pho->full5x5_r9()<singlePhotonMinR9_ or sublead_pho->full5x5_r9()<singlePhotonMinR9_ ) continue;
 
     if ( diphoton->mass()<photonPairMinMass_ ) continue;
 
@@ -421,24 +430,52 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
     fDiphotonVertexZ[fDiphotonNum] = diphoton->vtx()->z();
     diphoton_vtx[fDiphotonNum] = diphoton->vtx();
 
-    fDiphotonPt1[fDiphotonNum] = diphoton->leadingPhoton()->pt();
-    fDiphotonEta1[fDiphotonNum] = diphoton->leadingPhoton()->eta();
-    fDiphotonPhi1[fDiphotonNum] = diphoton->leadingPhoton()->phi();
-    fDiphotonR91[fDiphotonNum] = diphoton->leadingPhoton()->full5x5_r9();
+    fDiphotonPt1[fDiphotonNum] = lead_pho->pt();
+    fDiphotonEta1[fDiphotonNum] = lead_pho->eta();
+    fDiphotonPhi1[fDiphotonNum] = lead_pho->phi();
+    fDiphotonR91[fDiphotonNum] = lead_pho->full5x5_r9();
 
-    fDiphotonPt2[fDiphotonNum] = diphoton->subLeadingPhoton()->pt();
-    fDiphotonEta2[fDiphotonNum] = diphoton->subLeadingPhoton()->eta();
-    fDiphotonPhi2[fDiphotonNum] = diphoton->subLeadingPhoton()->phi();
-    fDiphotonR92[fDiphotonNum] = diphoton->subLeadingPhoton()->full5x5_r9();
+    fDiphotonPt2[fDiphotonNum] = sublead_pho->pt();
+    fDiphotonEta2[fDiphotonNum] = sublead_pho->eta();
+    fDiphotonPhi2[fDiphotonNum] = sublead_pho->phi();
+    fDiphotonR92[fDiphotonNum] = sublead_pho->full5x5_r9();
 
     fDiphotonM[fDiphotonNum] = diphoton->mass();
     fDiphotonY[fDiphotonNum] = diphoton->rapidity();
     fDiphotonPt[fDiphotonNum] = diphoton->pt();
 
-    float dphi = diphoton->leadingPhoton()->phi()-diphoton->subLeadingPhoton()->phi();
+    float dphi = lead_pho->phi()-sublead_pho->phi();
     while ( dphi<-TMath::Pi() ) dphi += 2.*TMath::Pi();
     while ( dphi> TMath::Pi() ) dphi -= 2.*TMath::Pi();
     fDiphotonDphi[fDiphotonNum] = dphi;
+
+    if ( lead_pho->matchedGenPhoton() or sublead_pho->matchedGenPhoton() ) {
+      for ( unsigned int i=0; i<fGenPartNum; i++ ) {
+        if ( lead_pho->matchedGenPhoton() and lead_pho->matchedGenPhoton()->pt()==fGenPartPt[i] and lead_pho->matchedGenPhoton()->eta()==fGenPartEta[i] ) { fDiphotonGenLevelPho1[fDiphotonNum] = i; }
+        if ( sublead_pho->matchedGenPhoton() and sublead_pho->matchedGenPhoton()->pt()==fGenPartPt[i] and sublead_pho->matchedGenPhoton()->eta()==fGenPartEta[i] ) { fDiphotonGenLevelPho2[fDiphotonNum] = i; }
+      }
+    }
+
+    //----- retrieve the associated jets
+
+    if ( diphoton->jetCollectionIndex()<jetsColls->size() ) {
+      for ( unsigned int j=0; j<jetsColls->at( diphoton->jetCollectionIndex() ).size(); j++ ) {
+        if ( fJetNum>=MAX_JET ) { std::cerr << ">> More jets than expected in this event (" << fJetNum << ">MAX_JET=" << MAX_JET << "). Increase MAX_JET for safety" << std::endl; }
+
+        const flashgg::Jet jet = jetsColls->at( diphoton->jetCollectionIndex() ).at( j );
+        fJetPt[fJetNum]   = jet.pt();
+        fJetEta[fJetNum]  = jet.eta();
+        fJetPhi[fJetNum]  = jet.phi();
+        fJetE[fJetNum]    = jet.energy();
+        fJetMass[fJetNum] = jet.mass();
+
+        fJetVertexX[fJetNum] = jet.vertex().x();
+        fJetVertexY[fJetNum] = jet.vertex().y();
+        fJetVertexZ[fJetNum] = jet.vertex().z();
+        fJetDiphoMatch[fJetNum] = i;
+        fJetNum++;
+      }
+    }
 
     fDiphotonNum++;
   }
@@ -449,7 +486,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
 
   //----- jets collection -----
 
-  edm::Handle< edm::View< std::vector<flashgg::Jet> > > jetsColls;
+  /*edm::Handle< edm::View< std::vector<flashgg::Jet> > > jetsColls;
   iEvent.getByToken( jetToken_, jetsColls );
 
   fJetNum = 0;
@@ -471,7 +508,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
       fJetVertexZ[fJetNum] = jet.vertex().z();
       fJetNum++;
     }
-  }
+  }*/
 
   //----- forward RP tracks -----
 
@@ -701,6 +738,8 @@ TreeProducer::beginJob()
   tree_->Branch( "diphoton_rapidity", fDiphotonY, "diphoton_rapidity[num_diphoton]/F" );
   tree_->Branch( "diphoton_pt", fDiphotonPt, "diphoton_pt[num_diphoton]/F" );
   tree_->Branch( "diphoton_dphi", fDiphotonDphi, "diphoton_dphi[num_diphoton]/F" );
+  tree_->Branch( "diphoton_genpho1", fDiphotonGenLevelPho1, "diphoton_genpho1[num_diphoton]/I" );
+  tree_->Branch( "diphoton_genpho2", fDiphotonGenLevelPho2, "diphoton_genpho2[num_diphoton]/I" );
 
   tree_->Branch( "diphoton_vertex_tracks", fDiphotonVertexTracks, "diphoton_vertex_tracks[num_diphoton]/i" );
   tree_->Branch( "diphoton_vertex_id", fDiphotonVertex, "diphoton_vertex_id[num_diphoton]/I" );
@@ -740,6 +779,7 @@ TreeProducer::beginJob()
   tree_->Branch( "jet_vtx_x", fJetVertexX, "jet_vtx_x[num_jet]/F" );
   tree_->Branch( "jet_vtx_y", fJetVertexY, "jet_vtx_y[num_jet]/F" );
   tree_->Branch( "jet_vtx_z", fJetVertexZ, "jet_vtx_z[num_jet]/F" );
+  tree_->Branch( "jet_dipho_match", fJetDiphoMatch, "jet_dipho_match[num_jet]/I" );
 
   tree_->Branch( "num_vertex", &fVertexNum, "num_vertex/i" );
   tree_->Branch( "vertex_x", fVertexX, "vertex_x[num_vertex]/F" );

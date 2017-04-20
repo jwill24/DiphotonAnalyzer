@@ -140,7 +140,8 @@ class Canvas : public TCanvas
 
   inline void Save( const char* ext, const char* out_dir="." ) {
     TCanvas::cd();
-    if ( fLeg and TCanvas::FindObject( fLeg )==0 ) {
+    //if ( fLeg and TCanvas::FindObject( fLeg )==0 ) {
+    if ( fLeg ) {
       fLeg->Draw();
     }
     if ( fTopLabel and TCanvas::FindObject(fTopLabel)==0 ) {
@@ -209,6 +210,7 @@ class Canvas : public TCanvas
     fLeg->SetLineColor( kGray );
     fLeg->SetLineWidth( 1 );
     fLeg->SetTextSize( 0.032 );
+    fLeg->Draw();
   }
   inline float GetBinning( const TH1* h ) {
     return ( h->GetXaxis()->GetXmax() - h->GetXaxis()->GetXmin() ) / h->GetXaxis()->GetNbins();

@@ -176,6 +176,12 @@ plotter()
                     xim = ( diph_pt1[k]*exp( -diph_eta1[k] ) + diph_pt2[k]*exp( -diph_eta2[k] ) ) / sqrt_s;
         const TVector3 diph_vtx( vtx_x[diph_vtx_id[k]], vtx_y[diph_vtx_id[k]], vtx_z[diph_vtx_id[k]] );
 
+        // EB: 0 < |eta| < 1.4442
+        // EE: |eta| > 1.566
+        if ( diph_eta1[k]>min_etaveto ) continue;
+        if ( diph_eta2[k]>min_etaveto ) continue;
+        //FIXME only look at barrel photons
+
         h_ptlead[nosel][i]->Fill( diph_pt1[k], s_weight );
         h_ptsublead[nosel][i]->Fill( diph_pt2[k], s_weight );
         h_pt[nosel][i]->Fill( diph_pt1[k], s_weight );
