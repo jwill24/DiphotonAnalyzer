@@ -25,7 +25,8 @@ def main(argv):
     print files_list, 'created and populated!'
 
     LaunchOnFarm.useLSF = True
-    LaunchOnFarm.Jobs_Queue = '1nd'
+    #LaunchOnFarm.Jobs_Queue = '1nd'
+    LaunchOnFarm.Jobs_Queue = '8nh'
     LaunchOnFarm.SendCluster_Create(argv[3]+'/', argv[3])
     num_jobs = LaunchOnFarm.SendCluster_LoadInputFiles(files_list, 500)
     for i in range(num_jobs):

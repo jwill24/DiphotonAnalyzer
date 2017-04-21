@@ -105,6 +105,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     double singlePhotonMinPt_, singlePhotonMaxEta_, singlePhotonMinR9_;
     double photonPairMinMass_;
     std::string filename_;
+    double maxGenLevelDR_;
     edm::FileInPath puMCfile_, puDatafile_;
     std::string puMCpath_, puDatapath_;
 
@@ -154,16 +155,24 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     float fDiphotonPt1[MAX_DIPHOTON], fDiphotonPt2[MAX_DIPHOTON];
     float fDiphotonEta1[MAX_DIPHOTON], fDiphotonEta2[MAX_DIPHOTON];
     float fDiphotonPhi1[MAX_DIPHOTON], fDiphotonPhi2[MAX_DIPHOTON];
+    float fDiphotonE1[MAX_DIPHOTON], fDiphotonE2[MAX_DIPHOTON];
     float fDiphotonR91[MAX_DIPHOTON], fDiphotonR92[MAX_DIPHOTON];
     float fDiphotonM[MAX_DIPHOTON], fDiphotonY[MAX_DIPHOTON];
     float fDiphotonPt[MAX_DIPHOTON], fDiphotonDphi[MAX_DIPHOTON];
-    int fDiphotonGenLevelPho1[MAX_DIPHOTON], fDiphotonGenLevelPho2[MAX_DIPHOTON];
+
+    float fDiphotonGenPt1[MAX_DIPHOTON], fDiphotonGenPt2[MAX_DIPHOTON];
+    float fDiphotonGenEta1[MAX_DIPHOTON], fDiphotonGenEta2[MAX_DIPHOTON];
+    float fDiphotonGenPhi1[MAX_DIPHOTON], fDiphotonGenPhi2[MAX_DIPHOTON];
+    float fDiphotonGenE1[MAX_DIPHOTON], fDiphotonGenE2[MAX_DIPHOTON];
 
     int fDiphotonVertex[MAX_DIPHOTON];
     unsigned int fDiphotonVertexTracks[MAX_DIPHOTON];
     unsigned int fDiphotonVerticesAt1mmDist[MAX_DIPHOTON], fDiphotonVerticesAt2mmDist[MAX_DIPHOTON], fDiphotonVerticesAt5mmDist[MAX_DIPHOTON], fDiphotonVerticesAt1cmDist[MAX_DIPHOTON];
     float fDiphotonVertexX[MAX_DIPHOTON], fDiphotonVertexY[MAX_DIPHOTON], fDiphotonVertexZ[MAX_DIPHOTON];
     float fDiphotonNearestDist[MAX_DIPHOTON];
+
+    float fDiphotonGenVertexX, fDiphotonGenVertexY, fDiphotonGenVertexZ;
+    float fDiphotonGenVertexSmearX, fDiphotonGenVertexSmearY, fDiphotonGenVertexSmearZ;
 
     float fMET, fMETPhi, fMETsignif;
 
@@ -206,6 +215,7 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   singlePhotonMinR9_ ( iConfig.getParameter<double>     ( "minR9SinglePhoton" ) ),
   photonPairMinMass_ ( iConfig.getParameter<double>     ( "minMassDiPhoton" ) ),
   filename_          ( iConfig.getParameter<std::string>( "outputFilename" ) ),
+  maxGenLevelDR_     ( iConfig.getParameter<double>     ( "maxGenLevelDeltaR" ) ),
   puMCpath_          ( iConfig.getUntrackedParameter<std::string>( "pileupMCPath", "pileup" ) ),
   puDatapath_        ( iConfig.getUntrackedParameter<std::string>( "pileupDataPath", "pileup" ) ),
   useXiInterp_       ( iConfig.getParameter<bool>       ( "useXiInterpolation" ) ),
@@ -281,6 +291,7 @@ TreeProducer::clearTree()
     fDiphotonPt1[i] = fDiphotonPt2[i] = -1.;
     fDiphotonEta1[i] = fDiphotonEta2[i] = -1.;
     fDiphotonPhi1[i] = fDiphotonPhi2[i] = -1.;
+    fDiphotonE1[i] = fDiphotonE2[i] = -1.;
     fDiphotonR91[i] = fDiphotonR92[i] = -1.;
     fDiphotonM[i] = fDiphotonY[i] = fDiphotonPt[i] = fDiphotonDphi[i] = -1.;
     fDiphotonVertexTracks[i] = 0;
@@ -288,8 +299,14 @@ TreeProducer::clearTree()
     fDiphotonVerticesAt1mmDist[i] = fDiphotonVerticesAt2mmDist[i] = fDiphotonVerticesAt5mmDist[i] = fDiphotonVerticesAt1cmDist[i] = 0;
     fDiphotonVertexX[i] = fDiphotonVertexY[i] = fDiphotonVertexZ[i] = -1.;
     fDiphotonNearestDist[i] = 999.;
-    fDiphotonGenLevelPho1[i] = fDiphotonGenLevelPho2[i] = -1;
+
+    fDiphotonGenPt1[i] = fDiphotonGenPt2[i] = -1.;
+    fDiphotonGenEta1[i] = fDiphotonGenEta2[i] = -1.;
+    fDiphotonGenPhi1[i] = fDiphotonGenPhi2[i] = -1.;
+    fDiphotonGenE1[i] = fDiphotonGenE2[i] = -1.;
   }
+  fDiphotonGenVertexX = fDiphotonGenVertexY = fDiphotonGenVertexZ = -999.;
+  fDiphotonGenVertexSmearX = fDiphotonGenVertexSmearY = fDiphotonGenVertexSmearZ = -999.;
 
   fElectronNum = 0;
   for ( unsigned int i=0; i<MAX_ELECTRON; i++ ) {
@@ -340,6 +357,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
   #include <iostream> // for debugging purposes
 
   clearTree();
+  const reco::Candidate::Point orig( -999., -999, -999. );
 
   // Run and BX information
   fBX = iEvent.bunchCrossing();
@@ -355,11 +373,15 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
 
   //----- gen-level information -----
 
+  edm::Handle< edm::View<pat::PackedGenParticle> > genPhotons;
+  edm::Handle< edm::View<reco::GenParticle> > genParts;
+
   if ( !isData_ ) {
-    edm::Handle< edm::View<pat::PackedGenParticle> > genPhotons;
     iEvent.getByToken( genPhoToken_, genPhotons );
     for ( unsigned int i=0; i<genPhotons->size() && fGenPhotonNum<MAX_GEN_PHOTON; i++ ) {
       const edm::Ptr<pat::PackedGenParticle> genPho = genPhotons->ptrAt( i );
+
+      //----- gen-level information
 
       if ( genPho->pdgId()!=22 ) continue; // only keep gen-level photons
 
@@ -375,7 +397,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
       fGenPhotonNum++;
     }
 
-    edm::Handle< edm::View<reco::GenParticle> > genParts;
+    //----- smeared-level information
+
     iEvent.getByToken( genPartToken_, genParts );
     for ( unsigned int i=0; i<genParts->size() && fGenPartNum<MAX_GEN_PART; i++ ) {
       const edm::Ptr<reco::GenParticle> genPart = genParts->ptrAt( i );
@@ -449,10 +472,62 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
     while ( dphi> TMath::Pi() ) dphi -= 2.*TMath::Pi();
     fDiphotonDphi[fDiphotonNum] = dphi;
 
-    if ( lead_pho->matchedGenPhoton() or sublead_pho->matchedGenPhoton() ) {
-      for ( unsigned int i=0; i<fGenPartNum; i++ ) {
-        if ( lead_pho->matchedGenPhoton() and lead_pho->matchedGenPhoton()->pt()==fGenPartPt[i] and lead_pho->matchedGenPhoton()->eta()==fGenPartEta[i] ) { fDiphotonGenLevelPho1[fDiphotonNum] = i; }
-        if ( sublead_pho->matchedGenPhoton() and sublead_pho->matchedGenPhoton()->pt()==fGenPartPt[i] and sublead_pho->matchedGenPhoton()->eta()==fGenPartEta[i] ) { fDiphotonGenLevelPho2[fDiphotonNum] = i; }
+    //----- retrieve the gen-level information
+
+    if ( !isData_ ) {
+      reco::Candidate::Point vtx1( orig ), vtx2( orig ),
+                             vtx1_smear( orig ), vtx2_smear( orig );
+      if ( lead_pho->matchedGenPhoton() ) {
+        fDiphotonGenPt1[fDiphotonNum] = lead_pho->matchedGenPhoton()->pt();
+        fDiphotonGenEta1[fDiphotonNum] = lead_pho->matchedGenPhoton()->eta();
+        fDiphotonGenPhi1[fDiphotonNum] = lead_pho->matchedGenPhoton()->phi();
+        fDiphotonGenE1[fDiphotonNum] = lead_pho->matchedGenPhoton()->energy();
+        vtx1 = lead_pho->matchedGenPhoton()->vertex();
+      }
+      if ( sublead_pho->matchedGenPhoton() ) {
+        fDiphotonGenPt2[fDiphotonNum] = sublead_pho->matchedGenPhoton()->pt();
+        fDiphotonGenEta2[fDiphotonNum] = sublead_pho->matchedGenPhoton()->eta();
+        fDiphotonGenPhi2[fDiphotonNum] = sublead_pho->matchedGenPhoton()->phi();
+        fDiphotonGenE2[fDiphotonNum] = sublead_pho->matchedGenPhoton()->energy();
+        vtx2 = sublead_pho->matchedGenPhoton()->vertex();
+      }
+      if ( vtx2!=vtx1 ) {
+        std::cerr << "-> 2 different gen-level vertices: " << std::endl
+                  << "      leading photon vertex: (" << vtx1.x() << ", " << vtx1.y() << ", " << vtx1.z() << ")" << std::endl
+                  << "   subleading photon vertex: (" << vtx2.x() << ", " << vtx2.y() << ", " << vtx2.z() << ")" << std::endl;
+      }
+      if ( vtx1!=orig ) {
+        fDiphotonGenVertexX = vtx1.x();
+        fDiphotonGenVertexY = vtx1.y();
+        fDiphotonGenVertexZ = vtx1.z();
+      }
+      else {
+        fDiphotonGenVertexX = vtx2.x();
+        fDiphotonGenVertexY = vtx2.y();
+        fDiphotonGenVertexZ = vtx2.z();
+      }
+
+      //----- retrieve the smeared-level generated vertex
+
+      for ( unsigned int j=0; j<genParts->size(); j++ ) {
+        const edm::Ptr<reco::GenParticle> genPart = genParts->ptrAt( j );
+        if ( sqrt( pow( genPart->eta()-   lead_pho->eta(), 2 ) + pow( genPart->phi()-   lead_pho->phi(), 2 ) )<maxGenLevelDR_ ) { vtx1_smear = genPart->vertex(); continue; }
+        if ( sqrt( pow( genPart->eta()-sublead_pho->eta(), 2 ) + pow( genPart->phi()-sublead_pho->phi(), 2 ) )<maxGenLevelDR_ ) { vtx2_smear = genPart->vertex(); continue; }
+      }
+      /*if ( vtx2_smear!=vtx1_smear ) {
+        std::cerr << "-> 2 different smeared-level vertices: " << std::endl
+                  << "      leading photon vertex: (" << vtx1_smear.x() << ", " << vtx1_smear.y() << ", " << vtx1_smear.z() << ")" << std::endl
+                  << "   subleading photon vertex: (" << vtx2_smear.x() << ", " << vtx2_smear.y() << ", " << vtx2_smear.z() << ")" << std::endl;
+      }*/
+      if ( vtx1_smear!=orig ) {
+        fDiphotonGenVertexSmearX = vtx1_smear.x();
+        fDiphotonGenVertexSmearY = vtx1_smear.y();
+        fDiphotonGenVertexSmearZ = vtx1_smear.z();
+      }
+      else {
+        fDiphotonGenVertexSmearX = vtx2_smear.x();
+        fDiphotonGenVertexSmearY = vtx2_smear.y();
+        fDiphotonGenVertexSmearZ = vtx2_smear.z();
       }
     }
 
@@ -732,14 +807,23 @@ TreeProducer::beginJob()
   tree_->Branch( "diphoton_eta2", fDiphotonEta2, "diphoton_eta2[num_diphoton]/F" );
   tree_->Branch( "diphoton_phi1", fDiphotonPhi1, "diphoton_phi1[num_diphoton]/F" );
   tree_->Branch( "diphoton_phi2", fDiphotonPhi2, "diphoton_phi2[num_diphoton]/F" );
+  tree_->Branch( "diphoton_energy1", fDiphotonE1, "diphoton_energy1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_energy2", fDiphotonE2, "diphoton_energy2[num_diphoton]/F" );
   tree_->Branch( "diphoton_r91", fDiphotonR91, "diphoton_r91[num_diphoton]/F" );
   tree_->Branch( "diphoton_r92", fDiphotonR92, "diphoton_r92[num_diphoton]/F" );
   tree_->Branch( "diphoton_mass", fDiphotonM, "diphoton_mass[num_diphoton]/F" );
   tree_->Branch( "diphoton_rapidity", fDiphotonY, "diphoton_rapidity[num_diphoton]/F" );
   tree_->Branch( "diphoton_pt", fDiphotonPt, "diphoton_pt[num_diphoton]/F" );
   tree_->Branch( "diphoton_dphi", fDiphotonDphi, "diphoton_dphi[num_diphoton]/F" );
-  tree_->Branch( "diphoton_genpho1", fDiphotonGenLevelPho1, "diphoton_genpho1[num_diphoton]/I" );
-  tree_->Branch( "diphoton_genpho2", fDiphotonGenLevelPho2, "diphoton_genpho2[num_diphoton]/I" );
+
+  tree_->Branch( "diphoton_genpt1", fDiphotonGenPt1, "diphoton_genpt1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_genpt2", fDiphotonGenPt2, "diphoton_genpt2[num_diphoton]/F" );
+  tree_->Branch( "diphoton_geneta1", fDiphotonGenEta1, "diphoton_geneta1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_geneta2", fDiphotonGenEta2, "diphoton_geneta2[num_diphoton]/F" );
+  tree_->Branch( "diphoton_genphi1", fDiphotonGenPhi1, "diphoton_genphi1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_genphi2", fDiphotonGenPhi2, "diphoton_genphi2[num_diphoton]/F" );
+  tree_->Branch( "diphoton_genenergy1", fDiphotonGenE1, "diphoton_genenergy1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_genenergy2", fDiphotonGenE2, "diphoton_genenergy2[num_diphoton]/F" );
 
   tree_->Branch( "diphoton_vertex_tracks", fDiphotonVertexTracks, "diphoton_vertex_tracks[num_diphoton]/i" );
   tree_->Branch( "diphoton_vertex_id", fDiphotonVertex, "diphoton_vertex_id[num_diphoton]/I" );
@@ -751,6 +835,13 @@ TreeProducer::beginJob()
   tree_->Branch( "diphoton_vertex_vtx2mmdist", fDiphotonVerticesAt2mmDist, "diphoton_vertex_vtx2mmdist[num_diphoton]/i" );
   tree_->Branch( "diphoton_vertex_vtx5mmdist", fDiphotonVerticesAt5mmDist, "diphoton_vertex_vtx5mmdist[num_diphoton]/i" );
   tree_->Branch( "diphoton_vertex_vtx1cmdist", fDiphotonVerticesAt1cmDist, "diphoton_vertex_vtx1cmdist[num_diphoton]/i" );
+
+  tree_->Branch( "diphoton_genvertex_x", &fDiphotonGenVertexX, "diphoton_genvertex_x/F" );
+  tree_->Branch( "diphoton_genvertex_y", &fDiphotonGenVertexY, "diphoton_genvertex_y/F" );
+  tree_->Branch( "diphoton_genvertex_z", &fDiphotonGenVertexZ, "diphoton_genvertex_z/F" );
+  tree_->Branch( "diphoton_genvertex_smeared_x", &fDiphotonGenVertexSmearX, "diphoton_genvertex_smeared_x/F" );
+  tree_->Branch( "diphoton_genvertex_smeared_y", &fDiphotonGenVertexSmearY, "diphoton_genvertex_smeared_y/F" );
+  tree_->Branch( "diphoton_genvertex_smeared_z", &fDiphotonGenVertexSmearZ, "diphoton_genvertex_smeared_z/F" );
 
   tree_->Branch( "num_electron", &fElectronNum, "num_electron/i" );
   tree_->Branch( "electron_pt", fElectronPt, "electron_pt[num_electron]/F" );

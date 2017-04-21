@@ -31,4 +31,5 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     # generator-level input collections
     genPartLabel = cms.InputTag('flashggPrunedGenParticles'),
     genPhoLabel = cms.InputTag('flashggGenPhotons'),
+    maxGenLevelDeltaR = cms.double(5.0),
 )
