@@ -14,6 +14,7 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     electronLabel = cms.InputTag('flashggElectrons'),
     muonLabel = cms.InputTag('flashggMuons'),
     jetLabel = cms.InputTag('flashggFinalJets'),
+    beamSpotLabel = cms.InputTag('offlineBeamSpot'),
 
     # "tight" single/double photon selection
     minPtSinglePhoton = cms.double(50.),

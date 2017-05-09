@@ -12,6 +12,21 @@
 
 #include <string.h>
 
+class PaveText : public TPaveText
+{
+ public:
+  inline PaveText( float x1, float y1, float x2=-999., float y2=-999. ) :
+    TPaveText( x1, y1, ( x2!=-999. ) ? x2 : x1+0.25, ( y2!=-999. ) ? y2 : y1+0.15, "NB NDC" ) {
+    TPaveText::SetFillStyle( 0 );
+    TPaveText::SetFillColor( 0 );
+    TPaveText::SetLineColor( 0 );
+    TPaveText::SetLineStyle( 0 );
+    TPaveText::SetTextFont( 42 );
+    TPaveText::SetTextSize( 0.033 );
+    TPaveText::SetTextAlign( kHAlignRight+kVAlignBottom );
+  }
+};
+
 class Canvas : public TCanvas
 {
  public:
@@ -19,7 +34,7 @@ class Canvas : public TCanvas
     //TCanvas(name, "", 450, 450),
     TCanvas( name, "", 600, 600 ),
     fTitle( title ), fTopLabel( 0 ),
-    fLeg( 0 ), fLegXSize( 0.35 ), fLegYSize( 0.15 ),
+    fLeg( 0 ), fLegXpos( 0.5 ), fLegYpos( 0.75 ), fLegXSize( 0.35 ), fLegYSize( 0.15 ),
     fRatio( ratio )
   {
     Build();
@@ -85,6 +100,12 @@ class Canvas : public TCanvas
         *numer = 0;
     denom->GetXaxis()->SetTitle( "" );
     TCanvas::cd( 2 );
+
+    TH1D* denom_err = (TH1D*)denom->Clone(),
+         *denom_err2 = (TH1D*)denom->Clone();
+    denom_err2->Sumw2( false );
+    denom_err->Divide( denom_err2 );
+
     unsigned short i = 0;
     for ( HistsMap::const_iterator it=hm.begin()+1; it!=hm.end(); it++ ) {
       numer = dynamic_cast<TH1*>( it->second->Clone() );
@@ -99,9 +120,13 @@ class Canvas : public TCanvas
       numer->GetYaxis()->SetTitle( Form( "Ratio%s", ( hm.size()>2 ) ? "s" : "" ) );
       i++;
     }
+    denom_err->Draw( "e2same" );
+    denom_err->SetFillColor( kBlack );
+    denom_err->SetFillStyle( 3004 );
+
     if ( xline!=-999. ) {
       TLine* l = new TLine( denom->GetXaxis()->GetXmin(), xline, denom->GetXaxis()->GetXmax(), xline );
-      l->SetLineColor( kRed );
+      l->SetLineColor( kBlack );
       l->SetLineWidth( 1 );
       l->Draw();
     }
@@ -120,14 +145,10 @@ class Canvas : public TCanvas
 
   inline TLegend* GetLegend() { return fLeg; }
   inline void SetLegendX1( double x ) {
-    if ( !fLeg ) CreateLegend();
-    fLeg->SetX1NDC( x );
-    fLeg->SetX2NDC( x+fLegXSize );
+    fLegXpos = x;
   }
   inline void SetLegendY1( double y ) {
-    if ( !fLeg ) CreateLegend();
-    fLeg->SetY1NDC( y );
-    fLeg->SetY2NDC( y+fLegYSize );
+    fLegYpos = y;
   }
   inline void AddLegendEntry( const TObject* obj, const char* title, Option_t* option="lpf" ) {
     if ( !fLeg ) CreateLegend();
@@ -140,8 +161,8 @@ class Canvas : public TCanvas
 
   inline void Save( const char* ext, const char* out_dir="." ) {
     TCanvas::cd();
-    //if ( fLeg and TCanvas::FindObject( fLeg )==0 ) {
-    if ( fLeg ) {
+    if ( fLeg and TCanvas::FindObject( fLeg )==0 ) {
+      //if ( fLeg ) {
       fLeg->Draw();
     }
     if ( fTopLabel and TCanvas::FindObject(fTopLabel)==0 ) {
@@ -191,20 +212,13 @@ class Canvas : public TCanvas
 
   inline void BuildTopLabel() {
     TCanvas::cd();
-    fTopLabel = new TPaveText( 0.5, 0.95, 0.925, 0.96, "NB NDC" );
-    fTopLabel->SetFillStyle( 0 );
-    fTopLabel->SetFillColor( 0 );
-    fTopLabel->SetLineColor( 0 );
-    fTopLabel->SetLineStyle( 0 );
-    fTopLabel->SetTextFont( 42 );
-    fTopLabel->SetTextSize( 0.033 );
-    fTopLabel->SetTextAlign( kHAlignRight+kVAlignBottom );
+    fTopLabel = new PaveText( 0.5, 0.95, 0.925, 0.96 );
   }
 
   inline void CreateLegend() {
     if ( fLeg ) return;
     if ( fRatio ) TCanvas::cd(1);
-    fLeg = new TLegend( 0.5, 0.75, 0.5+fLegXSize, 0.75+fLegYSize );
+    fLeg = new TLegend( fLegXpos, fLegYpos, fLegXpos+fLegXSize, fLegYpos+fLegYSize );
     //fLeg->SetFillStyle( 0 );
     //fLeg->SetLineColor( kWhite );
     fLeg->SetLineColor( kGray );
@@ -217,9 +231,9 @@ class Canvas : public TCanvas
   }
 
   TString fTitle;
-  TPaveText* fTopLabel;
+  PaveText* fTopLabel;
   TLegend* fLeg;
-  double fLegXSize, fLegYSize;
+  double fLegXpos, fLegYpos, fLegXSize, fLegYSize;
   bool fRatio;
 };
 

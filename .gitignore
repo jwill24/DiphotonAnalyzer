@@ -1,4 +1,6 @@
+*~
 *.pyc
+*.d
 *.o
 *.so
 *.png
@@ -12,3 +14,5 @@ tmp_filelist_*
 # routines compilation
 *_C.d
 *_rdict.pcm
+# crab submissions
+crab_*

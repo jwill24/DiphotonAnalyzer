@@ -3,9 +3,11 @@
 #include "TH2.h"
 #include "TLorentzVector.h"
 #include "TStyle.h"
+#include "TSystem.h"
 
 #include "Canvas.h"
 #include "Plotter.h"
+#include "EventsSelector.h"
 
 #include <fstream>
 #include <iostream>
@@ -17,7 +19,8 @@
 //#define default_ntp_file "output_Run2016BC_looseCuts_7mar.root"
 //#define default_ntp_file "output_Run2016BC_looseCuts_9mar_xifix.root"
 //#define default_ntp_file "test.root"
-#define default_ntp_file "output_Run2016BCG_looseCuts_10mar_xifix.root"
+//#define default_ntp_file "output_Run2016BCG_looseCuts_10mar_xifix.root"
+#define default_ntp_file "output_Run2016BCG_looseCuts_9may.root"
 
 float photon_rel_energy_scale( const float& pt, const float& eta, const float& r9 );
 
@@ -26,6 +29,9 @@ enum Pot { nearPot = 2, farPot = 3 };
 
 void tree_reader( TString file=default_ntp_file )
 {
+  gSystem->Load( "libEventFilterUtilities.so" );
+  EventsSelector ev_selector( "/afs/cern.ch/user/l/lforthom/public/Cert_271036-284044_13TeV_PromptReco_Collisions16_JSON_PPSruns_preTS2.txt" );
+
   TFile f( file );
   if ( !f.IsOpen() ) return;
 
@@ -35,7 +41,8 @@ void tree_reader( TString file=default_ntp_file )
               lumi_c = 1.470474265456,
               lumi_g = 7.487318307770;
 
-  const float lumi = ( file.Contains( "2016BCG" ) ) ? lumi_b+lumi_c+lumi_g : lumi_b+lumi_c;
+  //const float lumi = ( file.Contains( "2016BCG" ) ) ? lumi_b+lumi_c+lumi_g : lumi_b+lumi_c;
+  const float lumi = 9.412003739742; // pre-TS2 runs with horizontal RPs inserted
 
   //----- cuts -----
 
@@ -50,7 +57,7 @@ void tree_reader( TString file=default_ntp_file )
   const float max_pt_diphoton = 50.,
               max_acopl = 0.01;
   const float oth_obj_minpt = 150.;
-  const float n_sigma = 1.0, // xi matching sigma number
+  const float n_sigma = 2.0, // xi matching sigma number
               n_sigma_massrap = 1.0;
 
   /*210-N (beam 1): 0.0334862
@@ -344,7 +351,8 @@ void tree_reader( TString file=default_ntp_file )
   for ( unsigned int i=0; i<tr->GetEntries(); i++ ) {
     tr->GetEntry( i );
 
-    if ( run_id>280385 ) { continue; } // skip post-TS2 runs
+    //if ( run_id>280385 ) { continue; } // skip post-TS2 runs
+    if ( !ev_selector.isSelected( run_id, lumisection, event_number ) ) continue;
 
     //----- diphotons retrieval part -----
 
@@ -386,6 +394,8 @@ void tree_reader( TString file=default_ntp_file )
 
       const float acopl = 1-fabs( diphoton_dphi[j]/TMath::Pi() );
 
+      /*const float energy_corr_pho1 = photon_rel_energy_scale( diphoton_pt1[j], diphoton_eta1[j], diphoton_r9_1[j] ) * diphoton_pt1[j],
+	energy_corr_pho2 = photon_rel_energy_scale( diphoton_pt2[j], diphoton_eta2[j], diphoton_r9_2[j] ) * diphoton_pt2[j];*/
       const float energy_corr_pho1 = photon_rel_energy_scale( diphoton_pt1[j], diphoton_eta1[j], diphoton_r9_1[j] ) * diphoton_pt1[j],
                   energy_corr_pho2 = photon_rel_energy_scale( diphoton_pt2[j], diphoton_eta2[j], diphoton_r9_2[j] ) * diphoton_pt2[j];
 
@@ -628,7 +638,8 @@ void tree_reader( TString file=default_ntp_file )
 
       //if ( has_ele || has_muon || has_jet ) continue; //FIXME FIXME FIXME FIXME FIXME
       //if ( diphoton_pt[j]>max_pt_diphoton ) continue;
-      //if ( acopl>max_acopl ) continue;
+      if ( acopl>max_acopl ) continue;
+      if ( diphoton_pt1[j]/diphoton_pt2[j]<0.95 ) continue; // matches Fichet, Royon et al
 
       //----- FROM THAT POINT ON, EXCLUSIVE DIPHOTON CANDIDATE -----
 

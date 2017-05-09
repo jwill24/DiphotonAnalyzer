@@ -41,6 +41,8 @@ class Plotter
         //hist->Draw( ( i==0 ) ? "" : "e1 same" );
         hist->Draw( ( i==0 ) ? "hist" : "same" );
         hist->SetLineColor( kBlack );
+	//hist->SetFillStyle( 3004 );
+	//hist->SetFillColor( kBlack );
         //h->SetMarkerStyle( 20 );
         min = TMath::Min( min, hist->GetMinimum() );
         max = TMath::Max( max, hist->GetMaximum() );
@@ -56,7 +58,7 @@ class Plotter
       c.Prettify( hist );
       /*if ( hm.size()==2 ) c.RatioPlot( hm[0].second, hm[1].second, 0, min_ratio_y, max_ratio_y );
       if ( hm.size()>2 ) c.RatioPlot( hm[0].second, hm[1].second, hm[2].second, min_ratio_y, max_ratio_y );*/
-      c.RatioPlot( hm2, min_ratio_y, max_ratio_y );
+      if ( hm.size()>1 ) c.RatioPlot( hm2, min_ratio_y, max_ratio_y );
       c.Save( "pdf,png", out_path_ );
     }
 
@@ -65,7 +67,7 @@ class Plotter
       hm.push_back( std::make_pair( "All diphotons", h ) );
       hm.push_back( std::make_pair( "track(s) in 1 arm", h_1tag ) );
       hm.push_back( std::make_pair( "track(s) in 2 arms", h_2tag ) );
-      plot_multihists( name, hm, 0., 0.55, draw_overflow );
+      plot_multihists( name, hm, 0., 0.64, draw_overflow );
     }
 
     void plot_balances( const char* name, const char* title, GraphsMap gr_map,
@@ -179,7 +181,7 @@ class Plotter
       c.Save( "pdf,png", out_path_ );
     }
 
-    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, bool logy=false ) const {
+    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, TString label="", bool logy=false ) const {
       Canvas c( filename, top_label_, true );
       TH1D* hist = 0;
       TH1D* h_data, *h_mc = 0;
@@ -216,12 +218,18 @@ class Plotter
       i = 0;
       for ( HistsMap::iterator it=h_map_sig.begin(); it!=h_map_sig.end(); it++ ) {
         hist = dynamic_cast<TH1D*>( it->second );
+        TH1D* hist_stacked = dynamic_cast<TH1D*>( hist->Clone() );
         hist->SetLineColor( kGreen );
         hist->SetLineWidth( 3 );
         hist->SetLineStyle( i );
         if ( strcmp( it->first, "" )!=0 ) { c.AddLegendEntry( hist, it->first, "l" ); }
         hs_sig.Add( hist );
         if ( i==0 ) hs_sig.SetTitle( hist->GetTitle() );
+        hist_stacked->SetLineColor( kBlack );
+        hist_stacked->SetLineWidth( 1 );
+        hist_stacked->SetFillColorAlpha( kGreen-9, 0.5 );
+        hs_mc.Add( hist_stacked );
+        //h_mc->Add( hist_stacked );
         i++;
       }
       hs_mc.Draw( "hist" );
@@ -241,11 +249,18 @@ class Plotter
       else { hs_mc.SetMaximum( max_bin*1.4 ); }
       c.Prettify( hist );
       HistsMap hm;
-      hm.push_back( std::make_pair( "mc", h_mc ) );
-      hm.push_back( std::make_pair( "data", h_data ) );
+      hm.emplace_back( "mc", h_mc );
+      hm.emplace_back( "data", h_data );
       hs_mc.SetTitle( "" );
       c.RatioPlot( hm, -0.4, 2.4, 1.0 );
       c.cd( 1 );
+      if ( !label.IsNull() ) {
+        PaveText* lab = new PaveText( 0.135, 0.96, 0.2, 0.97 );
+        lab->SetTextSize( 0.05 );
+	lab->SetTextAlign( kVAlignTop+kHAlignLeft );
+        lab->AddText( label );
+        lab->Draw( "same" );
+      }
       if ( logy ) dynamic_cast<TPad*>( c.GetPad( 1 ) )->SetLogy();
       c.Save( "pdf,png", out_path_ );
     }
@@ -295,10 +310,7 @@ class Plotter
         hist->Draw( draw_style );
         c.Prettify( hist );
 
-        TPaveText* title = new TPaveText( 0.82, 0.85, 0.82, 0.85, "NDC" );
-        title->SetFillStyle( 0 );
-        title->SetLineColor( 0 );
-        title->SetTextFont( 42 );
+        PaveText* title = new PaveText( 0.82, 0.85, 0.82, 0.85 );
         title->SetTextSize( 0.05 );
         title->SetTextAlign( kHAlignRight+kVAlignTop );
         title->AddText( it->first );

@@ -35,6 +35,7 @@
 #include "flashgg/DataFormats/interface/DiPhotonCandidate.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
 #include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
@@ -91,6 +92,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     edm::EDGetTokenT< edm::View<flashgg::DiPhotonCandidate> > diphotonToken_;
     edm::EDGetTokenT< edm::View<flashgg::Met> > metToken_;
     edm::EDGetTokenT< edm::View<reco::Vertex> > vtxToken_;
+    edm::EDGetTokenT<reco::BeamSpot> beamSpotToken_;
 //                                 JW
     edm::EDGetTokenT< edm::View<flashgg::Electron> > electronToken_;
     edm::EDGetTokenT< edm::View<flashgg::Muon> > muonToken_; 
@@ -157,8 +159,13 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     float fDiphotonPhi1[MAX_DIPHOTON], fDiphotonPhi2[MAX_DIPHOTON];
     float fDiphotonE1[MAX_DIPHOTON], fDiphotonE2[MAX_DIPHOTON];
     float fDiphotonR91[MAX_DIPHOTON], fDiphotonR92[MAX_DIPHOTON];
+    float fDiphotonId1[MAX_DIPHOTON], fDiphotonId2[MAX_DIPHOTON];
+    float fDiphotonSigEOverE1[MAX_DIPHOTON], fDiphotonSigEOverE2[MAX_DIPHOTON];
     float fDiphotonM[MAX_DIPHOTON], fDiphotonY[MAX_DIPHOTON];
     float fDiphotonPt[MAX_DIPHOTON], fDiphotonDphi[MAX_DIPHOTON];
+
+    float fDiphotonSCX1[MAX_DIPHOTON], fDiphotonSCY1[MAX_DIPHOTON], fDiphotonSCZ1[MAX_DIPHOTON];
+    float fDiphotonSCX2[MAX_DIPHOTON], fDiphotonSCY2[MAX_DIPHOTON], fDiphotonSCZ2[MAX_DIPHOTON];
 
     float fDiphotonGenPt1[MAX_DIPHOTON], fDiphotonGenPt2[MAX_DIPHOTON];
     float fDiphotonGenEta1[MAX_DIPHOTON], fDiphotonGenEta2[MAX_DIPHOTON];
@@ -180,6 +187,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     float fVertexX[MAX_VERTEX], fVertexY[MAX_VERTEX], fVertexZ[MAX_VERTEX];
     int fJetDiphoMatch[MAX_VERTEX];
     //unsigned int fVertexTracks[MAX_VERTEX], fVertexTracksWght0p75[MAX_VERTEX], fVertexTracksWght0p9[MAX_VERTEX], fVertexTracksWght0p95[MAX_VERTEX];
+    float fBSX0, fBSY0, fBSZ0, fBSsigmaZ, fBSdxdz, fBSbeamWidthX, fBSbeamWidthY;
 
     float fPileupWeight;
 };
@@ -200,6 +208,7 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   diphotonToken_     ( consumes< edm::View<flashgg::DiPhotonCandidate> > ( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
   metToken_          ( consumes< edm::View<flashgg::Met> >               ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
   vtxToken_          ( consumes< edm::View<reco::Vertex> >               ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
+  beamSpotToken_     ( consumes<reco::BeamSpot>                          ( iConfig.getParameter<edm::InputTag>( "beamSpotLabel" ) ) ),
 //                               JW
   electronToken_     ( consumes< edm::View<flashgg::Electron> >          ( iConfig.getParameter<edm::InputTag>( "electronLabel") ) ),
   muonToken_         ( consumes< edm::View<flashgg::Muon> >              ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
@@ -293,6 +302,8 @@ TreeProducer::clearTree()
     fDiphotonPhi1[i] = fDiphotonPhi2[i] = -1.;
     fDiphotonE1[i] = fDiphotonE2[i] = -1.;
     fDiphotonR91[i] = fDiphotonR92[i] = -1.;
+    fDiphotonId1[i] = fDiphotonId2[i] = -1.;
+    fDiphotonSigEOverE1[i] = fDiphotonSigEOverE2[i] = -1.;
     fDiphotonM[i] = fDiphotonY[i] = fDiphotonPt[i] = fDiphotonDphi[i] = -1.;
     fDiphotonVertexTracks[i] = 0;
     fDiphotonVertex[i] = -1;
@@ -304,6 +315,9 @@ TreeProducer::clearTree()
     fDiphotonGenEta1[i] = fDiphotonGenEta2[i] = -1.;
     fDiphotonGenPhi1[i] = fDiphotonGenPhi2[i] = -1.;
     fDiphotonGenE1[i] = fDiphotonGenE2[i] = -1.;
+
+    fDiphotonSCX1[i] = fDiphotonSCY1[i] = fDiphotonSCZ1[i] = -999.;
+    fDiphotonSCX2[i] = fDiphotonSCY2[i] = fDiphotonSCZ2[i] = -999.;
   }
   fDiphotonGenVertexX = fDiphotonGenVertexY = fDiphotonGenVertexZ = -999.;
   fDiphotonGenVertexSmearX = fDiphotonGenVertexSmearY = fDiphotonGenVertexSmearZ = -999.;
@@ -346,6 +360,7 @@ TreeProducer::clearTree()
     fVertexX[i] = fVertexY[i] = fVertexZ[i] = -999.;
     //fVertexTracks[i] = fVertexTracksWght0p75[i] = fVertexTracksWght0p9[i] = fVertexTracksWght0p95[i] = 0;
   }
+  fBSX0 = fBSY0 = fBSZ0 = fBSsigmaZ = fBSdxdz = fBSbeamWidthX = fBSbeamWidthY = -999.;
 
   fPileupWeight = 1.;
 }
@@ -456,12 +471,18 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
     fDiphotonPt1[fDiphotonNum] = lead_pho->pt();
     fDiphotonEta1[fDiphotonNum] = lead_pho->eta();
     fDiphotonPhi1[fDiphotonNum] = lead_pho->phi();
+    fDiphotonE1[fDiphotonNum] = lead_pho->energy();
     fDiphotonR91[fDiphotonNum] = lead_pho->full5x5_r9();
+    fDiphotonId1[fDiphotonNum] = lead_pho->phoIdMvaDWrtVtx( diphoton->vtx() );
+    fDiphotonSigEOverE1[fDiphotonNum] = lead_pho->sigEOverE();
 
     fDiphotonPt2[fDiphotonNum] = sublead_pho->pt();
     fDiphotonEta2[fDiphotonNum] = sublead_pho->eta();
     fDiphotonPhi2[fDiphotonNum] = sublead_pho->phi();
+    fDiphotonE2[fDiphotonNum] = sublead_pho->energy();
     fDiphotonR92[fDiphotonNum] = sublead_pho->full5x5_r9();
+    fDiphotonId2[fDiphotonNum] = sublead_pho->phoIdMvaDWrtVtx( diphoton->vtx() );
+    fDiphotonSigEOverE2[fDiphotonNum] = sublead_pho->sigEOverE();
 
     fDiphotonM[fDiphotonNum] = diphoton->mass();
     fDiphotonY[fDiphotonNum] = diphoton->rapidity();
@@ -471,6 +492,15 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
     while ( dphi<-TMath::Pi() ) dphi += 2.*TMath::Pi();
     while ( dphi> TMath::Pi() ) dphi -= 2.*TMath::Pi();
     fDiphotonDphi[fDiphotonNum] = dphi;
+
+    //----- retrieve the SC information
+
+    fDiphotonSCX1[fDiphotonNum] = lead_pho->superCluster()->x();
+    fDiphotonSCY1[fDiphotonNum] = lead_pho->superCluster()->y();
+    fDiphotonSCZ1[fDiphotonNum] = lead_pho->superCluster()->z();
+    fDiphotonSCX2[fDiphotonNum] = sublead_pho->superCluster()->x();
+    fDiphotonSCY2[fDiphotonNum] = sublead_pho->superCluster()->y();
+    fDiphotonSCZ2[fDiphotonNum] = sublead_pho->superCluster()->z();
 
     //----- retrieve the gen-level information
 
@@ -584,6 +614,20 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& )
       fJetNum++;
     }
   }*/
+
+  //----- beam spot -----
+
+  edm::Handle<reco::BeamSpot> beamSpot;
+  iEvent.getByToken( beamSpotToken_, beamSpot );
+  if ( beamSpot.isValid() ) {
+    fBSX0 = beamSpot->x0();
+    fBSY0 = beamSpot->y0();
+    fBSZ0 = beamSpot->z0();
+    fBSsigmaZ = beamSpot->sigmaZ();
+    fBSdxdz = beamSpot->dxdz();
+    fBSbeamWidthX = beamSpot->BeamWidthX();
+    fBSbeamWidthY = beamSpot->BeamWidthY();
+  }
 
   //----- forward RP tracks -----
 
@@ -815,15 +859,28 @@ TreeProducer::beginJob()
   tree_->Branch( "diphoton_rapidity", fDiphotonY, "diphoton_rapidity[num_diphoton]/F" );
   tree_->Branch( "diphoton_pt", fDiphotonPt, "diphoton_pt[num_diphoton]/F" );
   tree_->Branch( "diphoton_dphi", fDiphotonDphi, "diphoton_dphi[num_diphoton]/F" );
+  tree_->Branch( "diphoton_id1", fDiphotonId1, "diphoton_id1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_id2", fDiphotonId2, "diphoton_id2[num_diphoton]/F" );
+  tree_->Branch( "diphoton_sigeove1", fDiphotonSigEOverE1, "diphoton_sigeove1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_sigeove2", fDiphotonSigEOverE2, "diphoton_sigeove2[num_diphoton]/F" );
 
-  tree_->Branch( "diphoton_genpt1", fDiphotonGenPt1, "diphoton_genpt1[num_diphoton]/F" );
-  tree_->Branch( "diphoton_genpt2", fDiphotonGenPt2, "diphoton_genpt2[num_diphoton]/F" );
-  tree_->Branch( "diphoton_geneta1", fDiphotonGenEta1, "diphoton_geneta1[num_diphoton]/F" );
-  tree_->Branch( "diphoton_geneta2", fDiphotonGenEta2, "diphoton_geneta2[num_diphoton]/F" );
-  tree_->Branch( "diphoton_genphi1", fDiphotonGenPhi1, "diphoton_genphi1[num_diphoton]/F" );
-  tree_->Branch( "diphoton_genphi2", fDiphotonGenPhi2, "diphoton_genphi2[num_diphoton]/F" );
-  tree_->Branch( "diphoton_genenergy1", fDiphotonGenE1, "diphoton_genenergy1[num_diphoton]/F" );
-  tree_->Branch( "diphoton_genenergy2", fDiphotonGenE2, "diphoton_genenergy2[num_diphoton]/F" );
+  tree_->Branch( "diphoton_supercluster_x1", fDiphotonSCX1, "diphoton_supercluster_x1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_supercluster_y1", fDiphotonSCY1, "diphoton_supercluster_y1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_supercluster_z1", fDiphotonSCZ1, "diphoton_supercluster_z1[num_diphoton]/F" );
+  tree_->Branch( "diphoton_supercluster_x2", fDiphotonSCX2, "diphoton_supercluster_x2[num_diphoton]/F" );
+  tree_->Branch( "diphoton_supercluster_y2", fDiphotonSCY2, "diphoton_supercluster_y2[num_diphoton]/F" );
+  tree_->Branch( "diphoton_supercluster_z2", fDiphotonSCZ2, "diphoton_supercluster_z2[num_diphoton]/F" );
+
+  if ( !isData_ ) {
+    tree_->Branch( "diphoton_genpt1", fDiphotonGenPt1, "diphoton_genpt1[num_diphoton]/F" );
+    tree_->Branch( "diphoton_genpt2", fDiphotonGenPt2, "diphoton_genpt2[num_diphoton]/F" );
+    tree_->Branch( "diphoton_geneta1", fDiphotonGenEta1, "diphoton_geneta1[num_diphoton]/F" );
+    tree_->Branch( "diphoton_geneta2", fDiphotonGenEta2, "diphoton_geneta2[num_diphoton]/F" );
+    tree_->Branch( "diphoton_genphi1", fDiphotonGenPhi1, "diphoton_genphi1[num_diphoton]/F" );
+    tree_->Branch( "diphoton_genphi2", fDiphotonGenPhi2, "diphoton_genphi2[num_diphoton]/F" );
+    tree_->Branch( "diphoton_genenergy1", fDiphotonGenE1, "diphoton_genenergy1[num_diphoton]/F" );
+    tree_->Branch( "diphoton_genenergy2", fDiphotonGenE2, "diphoton_genenergy2[num_diphoton]/F" );
+  }
 
   tree_->Branch( "diphoton_vertex_tracks", fDiphotonVertexTracks, "diphoton_vertex_tracks[num_diphoton]/i" );
   tree_->Branch( "diphoton_vertex_id", fDiphotonVertex, "diphoton_vertex_id[num_diphoton]/I" );
@@ -884,6 +941,14 @@ TreeProducer::beginJob()
   tree_->Branch( "met", &fMET, "met/F" );
   tree_->Branch( "met_phi", &fMETPhi, "met_phi/F" );
   tree_->Branch( "met_significance", &fMETsignif, "met_significance/F" );
+
+  tree_->Branch( "bs_x0", &fBSX0, "bs_x0/F" );
+  tree_->Branch( "bs_y0", &fBSY0, "bs_y0/F" );
+  tree_->Branch( "bs_z0", &fBSZ0, "bs_z0/F" );
+  tree_->Branch( "bs_sigma_z", &fBSsigmaZ, "bs_sigma_z/F" );
+  tree_->Branch( "bs_dxdz", &fBSdxdz, "bs_dxdz/F" );
+  tree_->Branch( "bs_beam_width_x", &fBSbeamWidthX, "bs_beam_width_x/F" );
+  tree_->Branch( "bs_beam_width_y", &fBSbeamWidthY, "bs_beam_width_y/F" );
 
   tree_->Branch( "pileup_weight", &fPileupWeight, "pileup_weight/F" );
 }

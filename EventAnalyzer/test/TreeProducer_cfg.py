@@ -14,7 +14,8 @@ process.source = cms.Source("PoolSource",
 #'/store/group/phys_higgs/cmshgg/lforthom/flashgg/pps_run2016/Moriond16WSFinal-106-g90923ae/DoubleEG/pps_run2016-Moriond16WSFinal-106-g90923ae-v0-Run2016B-PromptReco-v2/160624_003754/0000/myMicroAODOutputFile_1.root',
 #'/store/group/phys_higgs/cmshgg/lforthom/flashgg/pps_run2016/Moriond16WSFinal-106-g90923ae/DoubleEG/pps_run2016-Moriond16WSFinal-106-g90923ae-v0-Run2016B-PromptReco-v2/160624_003754/0000/myMicroAODOutputFile_2.root',
 #'/store/group/phys_higgs/cmshgg/lforthom/flashgg/DoubleEG/pps_lforthom-miniAOD_run2016B_v2/160831_083550/0000/myMicroAODOutputFile_881.root',
-'/store/group/phys_higgs/cmshgg/lforthom/flashgg/DoubleEG/pps_lforthom-miniAOD_run2016B_v5/161208_215044/0000/myMicroAODOutputFile_881.root'
+#'/store/group/phys_higgs/cmshgg/lforthom/flashgg/DoubleEG/pps_lforthom-miniAOD_run2016B_v5/161208_215044/0000/myMicroAODOutputFile_881.root'
+'/store/group/phys_pps/diphoton/DoubleEG/lforthom-microAOD-ctpps_Run2016C-23Sep2016_v3/170303_022624/0000/myMicroAODOutputFile_64.root',
     )
 )
 
@@ -28,8 +29,9 @@ process.hltHighLevel.throw = cms.bool(False)
 process.load('DiphotonAnalyzer.EventAnalyzer.TreeProducer_cfi')
 
 # set some parameters to the run
-process.treeProducer.minPtSinglePhoton = cms.double(75.)
-process.treeProducer.minMassDiPhoton = cms.double(500.)
+process.treeProducer.minPtSinglePhoton = cms.double(50.)
+process.treeProducer.minMassDiPhoton = cms.double(350.)
+process.treeProducer.minR9SinglePhoton = cms.double(0.)
 
 process.p = cms.Path(
     process.hltHighLevel*

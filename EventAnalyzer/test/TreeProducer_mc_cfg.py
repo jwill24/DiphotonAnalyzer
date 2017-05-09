@@ -11,9 +11,12 @@ process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
 #        'file:myfile.root'
-'/store/group/phys_pps/diphoton/VBFHToGG_M125_13TeV_amcatnlo_pythia8/lforthom-microAOD-ctpps_VBFHToGG_M125_13TeV_amcatnlo_pythia8_v1/170315_142732/0000/myMicroAODOutputFile_61.root',
-'/store/group/phys_pps/diphoton/VBFHToGG_M125_13TeV_amcatnlo_pythia8/lforthom-microAOD-ctpps_VBFHToGG_M125_13TeV_amcatnlo_pythia8_v1/170315_142732/0000/myMicroAODOutputFile_62.root',
-'/store/group/phys_pps/diphoton/VBFHToGG_M125_13TeV_amcatnlo_pythia8/lforthom-microAOD-ctpps_VBFHToGG_M125_13TeV_amcatnlo_pythia8_v1/170315_142732/0000/myMicroAODOutputFile_63.root'
+#'/store/group/phys_pps/diphoton/VBFHToGG_M125_13TeV_amcatnlo_pythia8/lforthom-microAOD-ctpps_VBFHToGG_M125_13TeV_amcatnlo_pythia8_v1/170315_142732/0000/myMicroAODOutputFile_61.root',
+#'/store/group/phys_pps/diphoton/VBFHToGG_M125_13TeV_amcatnlo_pythia8/lforthom-microAOD-ctpps_VBFHToGG_M125_13TeV_amcatnlo_pythia8_v1/170315_142732/0000/myMicroAODOutputFile_62.root',
+#'/store/group/phys_pps/diphoton/VBFHToGG_M125_13TeV_amcatnlo_pythia8/lforthom-microAOD-ctpps_VBFHToGG_M125_13TeV_amcatnlo_pythia8_v1/170315_142732/0000/myMicroAODOutputFile_63.root'
+#'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_elastic.root'
+#'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_singleinelastic.root'
+'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_doubleinelastic.root'
     )
 )
 
@@ -30,7 +33,7 @@ process.load('DiphotonAnalyzer.EventAnalyzer.TreeProducer_cfi')
 process.treeProducer.isData = cms.bool(False)
 process.treeProducer.minPtSinglePhoton = cms.double(50.)
 process.treeProducer.minMassDiPhoton = cms.double(350.)
-process.treeProducer.minR9SinglePhoton = cms.double(0.85)
+process.treeProducer.minR9SinglePhoton = cms.double(0.)
 
 process.treeProducer.pileupMCFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/pileup_mc.root')
 process.treeProducer.pileupDataFile = cms.FileInPath('DiphotonAnalyzer/EventAnalyzer/data/pileup_data16BCG_PPSruns.root')
