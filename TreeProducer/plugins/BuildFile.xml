@@ -1,0 +1,13 @@
+<use name="FWCore/Framework"/>
+<use name="FWCore/PluginManager"/>
+<use name="FWCore/ParameterSet"/>
+<use name="FWCore/ServiceRegistry"/>
+<use name="DataFormats/PatCandidates"/>
+<use name="DataFormats/CTPPSDetId"/>
+<use name="PhysicsTools/UtilAlgos"/>
+<use name="PhysicsTools/Utilities"/>
+<use name="HLTrigger/HLTcore"/>
+<use name="flashgg/DataFormats"/>
+<use name="DiphotonAnalyzer/TreeProducer"/>
+<use name="CLHEP"/>
+<flags EDM_PLUGIN="1"/>
