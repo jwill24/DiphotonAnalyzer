@@ -44,6 +44,7 @@ void tree_reader( TString file=default_ntp_file )
 
   //const float lumi = ( file.Contains( "2016BCG" ) ) ? lumi_b+lumi_c+lumi_g : lumi_b+lumi_c;
   const float lumi = 9.412003739742; // pre-TS2 runs with horizontal RPs inserted
+  const float rel_err_xigg = 0.028;
 
   //----- cuts -----
 
@@ -65,10 +66,10 @@ void tree_reader( TString file=default_ntp_file )
     210-N (beam 2): 0.0496449
     210-F (beam 1): 0.023913
     210-F (beam 2): 0.0368263*/
-  const float lim_45n = 0.034,
-              lim_45f = 0.024,
-              lim_56n = 0.050,
-              lim_56f = 0.037;
+  const float lim_45n = 0.033;
+  const float lim_45f = 0.024;
+  const float lim_56n = 0.0496;
+  const float lim_56f = 0.037;
 
   TH1D* h_pt_incl = new TH1D( "pt_incl", "", 100, 0., 2000. );
 
@@ -316,6 +317,7 @@ void tree_reader( TString file=default_ntp_file )
                h_yggmet_vs_ypp, h_yggmet_vs_ypp_candm, h_yggmet_vs_ypp_candy,
                h_yggincl_vs_ypp, h_yggincl_vs_ypp_candm, h_yggincl_vs_ypp_candy;
   TGraphErrors h_ximatch_45n, h_ximatch_45f, h_ximatch_56n, h_ximatch_56f,
+               h_ximatch_45n_ooa, h_ximatch_45f_ooa, h_ximatch_56n_ooa, h_ximatch_56f_ooa,
                h_ximatch_45n_matched, h_ximatch_45f_matched, h_ximatch_56n_matched, h_ximatch_56f_matched,
                h_ximatch_45n_withmet, h_ximatch_45f_withmet, h_ximatch_56n_withmet, h_ximatch_56f_withmet,
                h_ximatch_45n_withmet_matched, h_ximatch_45f_withmet_matched, h_ximatch_56n_withmet_matched, h_ximatch_56f_withmet_matched;
@@ -411,15 +413,15 @@ void tree_reader( TString file=default_ntp_file )
       err_xip_reco = sqrt( pow( energy_corr_pho1, 2 ) * exp(  2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp(  2.*diphoton_eta2[j] ) )/sqrt_s; //FIXME*/
 	/*err_xim_reco = sqrt( pow( energy_corr_pho1, 2 ) * exp( -2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp( -2.*diphoton_eta2[j] ) )/sqrt_s,
 	  err_xip_reco = sqrt( pow( energy_corr_pho1, 2 ) * exp(  2.*diphoton_eta1[j] ) + pow( energy_corr_pho2, 2 ) * exp(  2.*diphoton_eta2[j] ) )/sqrt_s; //FIXME*/
-      err_xim_reco = xim_reco*0.028,
-      err_xip_reco = xip_reco*0.028;
+      err_xim_reco = xim_reco*rel_err_xigg,
+      err_xip_reco = xip_reco*rel_err_xigg;
 
       //cout << xim_reco << " +- " << err_xim_reco << " // " << xip_reco << " +- " << err_xip_reco << endl;
       //cout << ">>>> " << err_xim_reco << "\t" << err_xip_reco << endl;
       //cout << ">>>> " << err_xim_reco/xim_reco << "\t" << err_xip_reco/xip_reco << endl;
 
-      const float xim_reco_withmet = xim_reco + met/sqrt_s, err_xim_reco_withmet = xim_reco_withmet*0.028,
-                  xip_reco_withmet = xip_reco + met/sqrt_s, err_xip_reco_withmet = xip_reco_withmet*0.028;
+      const float xim_reco_withmet = xim_reco + met/sqrt_s, err_xim_reco_withmet = xim_reco_withmet*rel_err_xigg,
+                  xip_reco_withmet = xip_reco + met/sqrt_s, err_xip_reco_withmet = xip_reco_withmet*rel_err_xigg;
 
       //----- PRESELECTION ------
 
@@ -679,7 +681,7 @@ void tree_reader( TString file=default_ntp_file )
       for ( unsigned short k=0; k<num_proton; k++ ) {
         if ( proton_side[k]==sector45 ) {
           if ( proton_pot[k]==farPot ) {
-            if ( fabs( proton_xi[k]-xip_reco )<n_sigma_1d*proton_xi_error[k] && xip_reco>lim_45f ) { compat_45f = true; }
+          if ( is_matched( n_sigma_1d, proton_xi[k], xip_reco, proton_xi_error[k], err_xip_reco ) && xip_reco>lim_45f ) { compat_45f = true; }
             xi_45.push_back( proton_xi[k] );
             err_xi_45.push_back( proton_xi_error[k] );
             xi_45f.push_back( proton_xi[k] );
@@ -687,19 +689,19 @@ void tree_reader( TString file=default_ntp_file )
             id_45 = k;
           }
           if ( proton_pot[k]==nearPot ) {
-            if ( fabs( proton_xi[k]-xip_reco )<n_sigma_1d*proton_xi_error[k] && xip_reco>lim_45n ) { compat_45n = true; }
-            if ( xi_45.size()==0 ) { // no far pot info retrieved
+          if ( is_matched( n_sigma_1d, proton_xi[k], xip_reco, proton_xi_error[k], err_xip_reco ) && xip_reco>lim_45n ) { compat_45n = true; }
+            //if ( xi_45.size()==0 ) { // no far pot info retrieved
               xi_45.push_back( proton_xi[k] );
               err_xi_45.push_back( proton_xi_error[k] );
               xi_45n.push_back( proton_xi[k] );
               err_xi_45n.push_back( proton_xi_error[k] );
               id_45 = k;
-            }
+            //}
           }
         }
         if ( proton_side[k]==sector56 ) {
           if ( proton_pot[k]==farPot ) {
-            if ( fabs( proton_xi[k]-xip_reco )<n_sigma_1d*proton_xi_error[k] && xip_reco>lim_56f ) { compat_56f = true; }
+          if ( is_matched( n_sigma_1d, proton_xi[k], xim_reco, proton_xi_error[k], err_xim_reco ) && xim_reco>lim_56f ) { compat_56f = true; }
             xi_56.push_back( proton_xi[k] );
             err_xi_56.push_back( proton_xi_error[k] );
             xi_56f.push_back( proton_xi[k] );
@@ -707,14 +709,14 @@ void tree_reader( TString file=default_ntp_file )
             id_56 = k;
           }
           if ( proton_pot[k]==nearPot ) {
-            if ( fabs( proton_xi[k]-xip_reco )<n_sigma_1d*proton_xi_error[k] && xip_reco>lim_56n ) { compat_56n = true; }
-            if ( xi_56.size()==0 ) { // no far pot info retrieved
+            if ( is_matched( n_sigma_1d, proton_xi[k], xim_reco, proton_xi_error[k], err_xim_reco ) && xim_reco>lim_56n ) { compat_56n = true; }
+            //if ( xi_56.size()==0 ) { // no far pot info retrieved
               xi_56.push_back( proton_xi[k] );
               err_xi_56.push_back( proton_xi_error[k] );
               xi_56n.push_back( proton_xi[k] );
               err_xi_56n.push_back( proton_xi_error[k] );
               id_56 = k;
-            }
+            //}
           }
         }
       } // loop over proton tracks
@@ -728,6 +730,7 @@ void tree_reader( TString file=default_ntp_file )
         //events_list << "1\t" << diphoton_mass[j] << "\t" << diphoton_rapidity[j] << endl;
       }
       if ( ( compat_45n || compat_45f ) && ( compat_56n || compat_56f ) ) {
+        cout << "compatible in both arms!!" << endl;
         //events_list << "1\t" << diphoton_mass[j] << "\t" << diphoton_rapidity[j] << endl;
         //events_list << "2\t" << diphoton_mass[j] << "\t" << diphoton_rapidity[j] << endl;
       }
@@ -901,15 +904,22 @@ void tree_reader( TString file=default_ntp_file )
       bool has_45 = false,
            has_56 = false;
       for ( unsigned short k=0; k<xi_45f.size(); k++ ) {
-        const unsigned short id = h_ximatch_45f.GetN();
-
-        h_ximatch_45f.SetPoint( id, xi_45f[k], xip_reco );
-        h_ximatch_45f.SetPointError( id, err_xi_45f[k], err_xip_reco );
-        //if ( ( fabs( xi_45f[k]-xip_reco )<n_sigma_1d*err_xi_45f[k] || fabs( xi_45f[k]-xip_reco )<n_sigma_1d*err_xip_reco ) && xip_reco>lim_45f ) {
-        if ( is_matched( n_sigma_1d, xi_45f[k], xip_reco, err_xi_45f[k], err_xip_reco ) ) {
-          h_ximatch_45f_matched.SetPoint( h_ximatch_45f_matched.GetN(), xi_45f[k], xip_reco );
-          has_45 = true;
+        if ( xip_reco>lim_45f ) {
+          const unsigned short id = h_ximatch_45f.GetN();
+          h_ximatch_45f.SetPoint( id, xi_45f[k], xip_reco );
+          h_ximatch_45f.SetPointError( id, err_xi_45f[k], err_xip_reco );
+          //if ( ( fabs( xi_45f[k]-xip_reco )<n_sigma_1d*err_xi_45f[k] || fabs( xi_45f[k]-xip_reco )<n_sigma_1d*err_xip_reco ) && xip_reco>lim_45f ) {
+          if ( is_matched( n_sigma_1d, xi_45f[k], xip_reco, err_xi_45f[k], err_xip_reco ) ) {
+            h_ximatch_45f_matched.SetPoint( h_ximatch_45f_matched.GetN(), xi_45f[k], xip_reco );
+            has_45 = true;
+          }
         }
+        else {
+          const unsigned short id = h_ximatch_45f_ooa.GetN();
+          h_ximatch_45f_ooa.SetPoint( id, xi_45f[k], xip_reco );
+          h_ximatch_45f_ooa.SetPointError( id, err_xi_45f[k], err_xip_reco );
+        }
+        const unsigned short id = h_ximatch_45f_withmet.GetN();
         h_ximatch_45f_withmet.SetPoint( id, xi_45f[k], xip_reco_withmet );
         h_ximatch_45f_withmet.SetPointError( id, err_xi_45f[k], err_xip_reco_withmet );
         //if ( fabs( xi_45f[k]-xip_reco_withmet )<n_sigma_1d*err_xi_45f[k] && xip_reco_withmet>lim_45f ) {
@@ -918,14 +928,21 @@ void tree_reader( TString file=default_ntp_file )
         }
       }
       for ( unsigned short k=0; k<xi_45n.size(); k++ ) {
-        const unsigned short id = h_ximatch_45n.GetN();
-
-        h_ximatch_45n.SetPoint( id, xi_45n[k], xip_reco );
-        h_ximatch_45n.SetPointError( id, err_xi_45n[k], err_xip_reco );
-        if ( is_matched( n_sigma_1d, xi_45n[k], xip_reco, err_xi_45n[k], err_xip_reco ) ) {
-          h_ximatch_45n_matched.SetPoint( h_ximatch_45n_matched.GetN(), xi_45n[k], xip_reco );
-          has_45 = true;
+        if ( xip_reco>lim_45n ) {
+          const unsigned short id = h_ximatch_45n.GetN();
+          h_ximatch_45n.SetPoint( id, xi_45n[k], xip_reco );
+          h_ximatch_45n.SetPointError( id, err_xi_45n[k], err_xip_reco );
+          if ( is_matched( n_sigma_1d, xi_45n[k], xip_reco, err_xi_45n[k], err_xip_reco ) ) {
+            h_ximatch_45n_matched.SetPoint( h_ximatch_45n_matched.GetN(), xi_45n[k], xip_reco );
+            has_45 = true;
+          }
         }
+        else {
+          const unsigned short id = h_ximatch_45n_ooa.GetN();
+          h_ximatch_45n_ooa.SetPoint( id, xi_45n[k], xip_reco );
+          h_ximatch_45n_ooa.SetPointError( id, err_xi_45n[k], err_xip_reco );
+        }
+        const unsigned short id = h_ximatch_45n_withmet.GetN();
         h_ximatch_45n_withmet.SetPoint( id, xi_45n[k], xip_reco_withmet );
         h_ximatch_45n_withmet.SetPointError( id, err_xi_45n[k], err_xip_reco_withmet );
         if ( is_matched( n_sigma_1d, xi_45n[k], xip_reco_withmet, err_xi_45n[k], err_xip_reco ) ) {
@@ -933,14 +950,21 @@ void tree_reader( TString file=default_ntp_file )
         }
       }
       for ( unsigned short k=0; k<xi_56f.size(); k++ ) {
-        const unsigned short id = h_ximatch_56f.GetN();
-
-        h_ximatch_56f.SetPoint( id, xi_56f[k], xim_reco );
-        h_ximatch_56f.SetPointError( id, err_xi_56f[k], err_xim_reco );
-        if ( is_matched( n_sigma_1d, xi_56f[k], xim_reco, err_xi_56f[k], err_xim_reco ) ) {
-          h_ximatch_56f_matched.SetPoint( h_ximatch_56f_matched.GetN(), xi_56f[k], xim_reco );
-          has_56 = true;
+        if ( xim_reco>lim_56f ) {
+          const unsigned short id = h_ximatch_56f.GetN();
+          h_ximatch_56f.SetPoint( id, xi_56f[k], xim_reco );
+          h_ximatch_56f.SetPointError( id, err_xi_56f[k], err_xim_reco );
+          if ( is_matched( n_sigma_1d, xi_56f[k], xim_reco, err_xi_56f[k], err_xim_reco ) ) {
+            h_ximatch_56f_matched.SetPoint( h_ximatch_56f_matched.GetN(), xi_56f[k], xim_reco );
+            has_56 = true;
+          }
         }
+        else {
+          const unsigned short id = h_ximatch_56f_ooa.GetN();
+          h_ximatch_56f_ooa.SetPoint( id, xi_56f[k], xim_reco );
+          h_ximatch_56f_ooa.SetPointError( id, err_xi_56f[k], err_xim_reco );
+        }
+        const unsigned short id = h_ximatch_56f_withmet.GetN();
         h_ximatch_56f_withmet.SetPoint( id, xi_56f[k], xim_reco_withmet );
         h_ximatch_56f_withmet.SetPointError( id, err_xi_56f[k], err_xim_reco_withmet );
         if ( is_matched( n_sigma_1d, xi_56f[k], xim_reco_withmet, err_xi_56f[k], err_xim_reco ) ) {
@@ -948,15 +972,22 @@ void tree_reader( TString file=default_ntp_file )
         }
       }
       for ( unsigned short k=0; k<xi_56n.size(); k++ ) {
-        const unsigned short id = h_ximatch_56n.GetN();
-        //events_list << "2\t" << diphoton_mass[j] << "\t" << diphoton_rapidity[j] << endl;
-
-        h_ximatch_56n.SetPoint( id, xi_56n[k], xim_reco );
-        h_ximatch_56n.SetPointError( id, err_xi_56n[k], err_xim_reco );
-        if ( is_matched( n_sigma_1d, xi_56n[k], xim_reco, err_xi_56n[k], err_xim_reco ) ) {
-          h_ximatch_56n_matched.SetPoint( h_ximatch_56n_matched.GetN(), xi_56n[k], xim_reco );
-          has_56 = true;
+        if ( xim_reco>lim_56n ) {
+          const unsigned short id = h_ximatch_56n.GetN();
+          //events_list << "2\t" << diphoton_mass[j] << "\t" << diphoton_rapidity[j] << endl;
+          h_ximatch_56n.SetPoint( id, xi_56n[k], xim_reco );
+          h_ximatch_56n.SetPointError( id, err_xi_56n[k], err_xim_reco );
+          if ( is_matched( n_sigma_1d, xi_56n[k], xim_reco, err_xi_56n[k], err_xim_reco ) ) {
+            h_ximatch_56n_matched.SetPoint( h_ximatch_56n_matched.GetN(), xi_56n[k], xim_reco );
+            has_56 = true;
+          }
         }
+        else {
+          const unsigned short id = h_ximatch_56n_ooa.GetN();
+          h_ximatch_56n_ooa.SetPoint( id, xi_56n[k], xim_reco );
+          h_ximatch_56n_ooa.SetPointError( id, err_xi_56n[k], err_xim_reco );
+        }
+        const unsigned short id = h_ximatch_56n_withmet.GetN();
         h_ximatch_56n_withmet.SetPoint( id, xi_56n[k], xim_reco_withmet );
         h_ximatch_56n_withmet.SetPointError( id, err_xi_56n[k], err_xim_reco_withmet );
         if ( is_matched( n_sigma_1d, xi_56n[k], xim_reco_withmet, err_xi_56n[k], err_xim_reco ) ) {
@@ -1195,30 +1226,34 @@ void tree_reader( TString file=default_ntp_file )
     {
       Plotter::GraphsMap gm;
       h_ximatch_45n.SetTitle( "Proton #xi (sector 45 - near pot)\\#xi from diphoton" );
-      gm.push_back( make_pair( "All candidates", &h_ximatch_45n ) );
+      gm.push_back( make_pair( "Non-matching candidates", &h_ximatch_45n ) );
       gm.push_back( make_pair( Form( "#xi within %.0f #sigma", n_sigma_1d ), &h_ximatch_45n_matched ) );
+      gm.push_back( make_pair( "No acceptance", &h_ximatch_45n_ooa ) );
       //gm.push_back( std::pair<const char*,TGraphErrors*>( "Including #slash{E}_{T}", &h_ximatch_45n_withmet ) );
       plt.draw_multigraph( "excl_xi_balance_45n", gm, 0., 0.3, true, lim_45n );
     }
     {
       Plotter::GraphsMap gm;
       h_ximatch_45f.SetTitle( "Proton #xi (sector 45 - far pot)\\#xi from diphoton" );
-      gm.push_back( make_pair( "All candidates", &h_ximatch_45f ) );
+      gm.push_back( make_pair( "Non-matching candidates", &h_ximatch_45f ) );
       gm.push_back( make_pair( Form( "#xi within %.0f #sigma", n_sigma_1d ), &h_ximatch_45f_matched ) );
+      gm.push_back( make_pair( "No acceptance", &h_ximatch_45f_ooa ) );
       plt.draw_multigraph( "excl_xi_balance_45f", gm, 0., 0.3, true, lim_45f );
     }
     {
       Plotter::GraphsMap gm;
       h_ximatch_56n.SetTitle( "Proton #xi (sector 56 - near pot)\\#xi from diphoton" );
-      gm.push_back( make_pair( "All candidates", &h_ximatch_56n ) );
+      gm.push_back( make_pair( "Non-matching candidates", &h_ximatch_56n ) );
       gm.push_back( make_pair( Form( "#xi within %.0f #sigma", n_sigma_1d ), &h_ximatch_56n_matched ) );
+      gm.push_back( make_pair( "No acceptance", &h_ximatch_56n_ooa ) );
       plt.draw_multigraph( "excl_xi_balance_56n", gm, 0., 0.3, true, lim_56n );
     }
     {
       Plotter::GraphsMap gm;
       h_ximatch_56f.SetTitle( "Proton #xi (sector 56 - far pot)\\#xi from diphoton" );
-      gm.push_back( make_pair( "All candidates", &h_ximatch_56f ) );
+      gm.push_back( make_pair( "Non-matching candidates", &h_ximatch_56f ) );
       gm.push_back( make_pair( Form( "#xi within %.0f #sigma", n_sigma_1d ), &h_ximatch_56f_matched ) );
+      gm.push_back( make_pair( "No acceptance", &h_ximatch_56f_ooa ) );
       plt.draw_multigraph( "excl_xi_balance_56f", gm, 0., 0.3, true, lim_56f );
     }
     //----- matching plots with MET -----
