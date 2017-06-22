@@ -13,6 +13,7 @@ namespace CTPPSAlCa
       {
         public:
           Quantities() : x( 0. ), err_x( 0. ), y( 0. ), err_y( 0. ) {}
+          Quantities( float x, float y, float err_x=0., float err_y=0. ) : x( x ), err_x( err_x ), y( y ), err_y( err_y ) {}
 
           bool operator==( const Quantities& rhs ) const {
             return ( x==rhs.x && err_x==rhs.err_x

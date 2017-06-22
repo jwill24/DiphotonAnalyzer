@@ -98,8 +98,12 @@ namespace ProtonUtils
 
     if ( !trk.isValid() ) return;
 
+    std::cout << "--> alignment parameters:\n" << align_ << std::endl;
+
     // retrieve the alignment parameters
     const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rpCopyNumber() );
+
+    std::cout << "--> for this pot:\n" << ac << std::endl;
 
     // retrieve the proper interpolation curve
     TSpline3 *interp = 0;

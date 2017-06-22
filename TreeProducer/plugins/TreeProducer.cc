@@ -146,6 +146,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 
     unsigned int fProtonTrackNum;
     float fProtonTrackX[MAX_PROTON_TRK], fProtonTrackY[MAX_PROTON_TRK];
+    float fProtonTrackXCorr[MAX_PROTON_TRK], fProtonTrackYCorr[MAX_PROTON_TRK];
     float fProtonTrackXi[MAX_PROTON_TRK], fProtonTrackXiError[MAX_PROTON_TRK];
     unsigned int fProtonTrackSide[MAX_PROTON_TRK], fProtonTrackPot[MAX_PROTON_TRK], fProtonTrackLinkNF[MAX_PROTON_TRK];
     float fProtonTrackMinLinkDist[MAX_PROTON_TRK];
@@ -300,9 +301,15 @@ TreeProducer::~TreeProducer()
 void
 TreeProducer::clearTree()
 {
+  fBX = fRun = fLumiSection = fEventNum = 0;
+  fHLTNum = 0;
+  for ( unsigned int i=0; i<MAX_HLT; i++ ) {
+    fHLTAccept[i] = fHLTPrescl[i] = -1;
+  }
   fProtonTrackNum = 0;
   for ( unsigned int i=0; i<MAX_PROTON_TRK; i++ ) {
     fProtonTrackX[i] = fProtonTrackY[i] = -1.;
+    fProtonTrackXCorr[i] = fProtonTrackYCorr[i] = -1.;
     fProtonTrackXi[i] = fProtonTrackXiError[i] = -1.;
     fProtonTrackSide[i] = 2; //invalid
     fProtonTrackPot[i] = 0;
@@ -389,7 +396,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
   analyzeTriggers( iEvent, iSetup );
 
-  std::cout << "---> passing the trigger!" << std::endl;
+  //std::cout << "---> passing the trigger!" << std::endl;
 
   clearTree();
   const reco::Candidate::Point orig( -999., -999, -999. );
@@ -454,7 +461,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     }
 
   }
-  std::cout << "---> passing the mc matching!" << std::endl;
+  //std::cout << "---> passing the mc matching!" << std::endl;
 
   //----- diphoton candidates -----
 
@@ -611,32 +618,6 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
   if ( fDiphotonNum<1 ) return;
 
-  //----- jets collection -----
-
-  /*edm::Handle< edm::View< std::vector<flashgg::Jet> > > jetsColls;
-  iEvent.getByToken( jetToken_, jetsColls );
-
-  fJetNum = 0;
-  for ( unsigned int i=0; i<jetsColls->size(); i++ ) {
-    //           JW
-    edm::Ptr< std::vector<flashgg::Jet> > jets = jetsColls->ptrAt( i );
-    if ( fJetNum>=MAX_JET ) { std::cerr << ">> More jets than expected in this event (" << fJetNum << ">MAX_JET=" << MAX_JET << "). Increase MAX_JET for safety" << std::endl; }
-
-    for ( unsigned int j=0; j<jets->size() && fJetNum<MAX_JET; j++ ) {
-      const flashgg::Jet jet = jets->at( j );
-      fJetPt[fJetNum]   = jet.pt();
-      fJetEta[fJetNum]  = jet.eta();
-      fJetPhi[fJetNum]  = jet.phi();
-      fJetE[fJetNum]    = jet.energy();
-      fJetMass[fJetNum] = jet.mass();
-
-      fJetVertexX[fJetNum] = jet.vertex().x();
-      fJetVertexY[fJetNum] = jet.vertex().y();
-      fJetVertexZ[fJetNum] = jet.vertex().z();
-      fJetNum++;
-    }
-  }*/
-
   //----- beam spot -----
 
   edm::Handle<reco::BeamSpot> beamSpot;
@@ -674,8 +655,10 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
       for ( edm::DetSet<TotemRPLocalTrack>::const_iterator trk=it->begin(); trk!=it->end(); trk++ ) {
         if ( !trk->isValid() ) { continue; }
 
-        fProtonTrackX[fProtonTrackNum] = ( trk->getX0() + align_quant.x ) * 1.e-3; // store in m
-        fProtonTrackY[fProtonTrackNum] = ( trk->getY0() - align_quant.y ) * 1.e-3; // store in m
+        fProtonTrackX[fProtonTrackNum] = trk->getX0() * 1.e-3; // store in m
+        fProtonTrackY[fProtonTrackNum] = trk->getY0() * 1.e-3; // store in m
+        fProtonTrackXCorr[fProtonTrackNum] = ( trk->getX0() + align_quant.x ) * 1.e-3; // store in m
+        fProtonTrackYCorr[fProtonTrackNum] = ( trk->getY0() - align_quant.y ) * 1.e-3; // store in m
         fProtonTrackSide[fProtonTrackNum] = side; // 0 = left (45) ; 1 = right (56)
         fProtonTrackPot[fProtonTrackNum] = pot; // 2 = 210m ; 3 = 220m
 
@@ -771,7 +754,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
   fMETPhi = met->phi();
   fMETsignif = met->significance();
 
-  std::cout << "passed MET" << std::endl;
+  //std::cout << "passed MET" << std::endl;
   //--- pileup information ---
   if ( !isData_ ) {
     edm::Handle< edm::View<PileupSummaryInfo> > pileupInfo;
@@ -786,7 +769,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     fPileupWeight = lumiReweighter_->weight( npv0true );
   }
 
-  std::cout << "passed PU" << std::endl;
+  //std::cout << "passed PU" << std::endl;
   //----- vertexing information -----
 
   edm::Handle< edm::View<reco::Vertex> > vertices;
@@ -822,6 +805,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     fVertexNum++;
   }
 
+  std::cout << ">> Filling the tree" << std::endl;
   tree_->Fill();
 }
 
@@ -843,7 +827,7 @@ TreeProducer::analyzeTriggers( const edm::Event& iEvent, const edm::EventSetup& 
     fHLTAccept[trigNum] = hltResults->accept( i );
 
     // extract prescale value for this path
-    fHLTPrescl[trigNum] = 1.;
+    fHLTPrescl[trigNum] = 1;
     if ( isData_ ) { //FIXME
       int prescale_set = hlt_prescale_.prescaleSet( iEvent, iSetup );
       fHLTPrescl[trigNum] = ( prescale_set<0 ) ? 0. : hlt_config_.prescaleValue( prescale_set, trigNames.triggerNames().at( i ) ); //FIXME
@@ -851,8 +835,8 @@ TreeProducer::analyzeTriggers( const edm::Event& iEvent, const edm::EventSetup& 
     os << "--> (fired? " << fHLTAccept[trigNum] << ") " << trigNames.triggerNames().at( i ) << "\tprescale: " << fHLTPrescl[trigNum] << std::endl;
   }
   LogDebug( "TreeProducer" ) << os.str();
-  #include <iostream>
-  std::cout << os.str() << std::endl;
+  //#include <iostream>
+  //std::cout << os.str() << std::endl;
 }
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -877,6 +861,8 @@ TreeProducer::beginJob()
     tree_->Branch( "num_proton_track", &fProtonTrackNum, "num_proton_track/i" );
     tree_->Branch( "proton_track_x", fProtonTrackX, "proton_track_x[num_proton_track]/F" );
     tree_->Branch( "proton_track_y", fProtonTrackY, "proton_track_y[num_proton_track]/F" );
+    tree_->Branch( "proton_track_x_corr", fProtonTrackXCorr, "proton_track_x_corr[num_proton_track]/F" );
+    tree_->Branch( "proton_track_y_corr", fProtonTrackYCorr, "proton_track_y_corr[num_proton_track]/F" );
     tree_->Branch( "proton_track_xi", fProtonTrackXi, "proton_track_xi[num_proton_track]/F" );
     tree_->Branch( "proton_track_xi_error", fProtonTrackXiError, "proton_track_xi_error[num_proton_track]/F" );
     tree_->Branch( "proton_track_side", fProtonTrackSide, "proton_track_side[num_proton_track]/i" );

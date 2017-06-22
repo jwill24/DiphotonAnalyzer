@@ -53,19 +53,13 @@ namespace CTPPSAlCa
       else if ( std::regex_match( ss, match, rgx_algn_ ) and match.size()>0 ) { // new alignment parameters
         RPAlignmentConstants& align = retrieveConstants( fill_num );
         const unsigned short rp_id = atoi( match[1].str().c_str() );
-        const float align_x = atof( match[2].str().c_str() );
-        float err_align_x = 0., align_y = 0., err_align_y = 0.;
-        if ( match.size()>3 ) {
-          err_align_x = atof( match[3].str().c_str() );
-          align_y = atof( match[4].str().c_str() );
-          err_align_y = atof( match[5].str().c_str() );
-        }
-        RPAlignmentConstants::Quantities quant;
-        quant.x = align_x;
-        quant.err_x = err_align_x;
-        quant.y = align_y;
-        quant.err_y = err_align_y;
-        align.setQuantities( rp_id, quant );
+
+        const float align_x = ( match.size()>2 ) ? atof( match[2].str().c_str() ) : 0.;
+        const float err_align_x = ( match.size()>3 ) ? atof( match[3].str().c_str() ) : 0.;
+        const float align_y = ( match.size()>4 ) ? atof( match[4].str().c_str() ) : 0.;
+        const float err_align_y = ( match.size()>5 ) ? atof( match[5].str().c_str() ) : 0.;
+
+        align.setQuantities( rp_id, RPAlignmentConstants::Quantities( align_x, align_y, err_align_x, err_align_y ) );
       }
       else {
         throw cms::Exception( "InvalidLine" ) << "Failed to process line:\n\t" << ss;

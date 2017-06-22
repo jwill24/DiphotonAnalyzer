@@ -21,7 +21,7 @@ process.hltHighLevel.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
 process.hltHighLevel.HLTPaths = ['HLT_DoublePhoton60*', 'HLT_DoublePhoton85*']
 process.hltHighLevel.throw = cms.bool(False)
 
-process.load('DiphotonAnalyzer.EventAnalyzer.TreeProducer_cfi')
+process.load('DiphotonAnalyzer.TreeProducer.TreeProducer_cfi')
 
 # set some parameters to the run
 process.treeProducer.minPtSinglePhoton = cms.double(50.)
