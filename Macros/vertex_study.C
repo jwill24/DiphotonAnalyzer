@@ -2,7 +2,8 @@
 
 void vertex_study()
 {
-  TFile f( "Samples/output_Run2016BCG_looseCuts_9may.root" );
+  //TFile f( "Samples/output_Run2016BCG_looseCuts_9may.root" );
+  TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
   TTree* t = (TTree*)f.Get( "ntp" );
   const unsigned short max_diph = 50;
   unsigned int num_diph;
@@ -32,8 +33,8 @@ void vertex_study()
     *h_mdiff_orig = (TH1D*)h_mdiff_bs->Clone( "mdiff_orig" ),
     *h_mdiff_bs_orig = (TH1D*)h_mdiff_bs->Clone( "mdiff_bs_orig" );
 
-  const unsigned short num_vtx_pos = 11;
-  const float min_vtx_dist = -1., max_vtx_dist = 1.;
+  const unsigned short num_vtx_pos = 41;
+  const float min_vtx_dist = -10., max_vtx_dist = 10.;
   float vtx_shifts[num_vtx_pos];
   TH1D* h_mdiff_shift[num_vtx_pos];
   for ( unsigned short i=0; i<num_vtx_pos; i++ ) {
@@ -65,14 +66,21 @@ void vertex_study()
       h_mdiff_orig->Fill( ( corr_p1_orig+corr_p2_orig ).M()-diphoton_m[j] );
       h_mdiff_bs_orig->Fill( ( corr_p1_orig+corr_p2_orig ).M()-( corr_p1+corr_p2 ).M() );
       for ( unsigned short k=0; k<num_vtx_pos; k++ ) {
-	const TVector3 shift_pos( 0., 0., vtx_shifts[i] );
-	TVector3 p1_shift = ( pho1_sc-shift_pos ).Unit() * pho1_e[j];
-	TVector3 p2_shift = ( pho2_sc-shift_pos ).Unit() * pho2_e[j];
-	TLorentzVector corr_p1_shift( p1_shift.x(), p1_shift.y(), p1_shift.z(), pho1_e[j] );
-	TLorentzVector corr_p2_shift( p2_shift.x(), p2_shift.y(), p2_shift.z(), pho2_e[j] );
-	h_mdiff_shift[k]->Fill( ( corr_p1_shift+corr_p2_shift ).M()-diphoton_m );
+//cout << k << ": " << vtx_shifts[i]
+        const TVector3 shift_pos( 0., 0., vtx_shifts[k] );
+        TVector3 p1_shift = ( pho1_sc-shift_pos ).Unit() * pho1_e[j];
+        TVector3 p2_shift = ( pho2_sc-shift_pos ).Unit() * pho2_e[j];
+        TLorentzVector corr_p1_shift( p1_shift.x(), p1_shift.y(), p1_shift.z(), pho1_e[j] );
+        TLorentzVector corr_p2_shift( p2_shift.x(), p2_shift.y(), p2_shift.z(), pho2_e[j] );
+        h_mdiff_shift[k]->Fill( ( corr_p1_shift+corr_p2_shift ).M()-diphoton_m[j] );
       }
     }
+  }
+
+cout << "finished the events loop" << endl;
+
+  for ( unsigned short i=0; i<num_vtx_pos; i++ ) {
+    cout << "mean mass difference for z=" << vtx_shifts[i] << ": " << h_mdiff_shift[i]->GetMean() << endl;
   }
 
   //----- plotting part

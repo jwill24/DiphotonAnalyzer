@@ -33,8 +33,17 @@ namespace xi_reco
     TSpline* sp = get_spline( arm, pot );
     if ( !sp ) return;
     xi = sp->Eval( x );
-    double de_xi = sp->Eval( x+0.4e-3 )-xi, de_dx = 0.1*xi;
-    xi_err = sqrt( de_xi*de_xi+de_dx*de_dx );
+    // old
+    /*double de_xi = sp->Eval( x+0.4e-3 )-xi, de_dx = 0.1*xi;
+    xi_err = sqrt( de_xi*de_xi+de_dx*de_dx );*/
+    // determine uncertainty of xi
+    const double si_x_alignment = 150.0e-6; // in m, alignment uncertainty
+    const double si_x_neglected_angle = 150.0e-6; // in m, to (approximately) account for the neglected angular term in proton transport
+    const double si_rel_D = 0.055; // 1, relative uncertainty of dispersion
+    const double si_x = sqrt( si_x_alignment*si_x_alignment + si_x_neglected_angle*si_x_neglected_angle );
+    const double si_xi_from_x = sp->Eval( x+si_x )-xi;
+    const double si_xi_from_D_x = si_rel_D * xi;
+    xi_err = sqrt( si_xi_from_x*si_xi_from_x + si_xi_from_D_x*si_xi_from_D_x );
   }
 }
 

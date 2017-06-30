@@ -13,8 +13,8 @@
 class Plotter
 {
   public:
-    typedef std::vector< std::pair<const char*, TGraphErrors*> > GraphsMap;
-    typedef std::vector< std::pair<const char*, TH1*> > HistsMap;
+    typedef std::vector< std::pair<std::string, TGraphErrors*> > GraphsMap;
+    typedef std::vector< std::pair<std::string, TH1*> > HistsMap;
 
   public:
     Plotter( const char* out_path, const char* top_label ) : out_path_( out_path ), top_label_( top_label ) {}
@@ -48,7 +48,7 @@ class Plotter
         max = TMath::Max( max, hist->GetMaximum() );
         if ( i>2 ) hist->SetFillStyle( 3005 );
         if ( hm.size()>1 ) {
-          c.AddLegendEntry( hist, it->first, ( i==0 ) ? "f" : "ep" );
+          c.AddLegendEntry( hist, it->first.c_str(), ( i==0 ) ? "f" : "ep" );
         }
         i++;
       }
@@ -85,7 +85,7 @@ class Plotter
         gr->SetMarkerStyle( marker_pool_[i] );
         gr->SetMarkerColor( colour_pool_[i] );
         //c.SetLegendY1( 0.18 );
-        if ( gr_map.size()>0 && strcmp( it->first, "" )!=0 ) c.AddLegendEntry( gr, it->first, "p" );
+        if ( gr_map.size()>0 && strcmp( it->first.c_str(), "" )!=0 ) c.AddLegendEntry( gr, it->first.c_str(), "p" );
         i++;
       }
 
@@ -133,7 +133,7 @@ class Plotter
         mg.Add( gr );
         gr->SetMarkerStyle( marker_pool_[i] );
         gr->SetMarkerColor( colour_pool_[i] );
-        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( gr, it->first, "p" );
+        if ( strcmp( it->first.c_str(), "" )!=0 ) c.AddLegendEntry( gr, it->first.c_str(), "p" );
         i++;
       }
 
@@ -164,7 +164,7 @@ class Plotter
         if ( strcmp( gr->GetTitle(), "" )!=0 ) mg.SetTitle( gr->GetTitle() );
         gr->SetMarkerStyle( marker_pool_[i] );
         gr->SetMarkerColor( colour_pool_[i] );
-        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( gr, it->first, "p" );
+        if ( strcmp( it->first.c_str(), "" )!=0 ) c.AddLegendEntry( gr, it->first.c_str(), "p" );
         i++;
       }
 
@@ -211,7 +211,7 @@ class Plotter
         hist->SetMarkerStyle( 20+i );
         hist->SetMarkerColor( kBlack );
         hist->SetLineColor( kBlack );
-        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( hist, it->first, "lp" );
+        if ( strcmp( it->first.c_str(), "" )!=0 ) c.AddLegendEntry( hist, it->first.c_str(), "lp" );
         max_bin = TMath::Max( max_bin, hist->GetMaximum() );
         hs_data.Add( hist );
         i++;
@@ -224,7 +224,7 @@ class Plotter
         if ( colours ) hist->SetFillColorAlpha( colour_pool_[i+1], 0.5 );
         //hist->SetFillStyle( 3002 );
         hist->SetLineColor( kBlack );
-        if ( strcmp( it->first, "" )!=0 ) { c.AddLegendEntry( hist, it->first, "f" ); }
+        if ( strcmp( it->first.c_str(), "" )!=0 ) { c.AddLegendEntry( hist, it->first.c_str(), "f" ); }
         hs_mc.Add( hist );
         if ( i==0 ) hs_mc.SetTitle( hist->GetTitle() );
         i++;
@@ -236,7 +236,7 @@ class Plotter
         hist->SetLineColor( kGreen );
         hist->SetLineWidth( 3 );
         hist->SetLineStyle( i );
-        if ( strcmp( it->first, "" )!=0 ) { c.AddLegendEntry( hist, it->first, "l" ); }
+        if ( strcmp( it->first.c_str(), "" )!=0 ) { c.AddLegendEntry( hist, it->first.c_str(), "l" ); }
         hs_sig.Add( hist );
         if ( i==0 ) hs_sig.SetTitle( hist->GetTitle() );
         hist_stacked->SetLineColor( kBlack );
@@ -291,7 +291,7 @@ class Plotter
         hist->SetMarkerStyle( marker_pool_[i] );
         hist->SetMarkerColor( colour_pool_[i] );
         hist->SetLineColor( kBlack );
-        if ( strcmp( it->first, "" )!=0 ) c.AddLegendEntry( hist, it->first, ( compute_w2 ) ? "elp" : "lp" );
+        if ( strcmp( it->first.c_str(), "" )!=0 ) c.AddLegendEntry( hist, it->first.c_str(), ( compute_w2 ) ? "elp" : "lp" );
         max_bin = TMath::Max( max_bin, hist->GetMaximum() );
         i++;
       }
@@ -327,7 +327,7 @@ class Plotter
         PaveText* title = new PaveText( 0.82, 0.85, 0.82, 0.85 );
         title->SetTextSize( 0.05 );
         title->SetTextAlign( kHAlignRight+kVAlignTop );
-        title->AddText( it->first );
+        title->AddText( it->first.c_str() );
         title->Draw( "same" );
 
         hist->GetXaxis()->SetLabelSize( 12 );

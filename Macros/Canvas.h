@@ -93,7 +93,7 @@ class Canvas : public TCanvas
     }
   }
 
-  typedef std::vector< std::pair<const char*,TH1*> > HistsMap;
+  typedef std::vector< std::pair<std::string,TH1*> > HistsMap;
   inline void RatioPlot( HistsMap hm, float ymin=-999., float ymax=-999., float xline=-999. ) {
     if ( !fRatio ) return;
     TH1* denom = hm.begin()->second,

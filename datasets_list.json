@@ -5,21 +5,31 @@
       "name": "Data",
       "colour": 1,
       //"path": "Samples/output_Run2016BCG_looseCuts_10mar_xifix.root",
-      "path": "Samples/output_Run2016BCG_looseCuts_9may.root",
+      //"path": "Samples/output_Run2016BCG_looseCuts_9may.root",
+      //"path": "Samples/output_Run2016BCG_looseCuts_22jun.root",
+      "path": "Samples/output_Run2016BCG_looseCuts_28jun.root",
       "cross_section": 1.0,
       "num_events": 0
     },
     {
       "type": "signal",
-      "name": "Excl. #gamma#gamma #rightarrow #gamma#gamma (x100)",
+      "name": "Excl. #gamma#gamma#rightarrow#gamma#gamma",
       "colour": 3, // kGreen
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_r9gt0.root",
       "path": "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root",
       //"cross_section": 1.0342e-4, // +- 1.6516e-6
-      "cross_section": 2.0684e-2, // +- 1.6516e-6
+      "cross_section": 2.0684e-4, // +- 1.6516e-6
       "num_events": 100000
     },
+    /*{
+      "type": "signal",
+      "name": "Excl. #gamma#gamma#rightarrow#gamma#gamma",
+      "colour": 3, // kGreen
+      "path": "Samples/output_GammaGammaToGammaGamma_13TeV_superchic2_27jun.root",
+      "cross_section": 0.4580695e-6, // +- 1.6516e-6
+      "num_events": 10000
+    },*/
     {
       "type": "background",
       "colour": 432, // kCyan

@@ -148,6 +148,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     float fProtonTrackX[MAX_PROTON_TRK], fProtonTrackY[MAX_PROTON_TRK];
     float fProtonTrackXCorr[MAX_PROTON_TRK], fProtonTrackYCorr[MAX_PROTON_TRK];
     float fProtonTrackXi[MAX_PROTON_TRK], fProtonTrackXiError[MAX_PROTON_TRK];
+    float fProtonTrackChi2[MAX_PROTON_TRK], fProtonTrackNormChi2[MAX_PROTON_TRK];
     unsigned int fProtonTrackSide[MAX_PROTON_TRK], fProtonTrackPot[MAX_PROTON_TRK], fProtonTrackLinkNF[MAX_PROTON_TRK];
     float fProtonTrackMinLinkDist[MAX_PROTON_TRK];
 
@@ -311,6 +312,7 @@ TreeProducer::clearTree()
     fProtonTrackX[i] = fProtonTrackY[i] = -1.;
     fProtonTrackXCorr[i] = fProtonTrackYCorr[i] = -1.;
     fProtonTrackXi[i] = fProtonTrackXiError[i] = -1.;
+    fProtonTrackChi2[i] = fProtonTrackNormChi2[i] = -1.;
     fProtonTrackSide[i] = 2; //invalid
     fProtonTrackPot[i] = 0;
     fProtonTrackLinkNF[i] = 999;
@@ -668,6 +670,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
         else                { xiInterp_->computeXiLinear( detid, *trk, xi, err_xi ); }
         fProtonTrackXi[fProtonTrackNum] = xi;
         fProtonTrackXiError[fProtonTrackNum] = err_xi;
+        fProtonTrackChi2[fProtonTrackNum] = trk->getChiSquared();
+        fProtonTrackNormChi2[fProtonTrackNum] = trk->getChiSquaredOverNDF();
 
         switch ( pot ) {
           case 2: { map_near.insert( std::make_pair( fProtonTrackNum, localtrack_t( it->detId(), *trk ) ) ); } break;
@@ -866,6 +870,8 @@ TreeProducer::beginJob()
     tree_->Branch( "proton_track_xi", fProtonTrackXi, "proton_track_xi[num_proton_track]/F" );
     tree_->Branch( "proton_track_xi_error", fProtonTrackXiError, "proton_track_xi_error[num_proton_track]/F" );
     tree_->Branch( "proton_track_side", fProtonTrackSide, "proton_track_side[num_proton_track]/i" );
+    tree_->Branch( "proton_track_chi2", fProtonTrackChi2, "proton_track_chi2[num_proton_track]/F" );
+    tree_->Branch( "proton_track_normchi2", fProtonTrackNormChi2, "proton_track_normchi2[num_proton_track]/F" );
     tree_->Branch( "proton_track_pot", fProtonTrackPot, "proton_track_pot[num_proton_track]/i" );
     tree_->Branch( "proton_track_link_nearfar", fProtonTrackLinkNF, "proton_track_link_nearfar[num_proton_track]/i" );
     tree_->Branch( "proton_track_link_mindist", fProtonTrackMinLinkDist, "proton_track_link_mindist[num_proton_track]/F" );

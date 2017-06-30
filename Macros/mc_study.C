@@ -26,8 +26,8 @@ void mc_study()
   const float dr_cut = 0.1;
 
   //const char* file = "Samples/output_0000_GammaGammaToGammaGamma_13TeV_fpmc.root";
-  //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
-  const char* file = "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root";
+  const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
+  //const char* file = "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root";
   TFile f( file );
   TTree* t = dynamic_cast<TTree*>( f.Get( "ntp" ) );
 
@@ -229,7 +229,8 @@ void mc_study()
   }
   gStyle->SetOptStat( 0 );
   const char* output_dir = "/afs/cern.ch/user/l/lforthom/www/private/twophoton/mc_study",
-             *top_title = "CMS Simulation - Excl. #gamma#gamma #rightarrow #gamma#gamma, #sqrt{s} = 13 TeV, 2016 PU cond.";
+             //*top_title = "CMS Simulation - Excl. #gamma#gamma #rightarrow #gamma#gamma, #sqrt{s} = 13 TeV, 2016 PU cond.";
+             *top_title = "CMS Simulation - #sqrt{s} = 13 TeV, 2016 PU cond.";
   {
     Canvas c( "mc_study_mresol_vs_vtxpos", top_title );
     TGraphErrors gr;
@@ -395,8 +396,8 @@ void mc_study()
     hm.push_back( make_pair( "Reco level", h_energysingle_reco ) );
     plt.draw_multiplot( "mc_study_energycomp", hm );
   }
-  /*{
-    Canvas c( "mc_study_xiresol", top_title );
+  {
+    Canvas c( "mc_study_xiresolution", top_title );
     c.SetLegendX1( 0.16 );
     h_xiresol1->Draw( "hist" );
     h_xiresol1->SetLineColor( kBlack );
@@ -409,7 +410,7 @@ void mc_study()
     if ( fit1.Get() ) {
       const double* params_fit1 = fit1->GetParams();
       //c.AddLegendEntry( h_xiresol1, Form( "Sect.45, #sigma = %.4f", params_fit1[2] ), "f" );
-      c.AddLegendEntry( h_xiresol1, Form( "Sect.45, RMS = %.4f", h_xiresol1->GetRMS() ), "f" );
+      c.AddLegendEntry( h_xiresol1, Form( "Sect.45, Mean = %.2e, RMS = %.3f", h_xiresol1->GetMean(), h_xiresol1->GetRMS() ), "f" );
     }
     h_xiresol2->Draw( "hist same" );
     h_xiresol2->SetLineColor( kRed+1 );
@@ -421,10 +422,19 @@ void mc_study()
     if ( fit2.Get() ) {
       const double* params_fit2 = fit2->GetParams();
       //c.AddLegendEntry( h_xiresol2, Form( "Sect.56, #sigma = %.4f", params_fit2[2] ), "f" );
-      c.AddLegendEntry( h_xiresol2, Form( "Sect.56, RMS = %.4f", h_xiresol2->GetRMS() ), "f" );
+      c.AddLegendEntry( h_xiresol2, Form( "Sect.56, Mean = %.2e, RMS = %.3f", h_xiresol2->GetMean(), h_xiresol2->GetRMS() ), "f" );
     }
     c.Prettify( h_xiresol1 );
+
+    PaveText lab( 0.8, 0.6, 0.85, 0.7 );
+    lab.SetTextSize( 0.04 );
+    lab.SetFillStyle( 0 );
+    lab.SetLineWidth( 0 );
+    lab.AddText( "Elastic #gamma#gamma#rightarrow#gamma#gamma" );
+    lab.AddText( "FPMC, SM pred." );
+    lab.Draw( "same" );
+
     c.GetLegend()->SetLineColor( kWhite );
     c.Save( "pdf,png", output_dir );
-  }*/
+  }
 }
