@@ -58,14 +58,11 @@ void xi_matcher()
 
   unsigned int num_proton_track;
   float proton_track_x[MAX_PROTONS], proton_track_y[MAX_PROTONS];
-  float proton_track_xi[MAX_PROTONS], proton_track_xi_error[MAX_PROTONS];
   float proton_track_normchi2[MAX_PROTONS];
   unsigned int proton_track_side[MAX_PROTONS], proton_track_pot[MAX_PROTONS];
   tr->SetBranchAddress( "num_proton_track", &num_proton_track );
   tr->SetBranchAddress( "proton_track_x", proton_track_x );
   tr->SetBranchAddress( "proton_track_y", proton_track_y );
-  tr->SetBranchAddress( "proton_track_xi", proton_track_xi );
-  tr->SetBranchAddress( "proton_track_xi_error", proton_track_xi_error );
   tr->SetBranchAddress( "proton_track_side", proton_track_side );
   tr->SetBranchAddress( "proton_track_pot", proton_track_pot );
   tr->SetBranchAddress( "proton_track_normchi2", proton_track_normchi2 );
@@ -171,10 +168,12 @@ void xi_matcher()
     vector< pair<float, float> > xy_45n_ooa, xy_45f_ooa, xy_56n_ooa, xy_56f_ooa;
 
     for ( unsigned short j=0; j<num_proton_track; j++ ) {
+      const unsigned short pot_id = 100*proton_track_side[j]+proton_track_pot[j];
+      const auto& al = align[pot_id];
+
       double xi, xi_err;
+      xi_reco::reconstruct( proton_track_x[j]+al.x, proton_track_side[j], proton_track_pot[j], xi, xi_err );
       if ( proton_track_side[j]==0 && proton_track_pot[j]==2 ) {
-        const auto& al = align[2];
-        xi_reco::reconstruct( proton_track_x[j]+al.x, proton_track_side[j], proton_track_pot[j], xi, xi_err );
         if ( xi>=lim_45n ) {
           h_fwdtrk_chisq_45n_ina->Fill( proton_track_normchi2[j] );
         }
@@ -190,8 +189,6 @@ void xi_matcher()
 //cout << "xi45n: " << proton_track_xi[j] << " +/- " << proton_track_xi_error[j] << " / " << xi << " +/- " << xi_err << endl;
       }
       else if ( proton_track_side[j]==0 && proton_track_pot[j]==3 ) {
-        const auto& al = align[3];
-        xi_reco::reconstruct( proton_track_x[j]+al.x, proton_track_side[j], proton_track_pot[j], xi, xi_err );
         if ( xi>=lim_45f ) {
           h_fwdtrk_chisq_45f_ina->Fill( proton_track_normchi2[j] );
         }
@@ -206,8 +203,6 @@ void xi_matcher()
         h_xispectrum_45f->Fill( xi );
       }
       else if ( proton_track_side[j]==1 && proton_track_pot[j]==2 ) {
-        const auto& al = align[102];
-        xi_reco::reconstruct( proton_track_x[j]+al.x, proton_track_side[j], proton_track_pot[j], xi, xi_err );
         if ( xi>=lim_56n ) {
           h_fwdtrk_chisq_56n_ina->Fill( proton_track_normchi2[j] );
         }
@@ -222,8 +217,6 @@ void xi_matcher()
         h_xispectrum_56n->Fill( xi );
       }
       else if ( proton_track_side[j]==1 && proton_track_pot[j]==3 ) {
-        const auto& al = align[103];
-        xi_reco::reconstruct( proton_track_x[j]+al.x, proton_track_side[j], proton_track_pot[j], xi, xi_err );
         if ( xi>=lim_56f ) {
           h_fwdtrk_chisq_56f_ina->Fill( proton_track_normchi2[j] );
         }
