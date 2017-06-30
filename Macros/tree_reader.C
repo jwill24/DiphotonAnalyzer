@@ -20,7 +20,8 @@
 //#define default_ntp_file "Samples/output_Run2016BC_looseCuts_9mar_xifix.root"
 //#define default_ntp_file "test.root"
 //#define default_ntp_file "Samples/output_Run2016BCG_looseCuts_10mar_xifix.root"
-#define default_ntp_file "Samples/output_Run2016BCG_looseCuts_9may.root"
+//#define default_ntp_file "Samples/output_Run2016BCG_looseCuts_9may.root"
+#define default_ntp_file "Samples/output_Run2016BCG_looseCuts_28jun.root"
 
 float photon_rel_energy_scale( const float& pt, const float& eta, const float& r9 );
 bool is_matched( int n_sigma, float xi_rp, float xi_cs, float err_xi_rp, float err_xi_cs );
@@ -60,7 +61,7 @@ void tree_reader( TString file=default_ntp_file )
               max_acopl = 0.01;
   const float oth_obj_minpt = 150.;
   const float n_sigma_1d = 2.0, // xi matching sigma number
-              n_sigma_2d = 1.0;
+              n_sigma_2d = 2.0;
 
   /*210-N (beam 1): 0.0334862
     210-N (beam 2): 0.0496449
@@ -68,7 +69,7 @@ void tree_reader( TString file=default_ntp_file )
     210-F (beam 2): 0.0368263*/
   const float lim_45n = 0.033;
   const float lim_45f = 0.024;
-  const float lim_56n = 0.0496;
+  const float lim_56n = 0.050;
   const float lim_56f = 0.037;
 
   TH1D* h_pt_incl = new TH1D( "pt_incl", "", 100, 0., 2000. );

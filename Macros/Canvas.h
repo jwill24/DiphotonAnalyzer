@@ -108,9 +108,9 @@ class Canvas : public TCanvas
     }
   }
 
-  inline void Divide( unsigned short num_cols, unsigned short num_lines=1 ) {
+  inline void Divide( int num_cols, int num_lines=1, float xmargin=0.01, float ymargin=0.01, int color=0 ) override {
     if ( fRatio ) return;
-    TCanvas::Divide( num_cols, num_lines );
+    TCanvas::Divide( num_cols, num_lines, xmargin, ymargin, color );
     double top_margin = 0.055;
     double pad_x = 1./num_cols, pad_y = ( 1.-top_margin )/num_lines;
     for ( unsigned short l=0; l<num_lines; l++ ) {

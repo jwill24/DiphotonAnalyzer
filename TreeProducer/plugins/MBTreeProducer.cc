@@ -169,29 +169,6 @@ MBTreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup
 {
   clearTree();
 
-  // Run and BX information
-  fBX = iEvent.bunchCrossing();
-  fRun = iEvent.id().run();
-  fLumiSection = iEvent.luminosityBlock();
-  fEventNum = iEvent.id().event();
-
-  // get the fill number from the run id <-> fill number LUT
-  fFill = ( fillLUTHandler_ ) ? fillLUTHandler_->getFillNumber( iEvent.id().run() ) : 1;
-
-  //----- beam spot -----
-
-  edm::Handle<reco::BeamSpot> beamSpot;
-  iEvent.getByToken( beamSpotToken_, beamSpot );
-  if ( beamSpot.isValid() ) {
-    fBSX0 = beamSpot->x0();
-    fBSY0 = beamSpot->y0();
-    fBSZ0 = beamSpot->z0();
-    fBSsigmaZ = beamSpot->sigmaZ();
-    fBSdxdz = beamSpot->dxdz();
-    fBSbeamWidthX = beamSpot->BeamWidthX();
-    fBSbeamWidthY = beamSpot->BeamWidthY();
-  }
-
   //----- forward RP tracks -----
 
   edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
@@ -216,6 +193,30 @@ MBTreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup
 
       fProtonTrackNum++;
     }
+  }
+  if ( fProtonTrackNum==0 ) return; // do not store in the tree if no valid tracks are found
+
+  // Run and BX information
+  fBX = iEvent.bunchCrossing();
+  fRun = iEvent.id().run();
+  fLumiSection = iEvent.luminosityBlock();
+  fEventNum = iEvent.id().event();
+
+  // get the fill number from the run id <-> fill number LUT
+  fFill = ( fillLUTHandler_ ) ? fillLUTHandler_->getFillNumber( iEvent.id().run() ) : 1;
+
+  //----- beam spot -----
+
+  edm::Handle<reco::BeamSpot> beamSpot;
+  iEvent.getByToken( beamSpotToken_, beamSpot );
+  if ( beamSpot.isValid() ) {
+    fBSX0 = beamSpot->x0();
+    fBSY0 = beamSpot->y0();
+    fBSZ0 = beamSpot->z0();
+    fBSsigmaZ = beamSpot->sigmaZ();
+    fBSdxdz = beamSpot->dxdz();
+    fBSbeamWidthX = beamSpot->BeamWidthX();
+    fBSbeamWidthY = beamSpot->BeamWidthY();
   }
 
   //----- vertexing information -----
