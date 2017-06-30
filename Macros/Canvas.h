@@ -35,7 +35,7 @@ class Canvas : public TCanvas
     TCanvas( name, "", 600, 600 ),
     fTitle( title ), fTopLabel( 0 ),
     fLeg( 0 ), fLegXpos( 0.5 ), fLegYpos( 0.75 ), fLegXsize( 0.35 ), fLegYsize( 0.15 ),
-    fRatio( ratio )
+    fRatio( ratio ), divided_( false )
   {
     Build();
   }
@@ -47,16 +47,31 @@ class Canvas : public TCanvas
   inline void Prettify(TH1* obj) {
     TAxis* x = dynamic_cast<TAxis*>( obj->GetXaxis() ),
           *y = dynamic_cast<TAxis*>( obj->GetYaxis() );
-    x->SetLabelFont( 43 ); x->SetLabelSize( 20 );
-    x->SetTitleFont( 43 ); x->SetTitleSize( 26 );
-    y->SetLabelFont( 43 ); y->SetLabelSize( 20 );
-    y->SetTitleFont( 43 ); y->SetTitleSize( 26 );
+    x->SetLabelFont( 43 );
+    x->SetTitleFont( 43 );
+    y->SetLabelFont( 43 );
+    y->SetTitleFont( 43 );
+    if ( !divided_ ) {
+      x->SetLabelSize( 20 );
+      x->SetTitleSize( 26 );
+      y->SetLabelSize( 20 );
+      y->SetTitleSize( 26 );
+      y->SetTitleOffset( 1.4 );
+    }
+    else {
+      x->SetLabelSize( 16 );
+      x->SetTitleSize( 20 );
+      y->SetLabelSize( 15 );
+      y->SetTitleSize( 20 );
+      x->SetTitleOffset( 1.8 );
+      x->SetLabelOffset( 0.02 );
+      y->SetTitleOffset( 2.1 );
+    }
     x->SetTitleColor( kBlack );
     if ( fRatio ) {
       x->SetTitleOffset( 3.2 );
       x->SetLabelOffset( 0.02 );
     }
-    y->SetTitleOffset( 1.4 );
 
     // axis titles
     TString ttle = obj->GetTitle();
@@ -91,6 +106,25 @@ class Canvas : public TCanvas
       obj->GetYaxis()->SetTitle( y_title );
       obj->SetTitle( "" );
     }
+  }
+
+  inline void Divide( unsigned short num_cols, unsigned short num_lines=1 ) {
+    if ( fRatio ) return;
+    TCanvas::Divide( num_cols, num_lines );
+    double top_margin = 0.055;
+    double pad_x = 1./num_cols, pad_y = ( 1.-top_margin )/num_lines;
+    for ( unsigned short l=0; l<num_lines; l++ ) {
+      for ( unsigned short c=0; c<num_cols; c++ ) { // fetch one line by one line
+        TPad* p = dynamic_cast<TPad*>( TCanvas::GetPad( 1+l*num_cols+c ) );
+        p->SetPad( 0.+pad_x*c, 1.-top_margin-pad_y*( l+1 ), 0.+pad_x*( c+1 ), 1.-top_margin-pad_y*l );
+        p->SetLeftMargin( 0.15 );
+        if ( c==num_cols-1 ) p->SetRightMargin( TCanvas::GetRightMargin() );
+        p->SetTopMargin( 0. );
+        p->SetBottomMargin( 0.15 );
+        p->SetTicks( 1, 1 );
+      }
+    }
+    divided_ = true;
   }
 
   typedef std::vector< std::pair<std::string,TH1*> > HistsMap;
@@ -233,6 +267,7 @@ class Canvas : public TCanvas
   TLegend* fLeg;
   double fLegXpos, fLegYpos, fLegXsize, fLegYsize;
   bool fRatio;
+  bool divided_;
 };
 
 TH1*
