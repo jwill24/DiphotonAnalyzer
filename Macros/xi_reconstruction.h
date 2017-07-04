@@ -1,6 +1,8 @@
 #ifndef DiphotonAnalyzer_Macros_xi_reconstruction_h
 #define DiphotonAnalyzer_Macros_xi_reconstruction_h
 
+#include "TSpline.h"
+
 namespace xi_reco
 {
   TSpline* sp[4];

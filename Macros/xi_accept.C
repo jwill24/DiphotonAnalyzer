@@ -84,6 +84,9 @@ void xi_accept()
   c_combined.Divide( 2, 2 );
   c_combined.SetLegendX1( 0.18 );
   c_combined.SetLegendY1( 0.82 );
+
+  const float min_frac = 0.01;
+
   for ( const auto& pot : xi_accept ) {
     const char* pot_name = pot_names[pot.first].c_str();
     /*{
@@ -121,6 +124,14 @@ void xi_accept()
         gr_accept->SetPoint( i, xi_cut, 1.-num_inside/num_total );
         i++;
       }
+      float xi_cut = 0.0, dist_goal = 99.;
+      for ( float xi=0.01; xi<0.1; xi+=0.001 ) {
+        double frac = gr_accept->Eval( xi );
+        if ( fabs( frac-min_frac )<dist_goal ) {
+          dist_goal = fabs( frac-min_frac );
+          xi_cut = xi;
+        }
+      }
       gr_accept->SetPoint( i, 0.1, 0. );
       gr_accept->Draw( "acf" );
       gr_accept->GetXaxis()->SetTitle( Form( "Lower cut on #xi(%s)", pot_name ) );
@@ -131,10 +142,14 @@ void xi_accept()
       gr_accept->SetFillStyle( 3004 );
       gr_accept->Draw( "c" );
       c_combined.Prettify( gr_accept->GetHistogram() );
-      TLine* cut_new = new TLine( xi_accept_new[pot.first], 0., xi_accept_new[pot.first], y_max ); // damn ROOT, damn...
+      TLine* cut_new = new TLine( xi_cut, 0., xi_cut, y_max ); // damn ROOT, damn...
       cut_new->SetLineWidth( 2 );
       cut_new->SetLineColor( kBlue-2 );
       cut_new->Draw( "same" );
+      /*TLine* cut_new_horiz = new TLine( 0., min_frac, xi_cut, min_frac ); // damn ROOT, damn...
+      cut_new_horiz->SetLineWidth( 2 );
+      cut_new_horiz->SetLineColor( kBlue-2 );
+      cut_new_horiz->Draw( "same" );*/
       TLine* cut_orig = new TLine( pot.second, 0., pot.second, y_max ); // damn ROOT, damn...
       cut_orig->SetLineWidth( 2 );
       cut_orig->SetLineStyle( 2 );

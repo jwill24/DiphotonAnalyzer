@@ -12,11 +12,19 @@ process.source = cms.Source("PoolSource",
 '/store/data/Run2016B/MinimumBias/AOD/23Sep2016-v1/50000/040C2700-A388-E611-AF56-00259073E390.root',
     )
 )
+# Trigger
+
+#from HLTrigger.HLTfilters.hltHighLevel_cfi import hltHighLevel
+process.load('HLTrigger.HLTfilters.hltHighLevel_cfi')
+process.hltHighLevel.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
+process.hltHighLevel.HLTPaths = ['HLT_L1MinimumBias*']
+process.hltHighLevel.throw = cms.bool(False)
 
 process.load('DiphotonAnalyzer.TreeProducer.mbTreeProducer_cfi')
 
 # set some parameters to the run
 
 process.p = cms.Path(
+    process.hltHighLevel*
     process.mbTreeProducer
 )
