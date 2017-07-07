@@ -33,7 +33,7 @@ void vertex_study()
     *h_mdiff_orig = (TH1D*)h_mdiff_bs->Clone( "mdiff_orig" ),
     *h_mdiff_bs_orig = (TH1D*)h_mdiff_bs->Clone( "mdiff_bs_orig" );
 
-  const unsigned short num_vtx_pos = 41;
+  const unsigned short num_vtx_pos = 21;
   const float min_vtx_dist = -10., max_vtx_dist = 10.;
   float vtx_shifts[num_vtx_pos];
   TH1D* h_mdiff_shift[num_vtx_pos];
@@ -78,9 +78,12 @@ void vertex_study()
   }
 
 cout << "finished the events loop" << endl;
-
+  TGraphErrors gr_mdiff;
   for ( unsigned short i=0; i<num_vtx_pos; i++ ) {
-    cout << "mean mass difference for z=" << vtx_shifts[i] << ": " << h_mdiff_shift[i]->GetMean() << endl;
+    gr_mdiff.SetPoint( i, vtx_shifts[i], h_mdiff_shift[i]->GetMean() );
+    //gr_mdiff.SetPointError( i, 0., h_mdiff_shift[i]->GetRMS() );
+    //gr_mdiff.SetPointError( i, 0., h_mdiff_shift[i]->GetStdDev() );
+    //cout << "mean mass difference for z=" << vtx_shifts[i] << ": " << h_mdiff_shift[i]->GetMean() << endl;
   }
 
   //----- plotting part
@@ -112,6 +115,16 @@ cout << "finished the events loop" << endl;
     c.SetGrid();
     c.Save( "pdf,png", "~lforthom/www/private/twophoton/vtx_study" );
   }
+
+  {
+    Canvas c( "mreco_vs_vtxz", top_label );
+    gr_mdiff.SetTitle( "Vertex z (cm)\\m(#gamma#gamma) at given z - m(#gamma#gamma) at #gamma#gamma vertex z (GeV)" );
+    gr_mdiff.Draw( "ap" );
+    gr_mdiff.SetMarkerStyle( 20 );
+    c.Prettify( gr_mdiff.GetHistogram() );
+    c.Save( "pdf,png", "~lforthom/www/private/twophoton/vtx_study" );
+  }
+
   Plotter plt( "~lforthom/www/private/twophoton/vtx_study", top_label );
   {
     Plotter::HistsMap hm;

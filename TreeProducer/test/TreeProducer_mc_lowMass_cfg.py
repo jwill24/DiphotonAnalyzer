@@ -10,7 +10,13 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32( 1000 )
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
-XXX_INPUT_XXX
+#        'file:myfile.root'
+#'/store/group/phys_pps/diphoton/VBFHToGG_M125_13TeV_amcatnlo_pythia8/lforthom-microAOD-ctpps_VBFHToGG_M125_13TeV_amcatnlo_pythia8_v1/170315_142732/0000/myMicroAODOutputFile_61.root',
+#'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_elastic.root'
+#'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_singleinelastic.root'
+#'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_doubleinelastic.root'
+#'/store/group/phys_pps/diphoton/ZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/microAOD-ctpps_ZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_v1/170324_135741/0000/myMicroAODOutputFile_960.root'
+''
     )
 )
 
@@ -26,12 +32,13 @@ process.load('DiphotonAnalyzer.TreeProducer.TreeProducer_cfi')
 # set some parameters to the run
 process.treeProducer.isData = cms.bool(False)
 process.treeProducer.minPtSinglePhoton = cms.double(50.)
-process.treeProducer.minMassDiPhoton = cms.double(350.)
+process.treeProducer.minMassDiPhoton = cms.double(50.)
+process.treeProducer.maxMassDiPhoton = cms.untracked.double(200.)
 process.treeProducer.minR9SinglePhoton = cms.double(0.)
-process.treeProducer.outputFilename = cms.string('output_XXX_NAME_XXX.root')
-process.treeProducer.pileupMCFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_mc.root')
-process.treeProducer.pileupDataFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_data16BCG_PPSruns_v2.root')
 process.treeProducer.triggersList = process.hltHighLevel.HLTPaths
+
+process.treeProducer.pileupMCFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_mc.root')
+process.treeProducer.pileupDataFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_data16BCG_PPSruns.root')
 
 process.p = cms.Path(
     process.hltHighLevel*

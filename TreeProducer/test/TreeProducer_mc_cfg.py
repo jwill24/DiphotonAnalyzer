@@ -37,7 +37,7 @@ process.treeProducer.minR9SinglePhoton = cms.double(0.)
 process.treeProducer.triggersList = process.hltHighLevel.HLTPaths
 
 process.treeProducer.pileupMCFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_mc.root')
-process.treeProducer.pileupDataFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_data16BCG_PPSruns.root')
+process.treeProducer.pileupDataFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_data16BCG_PPSruns_v2.root')
 
 process.p = cms.Path(
     process.hltHighLevel*

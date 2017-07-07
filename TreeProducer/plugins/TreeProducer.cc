@@ -114,7 +114,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     bool isData_;    
     double sqrtS_;
     double singlePhotonMinPt_, singlePhotonMaxEta_, singlePhotonMinR9_;
-    double photonPairMinMass_;
+    double photonPairMinMass_, photonPairMaxMass_;
     std::string filename_;
     double maxGenLevelDR_;
     edm::FileInPath puMCfile_, puDatafile_;
@@ -244,6 +244,7 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   singlePhotonMaxEta_ ( iConfig.getParameter<double>     ( "maxEtaSinglePhoton" ) ),
   singlePhotonMinR9_  ( iConfig.getParameter<double>     ( "minR9SinglePhoton" ) ),
   photonPairMinMass_  ( iConfig.getParameter<double>     ( "minMassDiPhoton" ) ),
+  photonPairMaxMass_  ( iConfig.getUntrackedParameter<double>( "maxMassDiPhoton", -1. ) ),
   filename_           ( iConfig.getParameter<std::string>( "outputFilename" ) ),
   maxGenLevelDR_      ( iConfig.getParameter<double>     ( "maxGenLevelDeltaR" ) ),
   puMCpath_           ( iConfig.getUntrackedParameter<std::string>( "pileupMCPath", "pileup" ) ),
@@ -491,6 +492,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     if ( lead_pho->pt()<singlePhotonMinPt_ or sublead_pho->pt()<singlePhotonMinPt_ ) continue;
     if ( lead_pho->full5x5_r9()<singlePhotonMinR9_ or sublead_pho->full5x5_r9()<singlePhotonMinR9_ ) continue;
 
+    if ( photonPairMaxMass_>0. && diphoton->mass()>photonPairMaxMass_ ) continue;
     if ( diphoton->mass()<photonPairMinMass_ ) continue;
 
     fDiphotonVertexTracks[fDiphotonNum] = diphoton->vtx()->nTracks();

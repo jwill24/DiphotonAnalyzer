@@ -43,7 +43,7 @@ void xi_matcher()
   xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
   pot_align::load_file( "TreeProducer/data/alignment_collection_v2.out" );
 
-  const float rel_err_xi_gg = 0.028;
+  const float rel_err_xi_gg = 0.039;
   const float num_sigma = 2.0;
 
   const float lim_45n = 0.033;
@@ -162,7 +162,8 @@ void xi_matcher()
   float min_xi_45n = 1., min_xi_45f = 1., min_xi_56n = 1., min_xi_56f = 1.;
   unsigned short num_ooa_45n = 0, num_ooa_45f = 0, num_ooa_56n = 0, num_ooa_56f = 0;
 
-  for ( unsigned long long i=0; i<tr->GetEntriesFast(); i++ ) {
+  const unsigned long long num_events = tr->GetEntriesFast();
+  for ( unsigned long long i=0; i<num_events; i++ ) {
     tr->GetEntry( i );
     //cout << "event " << i << ": " << num_proton_track << " proton tracks, " << num_diphoton << " diphoton candidates" << endl;
 
@@ -308,7 +309,7 @@ void xi_matcher()
         for ( unsigned short l=0; l<num_dist_bins; l++ ) if ( mu_dist<extraleptons_dist[l] ) num_extraleptons[l]++;
         if ( mu_dist<lepton_mindist ) num_close_muon++;
       }
-      for ( unsigned short k=0; k<num_dist_bins; k++ ) h_numextraleptons[k]->Fill( num_extraleptons[k] );
+      for ( unsigned short k=0; k<num_dist_bins; k++ ) h_numextraleptons[k]->Fill( num_extraleptons[k], 1./num_events );
 
       //----- search for associated jets
 
@@ -320,7 +321,7 @@ void xi_matcher()
         for ( unsigned short l=0; l<num_ptcut_bins; l++ ) if ( jet_pt[k]>=extrajets_ptcut[l] ) num_extrajets[l]++;
         if ( jet_pt[k]>min_extrajet_pt ) num_associated_jet++;
       }
-      for ( unsigned short k=0; k<num_ptcut_bins; k++ ) h_numextrajets[k]->Fill( num_extrajets[k] );
+      for ( unsigned short k=0; k<num_ptcut_bins; k++ ) h_numextrajets[k]->Fill( num_extrajets[k], 1./num_events );
 
       //----- another batch of "exclusivity" cuts
 
@@ -440,36 +441,51 @@ void xi_matcher()
   plot_xyaccept( "xi_ycorr_nearfar_45", h_nearfar_y_45, h_nearfar_y_45_ooa );
   plot_xyaccept( "xi_ycorr_nearfar_56", h_nearfar_y_56, h_nearfar_y_56_ooa );
 
+  int colours[] = { kBlack, kRed+1, kBlue-2, kGreen+2, kOrange };
   {
-    Canvas c( "num_extraleptons" );
+    Canvas c( "num_extraleptons", "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
     THStack hs;
     c.SetLegendX1( 0.35 );
+    double max = -1.;
     for ( unsigned short i=0; i<num_dist_bins; i++ ) {
       h_numextraleptons[i]->Sumw2();
       h_numextraleptons[i]->SetMarkerStyle( 20+i );
-      h_numextraleptons[i]->SetMarkerColor( 1+i );
+      h_numextraleptons[i]->SetMarkerColor( colours[i] );
+      h_numextraleptons[i]->SetLineColor( kBlack );
       hs.Add( h_numextraleptons[i] );
       c.AddLegendEntry( h_numextraleptons[i], h_numextraleptons[i]->GetTitle() );
+      max = TMath::Max( h_numextraleptons[i]->GetMaximum(), max );
     }
     hs.Draw( "p,nostack" );
-    hs.SetTitle( "Number of leptons associated to #gamma#gamma vertex\\Events" );
+    hs.SetTitle( "Number of leptons associated to #gamma#gamma vertex\\Events fraction" );
     c.GetLegend()->SetFillStyle( 0 );
     c.GetLegend()->SetLineWidth( 0 );
+    hs.SetMaximum( max*1.1 );
+    auto ln = new TLine( 1., 0., 1., max*1.1 );
+    ln->SetLineStyle( 2 );
+    ln->Draw();
     c.Prettify( hs.GetHistogram() );
     c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   {
-    Canvas c( "num_extrajets" );
+    Canvas c( "num_extrajets", "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
     THStack hs;
+    double max = -1.;
     for ( unsigned short i=0; i<num_ptcut_bins; i++ ) {
       h_numextrajets[i]->Sumw2();
       h_numextrajets[i]->SetMarkerStyle( 20+i );
-      h_numextrajets[i]->SetMarkerColor( 1+i );
+      h_numextrajets[i]->SetMarkerColor( colours[i] );
+      h_numextrajets[i]->SetLineColor( kBlack );
       hs.Add( h_numextrajets[i] );
       c.AddLegendEntry( h_numextrajets[i], h_numextrajets[i]->GetTitle() );
+      max = TMath::Max( h_numextrajets[i]->GetMaximum(), max );
     }
     hs.Draw( "p,nostack" );
-    hs.SetTitle( "Number of jets associated to #gamma#gamma vertex\\Events" );
+    hs.SetTitle( "Number of jets associated to #gamma#gamma vertex\\Events fraction" );
+    hs.SetMaximum( max*1.1 );
+    auto ln = new TLine( 1., 0., 1., max*1.1 );
+    ln->SetLineStyle( 2 );
+    ln->Draw();
     c.Prettify( hs.GetHistogram() );
     c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
@@ -544,7 +560,7 @@ plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_matc
   c.AddLegendEntry( &gr_ooa, "Out of acceptance events", "lp" );
   c.AddLegendEntry( &box, "No acceptance for RP", "f" );
 
-  PaveText lab( 0.8, 0.15, 0.85, 0.2 );
+  PaveText lab( 0.8, 0.2, 0.85, 0.25 );
   lab.SetTextSize( 0.075 );
   lab.SetFillStyle( 0 );
   lab.SetLineWidth( 0 );
@@ -578,7 +594,7 @@ plot_xispectrum( const char* name, TH1D* spec, double limit )
   //spec->SetFillColor( kBlack );
   TBox lim( 0., 0., limit, max_y );
   spec->Draw( "p same" );
-  lim.SetFillStyle( 3003 );
+  lim.SetFillStyle( 3004 );
   lim.SetFillColor( kBlack );
   lim.SetLineColor( kBlack );
   lim.SetLineWidth( 1 );

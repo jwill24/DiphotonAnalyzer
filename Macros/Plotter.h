@@ -271,7 +271,7 @@ class Plotter
       if ( !label.IsNull() ) {
         PaveText* lab = new PaveText( 0.135, 0.96, 0.2, 0.97 );
         lab->SetTextSize( 0.05 );
-	lab->SetTextAlign( kVAlignTop+kHAlignLeft );
+        lab->SetTextAlign( kVAlignTop+kHAlignLeft );
         lab->AddText( label );
         lab->Draw( "same" );
       }
@@ -279,30 +279,34 @@ class Plotter
       c.Save( "pdf,png", out_path_ );
     }
 
-    void draw_multiplot( const char* filename, HistsMap h_map, bool compute_w2=true, bool logy=false ) const {
+    void draw_multiplot( const char* filename, HistsMap h_map, bool compute_w2=true, bool logy=false, float min_y=0.5 ) const {
       Canvas c( filename, top_label_ );
+      THStack hs;
       TH1D* hist = 0;
       unsigned short i = 0;
       double max_bin = 0.;
       for ( HistsMap::iterator it=h_map.begin(); it!=h_map.end(); it++ ) {
         hist = ( TH1D* )it->second;
+        if ( i==0 ) hs.SetTitle( hist->GetTitle() );
         if ( compute_w2 ) hist->Sumw2();
-        hist->Draw( ( i>0 ) ? "same" : "" );
         hist->SetMarkerStyle( marker_pool_[i] );
         hist->SetMarkerColor( colour_pool_[i] );
         hist->SetLineColor( kBlack );
         if ( strcmp( it->first.c_str(), "" )!=0 ) c.AddLegendEntry( hist, it->first.c_str(), ( compute_w2 ) ? "elp" : "lp" );
-        max_bin = TMath::Max( max_bin, hist->GetMaximum() );
+        hs.Add( hist );
         i++;
       }
-      c.Prettify( h_map.begin()->second );
+      hs.Draw( "nostack" );
+      c.Prettify( hs.GetHistogram() );
       if ( logy ) {
-        h_map.begin()->second->GetYaxis()->SetRangeUser( 0.5, max_bin*3 );
         c.SetLogy();
+        hs.GetYaxis()->SetRangeUser( min_y, max_bin*3 );
+        hs.SetMinimum( min_y );
       }
       else {
-        h_map.begin()->second->GetYaxis()->SetRangeUser( 0., max_bin*1.1 );
+        hs.GetYaxis()->SetRangeUser( 0., max_bin*1.1 );
       }
+      hs.SetTitle( "" );
       c.Save( "pdf,png", out_path_ );
     }
 

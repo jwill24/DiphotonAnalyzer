@@ -17,7 +17,8 @@
       "colour": 3, // kGreen
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_r9gt0.root",
-      "path": "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root",
+      //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root",
+      "path": "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root",
       //"cross_section": 1.0342e-4, // +- 1.6516e-6
       "cross_section": 2.0684e-4, // +- 1.6516e-6
       "num_events": 100000

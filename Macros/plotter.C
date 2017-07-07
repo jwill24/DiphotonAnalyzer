@@ -43,17 +43,19 @@ plotter()
     presel = 1,
     elastic = 2,
     inelastic = 3,
+    qcd = 4,
     num_regions
   } regions;
-  const string kin_regions[num_regions] = { "nosel", "presel", "elastic", "inelastic" };
+  const string kin_regions[num_regions] = { "nosel", "presel", "elastic", "inelastic", "qcd" };
   typedef enum {
-    ebeb = 0,
-    ebee = 1,
-    eeee = 2,
+    all = 0,
+    ebeb = 1,
+    ebee = 2,
+    eeee = 3,
     invalid,
     num_classes
   } classes_;
-  const string classes[num_classes] = { "EBEB", "EBEE", "EEEE", "invalid" };
+  const string classes[num_classes] = { "", "EBEB", "EBEE", "EEEE", "invalid" };
 
   const PhotonScalesParser pho_scales( "egammaEffi.txt_EGM2D.root" );
 
@@ -65,6 +67,8 @@ plotter()
        *h_diph_vtxz[num_regions][num_classes-2][num_samples];
   TH1D* h_ndiph[num_regions][num_classes-2][num_samples],
        *h_nvtx[num_regions][num_classes-2][num_samples];
+  TH1D* h_diph_numjets[num_regions][num_classes-2][num_samples],
+       *h_diph_numleptons[num_regions][num_classes-2][num_samples];
   TH2D* h2_excl_sel[num_classes], *h2_excl_acop_dpt[num_classes], *h2_excl_jet[num_classes];
 
   for ( unsigned short i=0; i<num_types; i++ ) {
@@ -81,7 +85,8 @@ plotter()
                     hm_ptlead[num_regions][num_classes-2][3], hm_ptsublead[num_regions][num_classes-2][3], hm_pt[num_regions][num_classes-2][3],
                     hm_r9lead[num_regions][num_classes-2][3], hm_r9sublead[num_regions][num_classes-2][3], hm_r9[num_regions][num_classes-2][3],
                     hm_xip[num_regions][num_classes-2][3], hm_xim[num_regions][num_classes-2][3],
-                    hm_diph_vtxz[num_regions][num_classes-2][3];
+                    hm_diph_vtxz[num_regions][num_classes-2][3],
+                    hm_diph_numjets[num_regions][num_classes-2][3], hm_diph_numleptons[num_regions][num_classes-2][3];
 
   unsigned int run_id, fill_number, lumisection;
   unsigned long long event_number;
@@ -143,71 +148,86 @@ plotter()
         const char* region = kin_regions[j].c_str();
         h_ndiph[j][k][i] = new TH1D( Form( "h_%s_%d_ndiph_%d", region, k, i ), "Number of diphoton candidates\\Events", 7, 1., 8. );
         h_nvtx[j][k][i] = new TH1D( Form( "h_%s_%d_nvtx_%d", region, k, i ), "Number of primary vertices\\Events", 50, 0., 50. );
+        h_diph_numjets[j][k][i] = new TH1D( Form( "h_%s_%d_diph_numjets_%d", region, k, i ), "Number of jets surrounding the diphoton vertex\\Events", 10, 0., 10. );
+        h_diph_numleptons[j][k][i] = new TH1D( Form( "h_%s_%d_diph_numleptons_%d", region, k, i ), "Number of leptons surrounding the diphoton vertex\\Events", 10, 0., 10. );
       }
       h_ptlead[nosel][k][i] = new TH1D( Form( "h_%s_%d_ptlead_%d", kin_regions[nosel].c_str(), k, i ), "Leading photon p_{T}\\Events\\GeV", 40, 0., 600. );
+      h_ptlead[qcd][k][i] = new TH1D( Form( "h_%s_%d_ptlead_%d", kin_regions[qcd].c_str(), k, i ), "Leading photon p_{T}\\Events\\GeV", 40, 0., 600. );
       h_ptlead[presel][k][i] = new TH1D( Form( "h_%s_%d_ptlead_%d", kin_regions[presel].c_str(), k, i ), "Leading photon p_{T}\\Events\\GeV", 40, 0., 600. );
       h_ptlead[elastic][k][i] = new TH1D( Form( "h_%s_%d_ptlead_%d", kin_regions[elastic].c_str(), k, i ), "Leading photon p_{T}\\Events\\GeV", 20, 0., 600. );
       h_ptlead[inelastic][k][i] = new TH1D( Form( "h_%s_%d_ptlead_%d", kin_regions[inelastic].c_str(), k, i ), "Leading photon p_{T}\\Events\\GeV", 40, 0., 600. );
 
       h_ptsublead[nosel][k][i] = new TH1D( Form( "h_%s_%d_ptsublead_%d", kin_regions[nosel].c_str(), k, i ), "Subleading photon p_{T}\\Events\\GeV", 40, 0., 600. );
+      h_ptsublead[qcd][k][i] = new TH1D( Form( "h_%s_%d_ptsublead_%d", kin_regions[qcd].c_str(), k, i ), "Subleading photon p_{T}\\Events\\GeV", 40, 0., 600. );
       h_ptsublead[presel][k][i] = new TH1D( Form( "h_%s_%d_ptsublead_%d", kin_regions[presel].c_str(), k, i ), "Subleading photon p_{T}\\Events\\GeV", 40, 0., 600. );
       h_ptsublead[elastic][k][i] = new TH1D( Form( "h_%s_%d_ptsublead_%d", kin_regions[elastic].c_str(), k, i ), "Subleading photon p_{T}\\Events\\GeV", 20, 0., 600. );
       h_ptsublead[inelastic][k][i] = new TH1D( Form( "h_%s_%d_ptsublead_%d", kin_regions[inelastic].c_str(), k, i ), "Subleading photon p_{T}\\Events\\GeV", 40, 0., 600. );
 
       h_pt[nosel][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[nosel].c_str(), k, i ), "Single photon p_{T}\\Events\\GeV", 40, 0., 600. );
+      h_pt[qcd][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[qcd].c_str(), k, i ), "Single photon p_{T}\\Events\\GeV", 40, 0., 600. );
       h_pt[presel][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[presel].c_str(), k, i ), "Single photon p_{T}\\Events\\GeV", 40, 0., 600. );
       h_pt[elastic][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[elastic].c_str(), k, i ), "Single photon p_{T}\\Events\\GeV", 20, 0., 600. );
       h_pt[inelastic][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[inelastic].c_str(), k, i ), "Single photon p_{T}\\Events\\GeV", 40, 0., 600. );
 
       h_mass[nosel][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[nosel].c_str(), k, i ), "Diphoton mass\\Events\\GeV", 33, 350., 2000. );
+      h_mass[qcd][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[qcd].c_str(), k, i ), "Diphoton mass\\Events\\GeV", 33, 350., 2000. );
       h_mass[presel][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[presel].c_str(), k, i ), "Diphoton mass\\Events\\GeV", 33, 350., 2000. );
       h_mass[elastic][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton mass\\Events\\GeV", 16, 350., 1950. );
       h_mass[inelastic][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[inelastic].c_str(), k, i ), "Diphoton mass\\Events\\GeV", 33, 350., 2000. );
 
       h_ptpair[nosel][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[nosel].c_str(), k, i ), "Diphoton p_{T}\\Events\\GeV", 25, 0., 500. );
+      h_ptpair[qcd][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[qcd].c_str(), k, i ), "Diphoton p_{T}\\Events\\GeV", 25, 0., 500. );
       h_ptpair[presel][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[presel].c_str(), k, i ), "Diphoton p_{T}\\Events\\GeV", 25, 0., 500. );
-      h_ptpair[elastic][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton p_{T}\\Events\\GeV", 25, 0., 50. );
+      h_ptpair[elastic][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton p_{T}\\Events\\GeV", 25, 0., 75. );
       h_ptpair[inelastic][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[inelastic].c_str(), k, i ), "Diphoton p_{T}\\Events\\GeV", 25, 0., 500. );
 
       h_r9lead[nosel][k][i] = new TH1D( Form( "h_%s_%d_r9lead_%d", kin_regions[nosel].c_str(), k, i ), "Leading photon r_{9}\\Events\\?.2f", 50, 0.5, 1. );
+      h_r9lead[qcd][k][i] = new TH1D( Form( "h_%s_%d_r9lead_%d", kin_regions[qcd].c_str(), k, i ), "Leading photon r_{9}\\Events\\?.2f", 50, 0.5, 1. );
       h_r9lead[presel][k][i] = new TH1D( Form( "h_%s_%d_r9lead_%d", kin_regions[presel].c_str(), k, i ), "Leading photon r_{9}\\Events\\?.2f", 30, 0.94, 1. );
       h_r9lead[elastic][k][i] = new TH1D( Form( "h_%s_%d_r9lead_%d", kin_regions[elastic].c_str(), k, i ), "Leading photon r_{9}\\Events\\?.2f", 15, 0.94, 1. );
       h_r9lead[inelastic][k][i] = new TH1D( Form( "h_%s_%d_r9lead_%d", kin_regions[inelastic].c_str(), k, i ), "Leading photon r_{9}\\Events\\?.2f", 30, 0.94, 1. );
 
       h_r9sublead[nosel][k][i] = new TH1D( Form( "h_%s_%d_r9sublead_%d", kin_regions[nosel].c_str(), k, i ), "Subleading photon r_{9}\\Events\\?.2f", 50, 0.5, 1. );
+      h_r9sublead[qcd][k][i] = new TH1D( Form( "h_%s_%d_r9sublead_%d", kin_regions[qcd].c_str(), k, i ), "Subleading photon r_{9}\\Events\\?.2f", 50, 0.5, 1. );
       h_r9sublead[presel][k][i] = new TH1D( Form( "h_%s_%d_r9sublead_%d", kin_regions[presel].c_str(), k, i ), "Subleading photon r_{9}\\Events\\?.2f", 30, 0.94, 1. );
       h_r9sublead[elastic][k][i] = new TH1D( Form( "h_%s_%d_r9sublead_%d", kin_regions[elastic].c_str(), k, i ), "Subleading photon r_{9}\\Events\\?.2f", 15, 0.94, 1. );
       h_r9sublead[inelastic][k][i] = new TH1D( Form( "h_%s_%d_r9sublead_%d", kin_regions[inelastic].c_str(), k, i ), "Subleading photon r_{9}\\Events\\?.2f", 30, 0.94, 1. );
 
       h_r9[nosel][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[nosel].c_str(), k, i ), "Single photon r_{9}\\Events\\?.2f", 50, 0.5, 1. );
+      h_r9[qcd][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[qcd].c_str(), k, i ), "Single photon r_{9}\\Events\\?.2f", 50, 0.5, 1. );
       h_r9[presel][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[presel].c_str(), k, i ), "Single photon r_{9}\\Events\\?.2f", 30, 0.94, 1. );
       h_r9[elastic][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[elastic].c_str(), k, i ), "Single photon r_{9}\\Events\\?.2f", 15, 0.94, 1. );
       h_r9[inelastic][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[inelastic].c_str(), k, i ), "Single photon r_{9}\\Events\\?.2f", 30, 0.94, 1. );
 
       h_dphi[nosel][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[nosel].c_str(), k, i ), "Diphoton 1-|#Delta#phi/#pi|\\Events\\?.3f", 20, 0., 1. );
+      h_dphi[qcd][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[qcd].c_str(), k, i ), "Diphoton 1-|#Delta#phi/#pi|\\Events\\?.3f", 20, 0., 1. );
       h_dphi[presel][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[presel].c_str(), k, i ), "Diphoton 1-|#Delta#phi/#pi|\\Events\\?.3f", 40, 0., 1. );
       h_dphi[elastic][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton 1-|#Delta#phi/#pi|\\Events\\?.3f", 20, 0., 0.01 );
       h_dphi[inelastic][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[inelastic].c_str(), k, i ), "Diphoton 1-|#Delta#phi/#pi|\\Events\\?.3f", 40, 0., 1. );
 
       h_met[nosel][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[nosel].c_str(), k, i ), "Event #slash{E}_{T}\\Events\\GeV", 50, 0., 150. );
+      h_met[qcd][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[qcd].c_str(), k, i ), "Event #slash{E}_{T}\\Events\\GeV", 50, 0., 150. );
       h_met[presel][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[presel].c_str(), k, i ), "Event #slash{E}_{T}\\Events\\GeV", 50, 0., 150. );
       h_met[elastic][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[elastic].c_str(), k, i ), "Event #slash{E}_{T}\\Events\\GeV", 25, 0., 150. );
       h_met[inelastic][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[inelastic].c_str(), k, i ), "Event #slash{E}_{T}\\Events\\GeV", 50, 0., 150. );
 
       h_diph_vtxz[nosel][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[nosel].c_str(), k, i ), "Diphoton vertex z\\Events\\cm", 40, -20., 20. );
+      h_diph_vtxz[qcd][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[qcd].c_str(), k, i ), "Diphoton vertex z\\Events\\cm", 40, -20., 20. );
       h_diph_vtxz[presel][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[presel].c_str(), k, i ), "Diphoton vertex z\\Events\\cm", 40, -20., 20. );
       h_diph_vtxz[elastic][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton vertex z\\Events\\cm", 20, -20., 20. );
       h_diph_vtxz[inelastic][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[inelastic].c_str(), k, i ), "Diphoton vertex z\\Events\\cm", 40, -20., 20. );
 
-      h_xip[nosel][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[nosel].c_str(), k, i ), "Diphoton #xi^{+}\\Events", 50, 0., 0.5 );
-      h_xip[presel][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[presel].c_str(), k, i ), "Diphoton #xi^{+}\\Events", 50, 0., 0.5 );
-      h_xip[elastic][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton #xi^{+}\\Events", 25, 0., 0.5 );
-      h_xip[inelastic][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[inelastic].c_str(), k, i ), "Diphoton #xi^{+}\\Events", 50, 0., 0.5 );
+      h_xip[nosel][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[nosel].c_str(), k, i ), "Diphoton #xi^{+}\\Events\\?.2f", 50, 0., 0.5 );
+      h_xip[qcd][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[qcd].c_str(), k, i ), "Diphoton #xi^{+}\\Events\\?.2f", 50, 0., 0.5 );
+      h_xip[presel][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[presel].c_str(), k, i ), "Diphoton #xi^{+}\\Events\\?.2f", 50, 0., 0.5 );
+      h_xip[elastic][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton #xi^{+}\\Events\\?.2f", 20, 0., 0.4 );
+      h_xip[inelastic][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[inelastic].c_str(), k, i ), "Diphoton #xi^{+}\\Events\\?.2f", 50, 0., 0.5 );
 
-      h_xim[nosel][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[nosel].c_str(), k, i ), "Diphoton #xi^{-}\\Events", 50, 0., 0.5 );
-      h_xim[presel][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[presel].c_str(), k, i ), "Diphoton #xi^{-}\\Events", 50, 0., 0.5 );
-      h_xim[elastic][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton #xi^{-}\\Events", 25, 0., 0.5 );
-      h_xim[inelastic][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[inelastic].c_str(), k, i ), "Diphoton #xi^{-}\\Events", 50, 0., 0.5 );
+      h_xim[nosel][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[nosel].c_str(), k, i ), "Diphoton #xi^{-}\\Events\\?.2f", 50, 0., 0.5 );
+      h_xim[qcd][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[qcd].c_str(), k, i ), "Diphoton #xi^{-}\\Events\\?.2f", 50, 0., 0.5 );
+      h_xim[presel][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[presel].c_str(), k, i ), "Diphoton #xi^{-}\\Events\\?.2f", 50, 0., 0.5 );
+      h_xim[elastic][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton #xi^{-}\\Events\\?.2f", 20, 0., 0.4 );
+      h_xim[inelastic][k][i] = new TH1D( Form( "h_%s_%d_xim_%d", kin_regions[inelastic].c_str(), k, i ), "Diphoton #xi^{-}\\Events\\?.2f", 50, 0., 0.5 );
     }
     for ( unsigned short j=0; j<num_regions; j++ ) {
       const char* region = kin_regions[j].c_str();
@@ -287,6 +307,7 @@ plotter()
       const double sp_weight = pu_weight;
 
       // loop on diphotons
+      bool is_preselected = true;
       for ( unsigned short k=0; k<num_diph; k++ ) {
 
         // EB: 0 < |eta| < 1.4442
@@ -321,58 +342,6 @@ plotter()
         }
         if ( sample_type==mc_signal ) s_weight *= scaling_signal;
 
-        //--- no selection
-
-        h_ptlead[nosel][ev_class][i]->Fill( diph_pt1[k], s_weight );
-        h_ptsublead[nosel][ev_class][i]->Fill( diph_pt2[k], s_weight );
-        h_pt[nosel][ev_class][i]->Fill( diph_pt1[k], s_weight );
-        h_pt[nosel][ev_class][i]->Fill( diph_pt2[k], s_weight );
-
-        h_r9lead[nosel][ev_class][i]->Fill( diph_r9_1[k], s_weight );
-        h_r9sublead[nosel][ev_class][i]->Fill( diph_r9_2[k], s_weight );
-        h_r9[nosel][ev_class][i]->Fill( diph_r9_1[k], s_weight );
-        h_r9[nosel][ev_class][i]->Fill( diph_r9_2[k], s_weight );
-
-        h_mass[nosel][ev_class][i]->Fill( diph_mass[k], s_weight );
-        h_ptpair[nosel][ev_class][i]->Fill( diph_ptpair[k], s_weight );
-        h_dphi[nosel][ev_class][i]->Fill( acop, s_weight );
-        h_met[nosel][ev_class][i]->Fill( met, s_weight );
-
-        h_xip[nosel][ev_class][i]->Fill( xip, s_weight );
-        h_xim[nosel][ev_class][i]->Fill( xim, s_weight );
-
-        h_diph_vtxz[nosel][ev_class][i]->Fill( diph_vtx.z(), s_weight );
-
-        //--- preselection
-
-        if ( diph_pt1[k]<pt_cut || diph_pt2[k]<pt_cut ) continue;
-        if ( ( fabs( diph_eta1[k] )>min_etaveto && fabs( diph_eta1[k] )<max_etaveto ) ||
-             ( fabs( diph_eta2[k] )>min_etaveto && fabs( diph_eta2[k] )<max_etaveto ) ||
-             ( fabs( diph_eta1[k] )>eta_cut ) ||
-             ( fabs( diph_eta2[k] )>eta_cut ) ) continue;
-        if ( diph_r9_1[k]<r9_cut || diph_r9_2[k]<r9_cut ) continue;
-        if ( diph_mass[k]<mass_cut ) continue;
-
-        h_ptlead[presel][ev_class][i]->Fill( diph_pt1[k], s_weight );
-        h_ptsublead[presel][ev_class][i]->Fill( diph_pt2[k], s_weight );
-        h_pt[presel][ev_class][i]->Fill( diph_pt1[k], s_weight );
-        h_pt[presel][ev_class][i]->Fill( diph_pt2[k], s_weight );
-
-        h_r9lead[presel][ev_class][i]->Fill( diph_r9_1[k], s_weight );
-        h_r9sublead[presel][ev_class][i]->Fill( diph_r9_2[k], s_weight );
-        h_r9[presel][ev_class][i]->Fill( diph_r9_1[k], s_weight );
-        h_r9[presel][ev_class][i]->Fill( diph_r9_2[k], s_weight );
-
-        h_mass[presel][ev_class][i]->Fill( diph_mass[k], s_weight );
-        h_ptpair[presel][ev_class][i]->Fill( diph_ptpair[k], s_weight );
-        h_dphi[presel][ev_class][i]->Fill( acop, s_weight );
-        h_met[presel][ev_class][i]->Fill( met, s_weight );
-
-        h_xip[presel][ev_class][i]->Fill( xip, s_weight );
-        h_xim[presel][ev_class][i]->Fill( xim, s_weight );
-
-        h_diph_vtxz[presel][ev_class][i]->Fill( diph_vtx.z(), s_weight );
-
         //----- look at surrounding objects
 
         const float min_lep_vtx_dist = 2.0; // in cm
@@ -400,9 +369,171 @@ plotter()
           num_matched_jets++;
         }
 
-        has_diphoton_cand = true;
+        //--- no selection
+
+        h_ptlead[nosel][0][i]->Fill( diph_pt1[k], s_weight );
+        h_ptlead[nosel][ev_class][i]->Fill( diph_pt1[k], s_weight );
+
+        h_ptsublead[nosel][0][i]->Fill( diph_pt2[k], s_weight );
+        h_ptsublead[nosel][ev_class][i]->Fill( diph_pt2[k], s_weight );
+
+        h_pt[nosel][0][i]->Fill( diph_pt1[k], s_weight );
+        h_pt[nosel][0][i]->Fill( diph_pt2[k], s_weight );
+        h_pt[nosel][ev_class][i]->Fill( diph_pt1[k], s_weight );
+        h_pt[nosel][ev_class][i]->Fill( diph_pt2[k], s_weight );
+
+        h_r9lead[nosel][0][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9lead[nosel][ev_class][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9sublead[nosel][0][i]->Fill( diph_r9_2[k], s_weight );
+        h_r9sublead[nosel][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+
+        h_r9[nosel][0][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9[nosel][0][i]->Fill( diph_r9_2[k], s_weight );
+        h_r9[nosel][ev_class][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9[nosel][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+
+        h_mass[nosel][0][i]->Fill( diph_mass[k], s_weight );
+        h_mass[nosel][ev_class][i]->Fill( diph_mass[k], s_weight );
+
+        h_ptpair[nosel][0][i]->Fill( diph_ptpair[k], s_weight );
+        h_ptpair[nosel][ev_class][i]->Fill( diph_ptpair[k], s_weight );
+
+        h_dphi[nosel][0][i]->Fill( acop, s_weight );
+        h_dphi[nosel][ev_class][i]->Fill( acop, s_weight );
+
+        h_met[nosel][0][i]->Fill( met, s_weight );
+        h_met[nosel][ev_class][i]->Fill( met, s_weight );
+
+        h_xip[nosel][0][i]->Fill( xip, s_weight );
+        h_xip[nosel][ev_class][i]->Fill( xip, s_weight );
+        h_xim[nosel][0][i]->Fill( xim, s_weight );
+        h_xim[nosel][ev_class][i]->Fill( xim, s_weight );
+
+        h_diph_vtxz[nosel][0][i]->Fill( diph_vtx.z(), s_weight );
+        h_diph_vtxz[nosel][ev_class][i]->Fill( diph_vtx.z(), s_weight );
+
+        h_diph_numjets[nosel][0][i]->Fill( num_matched_jets );
+        h_diph_numjets[nosel][ev_class][i]->Fill( num_matched_jets );
+        h_diph_numleptons[nosel][0][i]->Fill( num_matched_ele+num_matched_mu );
+        h_diph_numleptons[nosel][ev_class][i]->Fill( num_matched_ele+num_matched_mu );
+
+        is_preselected = true;
+
+        if ( diph_pt1[k]<pt_cut || diph_pt2[k]<pt_cut ) is_preselected = false;
+        if ( ( fabs( diph_eta1[k] )>min_etaveto && fabs( diph_eta1[k] )<max_etaveto ) ||
+             ( fabs( diph_eta2[k] )>min_etaveto && fabs( diph_eta2[k] )<max_etaveto ) ||
+             ( fabs( diph_eta1[k] )>eta_cut ) ||
+             ( fabs( diph_eta2[k] )>eta_cut ) ) is_preselected = false;
+        if ( diph_r9_1[k]<r9_cut || diph_r9_2[k]<r9_cut ) is_preselected = false;
+        if ( diph_mass[k]<mass_cut ) is_preselected = false;
+
+        //--- QCD control region
+
+        if ( diph_r9_1[k]<0.85 || diph_r9_2[k]<0.85 ) {
+          h_ptlead[qcd][0][i]->Fill( diph_pt1[k], s_weight );
+          h_ptlead[qcd][ev_class][i]->Fill( diph_pt1[k], s_weight );
+
+          h_ptsublead[qcd][0][i]->Fill( diph_pt2[k], s_weight );
+          h_ptsublead[qcd][ev_class][i]->Fill( diph_pt2[k], s_weight );
+
+          h_pt[qcd][0][i]->Fill( diph_pt1[k], s_weight );
+          h_pt[qcd][0][i]->Fill( diph_pt2[k], s_weight );
+          h_pt[qcd][ev_class][i]->Fill( diph_pt1[k], s_weight );
+          h_pt[qcd][ev_class][i]->Fill( diph_pt2[k], s_weight );
+
+          h_r9lead[qcd][0][i]->Fill( diph_r9_1[k], s_weight );
+          h_r9lead[qcd][ev_class][i]->Fill( diph_r9_1[k], s_weight );
+
+          h_r9sublead[qcd][0][i]->Fill( diph_r9_2[k], s_weight );
+          h_r9sublead[qcd][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+
+          h_r9[qcd][0][i]->Fill( diph_r9_1[k], s_weight );
+          h_r9[qcd][0][i]->Fill( diph_r9_2[k], s_weight );
+          h_r9[qcd][ev_class][i]->Fill( diph_r9_1[k], s_weight );
+          h_r9[qcd][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+
+          h_mass[qcd][0][i]->Fill( diph_mass[k], s_weight );
+          h_mass[qcd][ev_class][i]->Fill( diph_mass[k], s_weight );
+
+          h_ptpair[qcd][0][i]->Fill( diph_ptpair[k], s_weight );
+          h_ptpair[qcd][ev_class][i]->Fill( diph_ptpair[k], s_weight );
+
+          h_dphi[qcd][0][i]->Fill( acop, s_weight );
+          h_dphi[qcd][ev_class][i]->Fill( acop, s_weight );
+
+          h_met[qcd][0][i]->Fill( met, s_weight );
+          h_met[qcd][ev_class][i]->Fill( met, s_weight );
+
+          h_xip[qcd][0][i]->Fill( xip, s_weight );
+          h_xip[qcd][ev_class][i]->Fill( xip, s_weight );
+
+          h_xim[qcd][0][i]->Fill( xim, s_weight );
+          h_xim[qcd][ev_class][i]->Fill( xim, s_weight );
+
+          h_diph_vtxz[qcd][0][i]->Fill( diph_vtx.z(), s_weight );
+          h_diph_vtxz[qcd][ev_class][i]->Fill( diph_vtx.z(), s_weight );
+
+          h_diph_numjets[qcd][0][i]->Fill( num_matched_jets );
+          h_diph_numjets[qcd][ev_class][i]->Fill( num_matched_jets );
+          h_diph_numleptons[qcd][0][i]->Fill( num_matched_ele+num_matched_mu );
+          h_diph_numleptons[qcd][ev_class][i]->Fill( num_matched_ele+num_matched_mu );
+        }
+
+        //--- preselection
+
+        if ( !is_preselected ) continue;
+
+        h_ptlead[presel][0][i]->Fill( diph_pt1[k], s_weight );
+        h_ptlead[presel][ev_class][i]->Fill( diph_pt1[k], s_weight );
+
+        h_ptsublead[presel][0][i]->Fill( diph_pt2[k], s_weight );
+        h_ptsublead[presel][ev_class][i]->Fill( diph_pt2[k], s_weight );
+
+        h_pt[presel][0][i]->Fill( diph_pt1[k], s_weight );
+        h_pt[presel][0][i]->Fill( diph_pt2[k], s_weight );
+        h_pt[presel][ev_class][i]->Fill( diph_pt1[k], s_weight );
+        h_pt[presel][ev_class][i]->Fill( diph_pt2[k], s_weight );
+
+        h_r9lead[presel][0][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9lead[presel][ev_class][i]->Fill( diph_r9_1[k], s_weight );
+
+        h_r9sublead[presel][0][i]->Fill( diph_r9_2[k], s_weight );
+        h_r9sublead[presel][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+
+        h_r9[presel][0][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9[presel][0][i]->Fill( diph_r9_2[k], s_weight );
+        h_r9[presel][ev_class][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9[presel][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+
+        h_mass[presel][0][i]->Fill( diph_mass[k], s_weight );
+        h_mass[presel][ev_class][i]->Fill( diph_mass[k], s_weight );
+
+        h_ptpair[presel][0][i]->Fill( diph_ptpair[k], s_weight );
+        h_ptpair[presel][ev_class][i]->Fill( diph_ptpair[k], s_weight );
+
+        h_dphi[presel][0][i]->Fill( acop, s_weight );
+        h_dphi[presel][ev_class][i]->Fill( acop, s_weight );
+
+        h_met[presel][0][i]->Fill( met, s_weight );
+        h_met[presel][ev_class][i]->Fill( met, s_weight );
+
+        h_xip[presel][0][i]->Fill( xip, s_weight );
+        h_xip[presel][ev_class][i]->Fill( xip, s_weight );
+
+        h_xim[presel][0][i]->Fill( xim, s_weight );
+        h_xim[presel][ev_class][i]->Fill( xim, s_weight );
+
+        h_diph_vtxz[presel][0][i]->Fill( diph_vtx.z(), s_weight );
+        h_diph_vtxz[presel][ev_class][i]->Fill( diph_vtx.z(), s_weight );
+
+        h_diph_numjets[presel][0][i]->Fill( num_matched_jets );
+        h_diph_numjets[presel][ev_class][i]->Fill( num_matched_jets );
+        h_diph_numleptons[presel][0][i]->Fill( num_matched_ele+num_matched_mu );
+        h_diph_numleptons[presel][ev_class][i]->Fill( num_matched_ele+num_matched_mu );
 
         //----- from that point on, we have a diphoton candidate
+
+        has_diphoton_cand = true;
 
         bool is_elastic = false;
         //if ( diph_ptpair[k]<20. && acop<0.005 ) {
@@ -415,52 +546,51 @@ plotter()
 
         //--- elastic/non-elastic regions
 
-        if ( is_elastic ) {
-          h_ptlead[elastic][ev_class][i]->Fill( diph_pt1[k], s_weight );
-          h_ptsublead[elastic][ev_class][i]->Fill( diph_pt2[k], s_weight );
-          h_pt[elastic][ev_class][i]->Fill( diph_pt1[k], s_weight );
-          h_pt[elastic][ev_class][i]->Fill( diph_pt2[k], s_weight );
+        const unsigned short region = ( is_elastic ) ? elastic : inelastic;
 
-          h_r9lead[elastic][ev_class][i]->Fill( diph_r9_1[k], s_weight );
-          h_r9sublead[elastic][ev_class][i]->Fill( diph_r9_2[k], s_weight );
-          h_r9[elastic][ev_class][i]->Fill( diph_r9_1[k], s_weight );
-          h_r9[elastic][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+        if ( is_elastic ) has_elastic_diphoton_cand = true;
+        if ( !is_elastic ) has_inelastic_diphoton_cand = true;
 
-          h_mass[elastic][ev_class][i]->Fill( diph_mass[k], s_weight );
-          h_ptpair[elastic][ev_class][i]->Fill( diph_ptpair[k], s_weight );
-          h_dphi[elastic][ev_class][i]->Fill( acop, s_weight );
-          h_met[elastic][ev_class][i]->Fill( met, s_weight );
+        h_ptlead[region][0][i]->Fill( diph_pt1[k], s_weight );
+        h_ptlead[region][ev_class][i]->Fill( diph_pt1[k], s_weight );
+        h_ptsublead[region][0][i]->Fill( diph_pt2[k], s_weight );
+        h_ptsublead[region][ev_class][i]->Fill( diph_pt2[k], s_weight );
 
-          h_xip[elastic][ev_class][i]->Fill( xip, s_weight );
-          h_xim[elastic][ev_class][i]->Fill( xim, s_weight );
+        h_pt[region][0][i]->Fill( diph_pt1[k], s_weight );
+        h_pt[region][0][i]->Fill( diph_pt2[k], s_weight );
+        h_pt[region][ev_class][i]->Fill( diph_pt1[k], s_weight );
+        h_pt[region][ev_class][i]->Fill( diph_pt2[k], s_weight );
 
-          h_diph_vtxz[elastic][ev_class][i]->Fill( diph_vtx.z(), s_weight );
+        h_r9lead[region][0][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9lead[region][ev_class][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9sublead[region][0][i]->Fill( diph_r9_2[k], s_weight );
+        h_r9sublead[region][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+        h_r9[region][0][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9[region][0][i]->Fill( diph_r9_2[k], s_weight );
+        h_r9[region][ev_class][i]->Fill( diph_r9_1[k], s_weight );
+        h_r9[region][ev_class][i]->Fill( diph_r9_2[k], s_weight );
 
-          has_elastic_diphoton_cand = true;
-        }
-        if ( !is_elastic ) {
-          h_ptlead[inelastic][ev_class][i]->Fill( diph_pt1[k], s_weight );
-          h_ptsublead[inelastic][ev_class][i]->Fill( diph_pt2[k], s_weight );
-          h_pt[inelastic][ev_class][i]->Fill( diph_pt1[k], s_weight );
-          h_pt[inelastic][ev_class][i]->Fill( diph_pt2[k], s_weight );
+        h_mass[region][0][i]->Fill( diph_mass[k], s_weight );
+        h_mass[region][ev_class][i]->Fill( diph_mass[k], s_weight );
+        h_ptpair[region][0][i]->Fill( diph_ptpair[k], s_weight );
+        h_ptpair[region][ev_class][i]->Fill( diph_ptpair[k], s_weight );
+        h_dphi[region][0][i]->Fill( acop, s_weight );
+        h_dphi[region][ev_class][i]->Fill( acop, s_weight );
+        h_met[region][0][i]->Fill( met, s_weight );
+        h_met[region][ev_class][i]->Fill( met, s_weight );
 
-          h_r9lead[inelastic][ev_class][i]->Fill( diph_r9_1[k], s_weight );
-          h_r9sublead[inelastic][ev_class][i]->Fill( diph_r9_2[k], s_weight );
-          h_r9[inelastic][ev_class][i]->Fill( diph_r9_1[k], s_weight );
-          h_r9[inelastic][ev_class][i]->Fill( diph_r9_2[k], s_weight );
+        h_xip[region][0][i]->Fill( xip, s_weight );
+        h_xim[region][0][i]->Fill( xim, s_weight );
+        h_xip[region][ev_class][i]->Fill( xip, s_weight );
+        h_xim[region][ev_class][i]->Fill( xim, s_weight );
 
-          h_mass[inelastic][ev_class][i]->Fill( diph_mass[k], s_weight );
-          h_ptpair[inelastic][ev_class][i]->Fill( diph_ptpair[k], s_weight );
-          h_dphi[inelastic][ev_class][i]->Fill( acop, s_weight );
-          h_met[inelastic][ev_class][i]->Fill( met, s_weight );
+        h_diph_vtxz[region][0][i]->Fill( diph_vtx.z(), s_weight );
+        h_diph_vtxz[region][ev_class][i]->Fill( diph_vtx.z(), s_weight );
 
-          h_xip[inelastic][ev_class][i]->Fill( xip, s_weight );
-          h_xim[inelastic][ev_class][i]->Fill( xim, s_weight );
-
-          h_diph_vtxz[inelastic][ev_class][i]->Fill( diph_vtx.z(), s_weight );
-
-          has_inelastic_diphoton_cand = true;
-        }
+        h_diph_numjets[region][0][i]->Fill( num_matched_jets );
+        h_diph_numjets[region][ev_class][i]->Fill( num_matched_jets );
+        h_diph_numleptons[region][0][i]->Fill( num_matched_ele+num_matched_mu );
+        h_diph_numleptons[region][ev_class][i]->Fill( num_matched_ele+num_matched_mu );
 
         if ( s.type()==Sample::kSignal ) {
           //cout << ">> MC signal candidate!" << endl;
@@ -484,6 +614,10 @@ plotter()
 
       h_ndiph[nosel][0][i]->Fill( num_diph, sp_weight );
       h_nvtx[nosel][0][i]->Fill( num_vtx, sp_weight );
+      if ( !is_preselected ) {
+        h_ndiph[qcd][0][i]->Fill( num_diph, sp_weight );
+        h_nvtx[qcd][0][i]->Fill( num_vtx, sp_weight );
+      }
       if ( has_diphoton_cand ) {
         h_ndiph[presel][0][i]->Fill( num_diph, sp_weight );
         h_nvtx[presel][0][i]->Fill( num_vtx, sp_weight );
@@ -515,6 +649,8 @@ plotter()
         h_xip[j][k][i]->Scale( sample_weight );
         h_xim[j][k][i]->Scale( sample_weight );
         h_diph_vtxz[j][k][i]->Scale( sample_weight );
+        h_diph_numjets[j][k][i]->Scale( sample_weight );
+        h_diph_numleptons[j][k][i]->Scale( sample_weight );
 
         const string sample_name = ( sample_type==mc_signal && scaling_signal!=1. ) ? Form( "%s (#times%.0f)", s.name(), scaling_signal ) : s.name();
 
@@ -533,6 +669,8 @@ plotter()
         hm_xip[j][k][sample_type].emplace_back( sample_name, h_xip[j][k][i] );
         hm_xim[j][k][sample_type].emplace_back( sample_name, h_xim[j][k][i] );
         hm_diph_vtxz[j][k][sample_type].emplace_back( sample_name, h_diph_vtxz[j][k][i] );
+        hm_diph_numjets[j][k][sample_type].emplace_back( sample_name, h_diph_numjets[j][k][i] );
+        hm_diph_numleptons[j][k][sample_type].emplace_back( sample_name, h_diph_numleptons[j][k][i] );
 
         if ( s.type()==Sample::kBackground ) {
           h_nvtx[j][k][i]->SetFillColorAlpha( s.colour(), 0.5 );
@@ -550,6 +688,8 @@ plotter()
           h_xip[j][k][i]->SetFillColorAlpha( s.colour(), 0.5 );
           h_xim[j][k][i]->SetFillColorAlpha( s.colour(), 0.5 );
           h_diph_vtxz[j][k][i]->SetFillColorAlpha( s.colour(), 0.5 );
+          h_diph_numjets[j][k][i]->SetFillColorAlpha( s.colour(), 0.5 );
+          h_diph_numleptons[j][k][i]->SetFillColorAlpha( s.colour(), 0.5 );
         }
       }
     }
@@ -583,6 +723,8 @@ std::cout << "event finished" << std::endl;
       plt.draw_multiplot( Form( "%s_diphoton_xip_%s", kin_regions[i].c_str(), classes[j].c_str() ), hm_xip[i][j][0], hm_xip[i][j][1], hm_xip[i][j][2], class_name.c_str(), false );
       plt.draw_multiplot( Form( "%s_diphoton_xim_%s", kin_regions[i].c_str(), classes[j].c_str() ), hm_xim[i][j][0], hm_xim[i][j][1], hm_xim[i][j][2], class_name.c_str(), false );
       plt.draw_multiplot( Form( "%s_diphoton_vtx_z_%s", kin_regions[i].c_str(), classes[j].c_str() ), hm_diph_vtxz[i][j][0], hm_diph_vtxz[i][j][1], hm_diph_vtxz[i][j][2], class_name.c_str(), false );
+      plt.draw_multiplot( Form( "%s_diphoton_numjets_%s", kin_regions[i].c_str(), classes[j].c_str() ), hm_diph_numjets[i][j][0], hm_diph_numjets[i][j][1], hm_diph_numjets[i][j][2], class_name.c_str(), false, true );
+      plt.draw_multiplot( Form( "%s_diphoton_numleptons_%s", kin_regions[i].c_str(), classes[j].c_str() ), hm_diph_numleptons[i][j][0], hm_diph_numleptons[i][j][1], hm_diph_numleptons[i][j][2], class_name.c_str(), false );
     }
     plt.draw_multiplot( Form( "%s_diphoton_mult", kin_regions[i].c_str() ), hm_ndiph[i][0][0], hm_ndiph[i][0][1], hm_ndiph[i][0][2], "", false, true );
     plt.draw_multiplot( Form( "%s_diphoton_nvtx", kin_regions[i].c_str() ), hm_nvtx[i][0][0], hm_nvtx[i][0][1], hm_nvtx[i][0][2], "", false, false );

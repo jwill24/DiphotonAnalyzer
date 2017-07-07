@@ -1,6 +1,9 @@
 #include "Canvas.h"
 #include "Plotter.h"
 
+void plot_resol( const char* title, TH1D* h_resol, const char* top_title="" );
+const char* output_dir = "/afs/cern.ch/user/l/lforthom/www/private/twophoton/mc_study";
+
 void mc_study()
 {
   const double pt_bins[] = { 50., 150., 500., 1000. };
@@ -26,7 +29,8 @@ void mc_study()
   const float dr_cut = 0.1;
 
   //const char* file = "Samples/output_0000_GammaGammaToGammaGamma_13TeV_fpmc.root";
-  const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
+  //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
+  const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root";
   //const char* file = "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root";
   TFile f( file );
   TTree* t = dynamic_cast<TTree*>( f.Get( "ntp" ) );
@@ -100,7 +104,7 @@ void mc_study()
 
   TH1D* h_ptsingle_gen = new TH1D( "pt_gen", "Single photon p_{T}\\Events fraction\\GeV", 100, 0., 1000. ),
        *h_ptsingle_reco = (TH1D*) h_ptsingle_gen->Clone( "pt_reco" );
-  TH1D* h_ptpair_gen = new TH1D( "ptpair_gen", "Diphoton p_{T}\\Events fraction\\GeV", 100, 0., 50. ),
+  TH1D* h_ptpair_gen = new TH1D( "ptpair_gen", "Diphoton p_{T}\\Events fraction\\GeV?.2f", 100, 0., 25. ),
        *h_ptpair_reco = (TH1D*) h_ptpair_gen->Clone( "ptpair_reco" );
   TH1D* h_etasingle_gen = new TH1D( "etasingle_gen", "Leading photon #eta\\Events fraction\\?.2f", 50, -2.5, 2.5 ),
        *h_etasingle_reco = (TH1D*) h_etasingle_gen->Clone( "etasingle_reco" );
@@ -117,6 +121,8 @@ void mc_study()
        *h_match_ptpair = new TH1D( "match_pt", "(p_{T}^{reco}(#gamma#gamma)-p_{T}^{gen}(#gamma#gamma))/p_{T}^{gen}(#gamma#gamma)\\Events fraction", 100, -15., 15. );
   TH1D* h_diphvtxz_gen = new TH1D( "diphvtx_gen", "Diphoton vertex z\\Events fraction\\cm", 60, -30., 30. ),
        *h_diphvtxz_reco = (TH1D*)h_diphvtxz_gen->Clone( "diphvtx_reco" );
+  TH1D* h_mresol = new TH1D( "mass_resol", "(m_{reco}-m_{gen})/m_{gen}\\Events fraction\\?.3f", 100, -0.25, 0.25 );
+  TH1D* h_yresol = new TH1D( "rapidity_resol", "(y_{reco}-y_{gen})/y_{gen}\\Events fraction\\?.3f", 100, -0.25, 0.25 );
   TH1D* h_xiresol1 = new TH1D( "xi_resol_p1", "(#xi_{reco}-#xi_{gen})/#xi_{gen}\\Events fraction\\?.3f", 100, -0.25, 0.25 ),
        *h_xiresol2 = (TH1D*)h_xiresol1->Clone( "xi_resol_p2" );
 
@@ -167,6 +173,9 @@ void mc_study()
                   xim = ( photon1_pt[j]*exp( -photon1_eta[j] ) + photon2_pt[j]*exp( -photon2_eta[j] ) ) / 13000.;
       h_xiresol1->Fill( ( xip-xi_pro1 )/xip, pu_weight/num_entries );
       h_xiresol2->Fill( ( xim-xi_pro2 )/xim, pu_weight/num_entries );
+
+      h_mresol->Fill( ( ( pho1+pho2 ).M()-( pho1_gen+pho2_gen ).M() )/( pho1_gen+pho2_gen ).M(), pu_weight/num_entries );
+      h_yresol->Fill( ( ( pho1+pho2 ).Rapidity()-( pho1_gen+pho2_gen ).Rapidity() )/( pho1_gen+pho2_gen ).Rapidity(), pu_weight/num_entries );
 
       h_ptsingle_reco->Fill( photon1_pt[j], pu_weight/num_entries );
       h_ptsingle_gen->Fill( gen_photon1_pt[j], pu_weight/num_entries );
@@ -228,9 +237,8 @@ void mc_study()
     }
   }
   gStyle->SetOptStat( 0 );
-  const char* output_dir = "/afs/cern.ch/user/l/lforthom/www/private/twophoton/mc_study",
-             //*top_title = "CMS Simulation - Excl. #gamma#gamma #rightarrow #gamma#gamma, #sqrt{s} = 13 TeV, 2016 PU cond.";
-             *top_title = "CMS Simulation - #sqrt{s} = 13 TeV, 2016 PU cond.";
+  const char* //*top_title = "CMS Simulation - Excl. #gamma#gamma #rightarrow #gamma#gamma, #sqrt{s} = 13 TeV, 2016 PU cond.";
+             top_title = "CMS Simulation, #sqrt{s} = 13 TeV, 2016 PU cond.";
   {
     Canvas c( "mc_study_mresol_vs_vtxpos", top_title );
     TGraphErrors gr;
@@ -364,7 +372,7 @@ void mc_study()
     Plotter::HistsMap hm;
     hm.push_back( make_pair( "Gen level", h_ptpair_gen ) );
     hm.push_back( make_pair( "Reco level", h_ptpair_reco ) );
-    plt.draw_multiplot( "mc_study_ptpair_comp", hm );
+    plt.draw_multiplot( "mc_study_ptpair_comp", hm, false, true, 0.00005 );
   }
   {
     Plotter::HistsMap hm;
@@ -396,6 +404,9 @@ void mc_study()
     hm.push_back( make_pair( "Reco level", h_energysingle_reco ) );
     plt.draw_multiplot( "mc_study_energycomp", hm );
   }
+  plot_resol( "mc_study_massresolution", h_mresol, top_title );
+  plot_resol( "mc_study_rapidityresolution", h_yresol, top_title );
+
   {
     Canvas c( "mc_study_xiresolution", top_title );
     c.SetLegendX1( 0.16 );
@@ -437,4 +448,32 @@ void mc_study()
     c.GetLegend()->SetLineColor( kWhite );
     c.Save( "pdf,png", output_dir );
   }
+}
+
+void plot_resol( const char* title, TH1D* h_resol, const char* top_title="" ) {
+  Canvas c( title, top_title );
+  c.SetLegendX1( 0.16 );
+  h_resol->Draw( "hist" );
+  h_resol->SetLineColor( kBlack );
+  h_resol->SetLineWidth( 2 );
+  h_resol->SetFillColor( kBlack );
+  h_resol->SetFillStyle( 3004 );
+  TFitResultPtr fit1 = h_resol->Fit( "gaus", "NS" );
+  if ( fit1.Get() ) {
+    const double* params_fit1 = fit1->GetParams();
+    c.AddLegendEntry( h_resol, Form( "Mean = %.2e, RMS = %.3f", h_resol->GetMean(), h_resol->GetRMS() ), "f" );
+  }
+  c.Prettify( h_resol );
+
+  PaveText lab( 0.8, 0.6, 0.85, 0.7 );
+  lab.SetTextSize( 0.04 );
+  lab.SetFillStyle( 0 );
+  lab.SetLineWidth( 0 );
+  lab.AddText( "Elastic #gamma#gamma#rightarrow#gamma#gamma" );
+  lab.AddText( "FPMC, SM pred." );
+  lab.Draw( "same" );
+
+  c.GetLegend()->SetY1( 0.85 );
+  c.GetLegend()->SetY2( 0.9 );
+  c.Save( "pdf,png", output_dir );
 }

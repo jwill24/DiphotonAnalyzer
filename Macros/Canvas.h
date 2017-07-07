@@ -251,10 +251,11 @@ class Canvas : public TCanvas
     if ( fLeg ) return;
     if ( fRatio ) TCanvas::cd(1);
     fLeg = new TLegend( fLegXpos, fLegYpos, fLegXpos+fLegXsize, fLegYpos+fLegYsize );
-    //fLeg->SetFillStyle( 0 );
+    fLeg->SetFillStyle( 0 );
     //fLeg->SetLineColor( kWhite );
-    fLeg->SetLineColor( kGray );
-    fLeg->SetLineWidth( 1 );
+    //fLeg->SetLineColor( kGray );
+    //fLeg->SetLineWidth( 1 );
+    fLeg->SetLineWidth( 0 );
     fLeg->SetTextSize( 0.032 );
     fLeg->Draw();
   }
