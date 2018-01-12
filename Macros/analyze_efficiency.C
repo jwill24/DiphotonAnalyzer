@@ -1,4 +1,5 @@
 #include "TH1.h"
+#include "TH2.h"
 #include "THStack.h"
 #include "TGraphAsymmErrors.h"
 #include "TEfficiency.h"
@@ -41,6 +42,7 @@ void analyze_efficiency()
   map<unsigned short,pair<double,double> > pot_fit_limits = { { 2, { 9., 15. } }, { 3, { 8., 15. } }, { 102, { 8., 13. }  }, { 103, { 6.5, 13. } } };
   map<unsigned short,double> pot_x_mineff = { { 2, 5.8 }, { 3, 7.3 }, { 102, 5.9 }, { 103, 5.1 } }; // x such as eff(x) > 95%
   map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_y_win, h_denom_y_win, h_num_xi, h_denom_xi;
+  map<unsigned short,TH2D*> h2_num_xy, h2_denom_xy;
   double y_bins[] = { -10., -9., -8., -7., -6.,
                       -5., -4.5, -4., -3.5, -3., -2.5, -2.25,
                       -2., -1.75, -1.5, -1.375, -1.25, -1.125, -1., -0.875, -0.75, -0.625, -0.5, -0.375, -0.25, -0.125,
@@ -60,6 +62,8 @@ void analyze_efficiency()
     h_denom_y_win[p.first] = dynamic_cast<TH1D*>( h_num_y_win[p.first]->Clone( Form( "h_denom_y_win_%d", p.first ) ) );
     h_num_xi[p.first] = new TH1D( Form( "h_num_xi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), 40, 0., 0.2 );
     h_denom_xi[p.first] = dynamic_cast<TH1D*>( h_num_xi[p.first]->Clone( Form( "h_denom_xi_%d", p.first ) ) );
+    h2_num_xy[p.first] = new TH2D( Form( "h2_num_xy_%d", p.first ), Form( "Track x (%s)@@Track y (%s)", p.second, p.second ), 24, 0., 12., 32, -8., 8. );
+    h2_denom_xy[p.first] = dynamic_cast<TH2D*>( h2_num_xy[p.first]->Clone( Form( "h2_denom_xy_%d", p.first ) ) );
   }
 
   const unsigned long long num_entries = tree->GetEntriesFast();
@@ -80,11 +84,13 @@ void analyze_efficiency()
       h_num_y[pid]->Fill( trk_y );
       h_num_xi[pid]->Fill( xi );
       if ( trk_x > pot_x_mineff[pid] ) h_num_y_win[pid]->Fill( trk_y );
+      h2_num_xy[pid]->Fill( trk_x, trk_y );
       if ( is_ref_fill ) {
         h_denom_x[pid]->Fill( trk_x );
         h_denom_y[pid]->Fill( trk_y );
         h_denom_xi[pid]->Fill( xi );
         if ( trk_x > pot_x_mineff[pid] ) h_denom_y_win[pid]->Fill( trk_y );
+        h2_denom_xy[pid]->Fill( trk_x, trk_y );
       }
     }
   }
@@ -115,6 +121,8 @@ void analyze_efficiency()
     h_denom_y_win[p.first]->Scale( 1./h_denom_y_win[p.first]->Integral( "width" ) );
     h_num_xi[p.first]->Scale( norm/h_num_xi[p.first]->Integral( "width" ) );
     h_denom_xi[p.first]->Scale( 1./h_denom_xi[p.first]->Integral( "width" ) );
+    h2_num_xy[p.first]->Scale( norm/h_num_xi[p.first]->Integral( "width" ) );
+    h2_denom_xy[p.first]->Scale( 1./h_denom_xi[p.first]->Integral( "width" ) );
   }
 
   // plotting part
@@ -198,6 +206,17 @@ void analyze_efficiency()
       }
     }
     i++;
+  }
+  for ( const auto& p : pot_names ) {
+    Canvas c( Form( "ratio2d_xy_%s", p.second ), top_title.c_str() );
+    auto ratio = dynamic_cast<TH2D*>( h2_num_xy[p.first]->Clone() );
+    ratio->Divide( h2_denom_xy[p.first] );
+    ratio->Draw( "colz" );
+    c.Pad()->SetRightMargin( 0.15 );
+    c.Prettify( ratio );
+    //ratio->Scale( 1./ratio->Integral() );
+    ratio->GetZaxis()->SetRangeUser( 0., 10. );
+    c.Save( "pdf,png", loc_www );
   }
 }
 
