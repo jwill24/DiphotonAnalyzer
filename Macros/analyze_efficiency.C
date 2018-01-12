@@ -18,6 +18,7 @@
 void analyze_efficiency()
 {
   const unsigned int ref_fill = 4985;
+  const double minimum_threshold = 0.95;
 
   pot_align::load_file( "TreeProducer/data/alignment_collection_v2.out" );
   xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
@@ -37,8 +38,9 @@ void analyze_efficiency()
   tree->SetBranchStatus( "proton_track_pot", 1 ); tree->SetBranchAddress( "proton_track_pot", proton_track_pot );
 
   map<unsigned short,const char*> pot_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
-  map<unsigned short,pair<double,double> > pot_fit_limits = { { 2, { 9., 15. } }, { 3, { 7., 15. } }, { 102, { 8., 13. }  }, { 103, { 6.5, 13. } } };
-  map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_xi, h_denom_xi;
+  map<unsigned short,pair<double,double> > pot_fit_limits = { { 2, { 9., 15. } }, { 3, { 8., 15. } }, { 102, { 8., 13. }  }, { 103, { 6.5, 13. } } };
+  map<unsigned short,double> pot_x_mineff = { { 2, 5.8 }, { 3, 7.3 }, { 102, 5.9 }, { 103, 5.1 } }; // x such as eff(x) > 95%
+  map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_y_win, h_denom_y_win, h_num_xi, h_denom_xi;
   double y_bins[] = { -10., -9., -8., -7., -6.,
                       -5., -4.5, -4., -3.5, -3., -2.5, -2.25,
                       -2., -1.75, -1.5, -1.375, -1.25, -1.125, -1., -0.875, -0.75, -0.625, -0.5, -0.375, -0.25, -0.125,
@@ -48,10 +50,14 @@ void analyze_efficiency()
                        5., 6., 7., 8., 9., 10. };
   for ( const auto& p : pot_names ) {
     h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.2f", p.second ), 40, 0., 20. );
+    //h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.2f", p.second ), 100, 0., 20. );
     h_denom_x[p.first] = dynamic_cast<TH1D*>( h_num_x[p.first]->Clone( Form( "h_denom_x_%d", p.first ) ) );
     //h_num_y[p.first] = new TH1D( Form( "h_num_y_%d", p.first ), Form( "Track y (%s)@@Entries@@mm?.2f", p.second ), 100, -12.5, 12.5 );
     h_num_y[p.first] = new TH1D( Form( "h_num_y_%d", p.first ), Form( "Track y (%s)@@Entries@@mm?.2f", p.second ), sizeof( y_bins )/sizeof( double )-1, y_bins );
     h_denom_y[p.first] = dynamic_cast<TH1D*>( h_num_y[p.first]->Clone( Form( "h_denom_y_%d", p.first ) ) );
+    h_num_y_win[p.first] = dynamic_cast<TH1D*>( h_num_y[p.first]->Clone( Form( "h_num_y_win_%d", p.first ) ) );
+    h_num_y_win[p.first]->SetTitle( Form( "Track y (with cut in x) (%s)@@Entries@@mm?.2f", p.second ) );
+    h_denom_y_win[p.first] = dynamic_cast<TH1D*>( h_num_y_win[p.first]->Clone( Form( "h_denom_y_win_%d", p.first ) ) );
     h_num_xi[p.first] = new TH1D( Form( "h_num_xi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), 40, 0., 0.2 );
     h_denom_xi[p.first] = dynamic_cast<TH1D*>( h_num_xi[p.first]->Clone( Form( "h_denom_xi_%d", p.first ) ) );
   }
@@ -70,15 +76,15 @@ void analyze_efficiency()
       xi_reco::reconstruct( proton_track_x[j]+align[pid].x, proton_track_side[j], proton_track_pot[j], xi, xi_err );
       const double trk_x = ( proton_track_x[j]+align[pid].x )*1.e3;
       const double trk_y = ( proton_track_y[j]-align[pid].y )*1.e3;
-      if ( !is_ref_fill ) {
-        h_num_x[pid]->Fill( trk_x );
-        h_num_y[pid]->Fill( trk_y );
-        h_num_xi[pid]->Fill( xi );
-      }
-      else {
+      h_num_x[pid]->Fill( trk_x );
+      h_num_y[pid]->Fill( trk_y );
+      h_num_xi[pid]->Fill( xi );
+      if ( trk_x > pot_x_mineff[pid] ) h_num_y_win[pid]->Fill( trk_y );
+      if ( is_ref_fill ) {
         h_denom_x[pid]->Fill( trk_x );
         h_denom_y[pid]->Fill( trk_y );
         h_denom_xi[pid]->Fill( xi );
+        if ( trk_x > pot_x_mineff[pid] ) h_denom_y_win[pid]->Fill( trk_y );
       }
     }
   }
@@ -93,6 +99,8 @@ void analyze_efficiency()
     h_denom_y[p.first]->Sumw2();
     h_num_xi[p.first]->Sumw2();
     h_denom_xi[p.first]->Sumw2();
+    h_num_y_win[p.first]->Sumw2();
+    h_denom_y_win[p.first]->Sumw2();
     h_num_x[p.first]->Scale( 1./h_num_x[p.first]->Integral( "width" ) );
     h_denom_x[p.first]->Scale( 1./h_denom_x[p.first]->Integral( "width" ) );
     const auto limits = pot_fit_limits[p.first];
@@ -103,6 +111,8 @@ void analyze_efficiency()
     h_num_x[p.first]->Scale( norm );
     h_num_y[p.first]->Scale( norm/h_num_y[p.first]->Integral( "width" ) );
     h_denom_y[p.first]->Scale( 1./h_denom_y[p.first]->Integral( "width" ) );
+    h_num_y_win[p.first]->Scale( norm/h_num_y_win[p.first]->Integral( "width" ) );
+    h_denom_y_win[p.first]->Scale( 1./h_denom_y_win[p.first]->Integral( "width" ) );
     h_num_xi[p.first]->Scale( norm/h_num_xi[p.first]->Integral( "width" ) );
     h_denom_xi[p.first]->Scale( 1./h_denom_xi[p.first]->Integral( "width" ) );
   }
@@ -113,12 +123,20 @@ void analyze_efficiency()
 
   auto text = new TText();
   text->SetTextColor( kGray+3 );
+  text->SetTextFont( 42 );
+  text->SetTextAlign( 21 );
+  text->SetTextSize( 0.035 );
 
-  const vector<string> distrib = { "x", "y", "xi" };
-  vector<pair<map<unsigned short,TH1D*>,map<unsigned short,TH1D*> > > hists = { { h_num_x, h_denom_x }, { h_num_y, h_denom_y }, { h_num_xi, h_denom_xi } };
+  const vector<string> distrib = { "x", "y", "xi", "y_win" };
+  vector<pair<map<unsigned short,TH1D*>,map<unsigned short,TH1D*> > > hists = { { h_num_x, h_denom_x }, { h_num_y, h_denom_y }, { h_num_xi, h_denom_xi }, { h_num_y_win, h_denom_y_win } };
   unsigned short i = 0;
   for ( auto& hist : hists ) {
     for ( const auto& p : pot_names ) {
+      auto limits = pot_fit_limits[p.first];
+      auto range = new TArrow( limits.first, 0.015, limits.second, 0.015, 0.015, "<>" );
+      //range->SetNDC( true );
+      range->SetLineColor( kGray+3 );
+      range->SetLineWidth( 3 );
       { // plot both the numerator and denominator
         Canvas c( Form( "dist_%s_%s", distrib[i].c_str(), p.second ), top_title.c_str() );
         c.SetLegendX1( 0.475 );
@@ -136,17 +154,8 @@ void analyze_efficiency()
         hs.GetHistogram()->SetTitle( hist.first[p.first]->GetTitle() );
         c.Prettify( hs.GetHistogram() );
         if ( distrib[i] == "x" ) {
-          auto limits = pot_fit_limits[p.first];
-          auto range = new TArrow( limits.first, 0.015, limits.second, 0.015, 0.015, "<>" );
-          //range->SetNDC( true );
-          range->SetLineColor( kGray+3 );
-          range->SetLineWidth( 3 );
           range->Draw();
-          auto range_leg = text->DrawText( 0.5*( limits.first+limits.second ), 0.0175, "Norm. range" );
-          range_leg->SetTextFont( 42 );
-          range_leg->SetTextAlign( 21 );
-          range_leg->SetTextSize( 0.035 );
-          range_leg->Draw();
+          text->DrawText( 0.5*( limits.first+limits.second ), 0.0175, "Norm. range" );
         }
         c.Save( "pdf,png", loc_www );
       }
@@ -158,10 +167,32 @@ void analyze_efficiency()
         auto den = dynamic_cast<TH1D*>( hist.second[p.first]->Clone() );
         ratio->Divide( den );
         ratio->Draw( "e0" );
+        /*if ( distrib[i] == "x" ) {
+          short min_j = ( p.first % 100 == 0 ) ? 30 : 20;
+          for ( unsigned short j = min_j; j < ratio->GetXaxis()->GetNbins(); ++j ) {
+            if ( ratio->GetBinContent( j ) > minimum_threshold ) {
+              cout << "--" << p.first << ":::" << ratio->GetXaxis()->GetBinCenter( j ) << " +/- " << ratio->GetXaxis()->GetBinWidth( j )*0.5 << endl;
+              break;
+            }
+          }
+        }*/
         c.Prettify( ratio );
         ratio->SetMarkerStyle( 24 );
         ratio->SetLineColor( kBlack );
         ratio->GetYaxis()->SetRangeUser( 0., 1.1 );
+        if ( distrib[i] == "x" ) range->Draw();
+        if ( distrib[i] == "y" ) {
+          auto ratio2 = dynamic_cast<TH1D*>( h_num_y_win[p.first]->Clone() );
+          ratio2->Divide( h_denom_y_win[p.first] );
+          ratio2->Draw( "e0,same" );
+          ratio2->SetMarkerStyle( 25 );
+          ratio2->SetMarkerColor( kRed+1 );
+          ratio2->SetLineColor( kRed+1 );
+          c.SetLegendX1( 0.15 );
+          c.SetLegendY1( 0.15 );
+          c.AddLegendEntry( ratio, "Full distribution", "p" );
+          c.AddLegendEntry( ratio2, "With x cut", "p" );
+        }
         c.SetGrid( 1, 1 );
         c.Save( "pdf,png", loc_www );
       }
