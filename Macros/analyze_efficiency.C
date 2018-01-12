@@ -50,6 +50,13 @@ void analyze_efficiency()
                        1., 1.125, 1.25, 1.375, 1.5, 1.75,
                        2., 2.25, 2.5, 3., 3.5, 4., 4.5,
                        5., 6., 7., 8., 9., 10. };
+  double xi_bins[] = {
+    0.020, 0.030,
+    0.040, 0.045, 0.0475, 0.050, 0.0525, 0.055, 0.0575,
+    0.060, 0.0625, 0.065, 0.070, 0.075,
+    0.080, 0.085, 0.090, 0.095,
+    0.100, 0.105, 0.110,
+    0.120, 0.130, 0.140, 0.150, 0.200 };
   for ( const auto& p : pot_names ) {
     h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.2f", p.second ), 40, 0., 20. );
     //h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.2f", p.second ), 100, 0., 15. );
@@ -60,7 +67,8 @@ void analyze_efficiency()
     h_num_y_win[p.first] = dynamic_cast<TH1D*>( h_num_y[p.first]->Clone( Form( "h_num_y_win_%d", p.first ) ) );
     h_num_y_win[p.first]->SetTitle( Form( "Track y (with cut in x) (%s)@@Entries@@mm?.2f", p.second ) );
     h_denom_y_win[p.first] = dynamic_cast<TH1D*>( h_num_y_win[p.first]->Clone( Form( "h_denom_y_win_%d", p.first ) ) );
-    h_num_xi[p.first] = new TH1D( Form( "h_num_xi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), 40, 0., 0.2 );
+    h_num_xi[p.first] = new TH1D( Form( "h_num_xi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), 36, 0.02, 0.2 );
+    //h_num_xi[p.first] = new TH1D( Form( "h_num_xi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), sizeof( xi_bins )/sizeof( double )-1, xi_bins );
     h_denom_xi[p.first] = dynamic_cast<TH1D*>( h_num_xi[p.first]->Clone( Form( "h_denom_xi_%d", p.first ) ) );
     h2_num_xy[p.first] = new TH2D( Form( "h2_num_xy_%d", p.first ), Form( "Track x (%s)@@Track y (%s)", p.second, p.second ), 24, 0., 12., 32, -8., 8. );
     h2_denom_xy[p.first] = dynamic_cast<TH2D*>( h2_num_xy[p.first]->Clone( Form( "h2_denom_xy_%d", p.first ) ) );
@@ -175,22 +183,20 @@ void analyze_efficiency()
         auto den = dynamic_cast<TH1D*>( hist.second[p.first]->Clone() );
         ratio->Divide( den );
         ratio->Draw( "e0" );
-        /*if ( distrib[i] == "x" ) {
-          short min_j = ( p.first % 100 == 0 ) ? 55 : 30;
-          for ( unsigned short j = min_j; j < ratio->GetXaxis()->GetNbins(); ++j ) {
+        if ( distrib[i] == "xi" ) {
+          const double min_x = 0.05;
+          const unsigned short min_bin = ratio->GetXaxis()->FindBin( min_x );
+          for ( unsigned short j = min_bin; j < ratio->GetXaxis()->GetNbins(); ++j )
             if ( ratio->GetBinContent( j ) > 0.85 ) { cout << "85%--" << p.first << ":::" << ratio->GetXaxis()->GetBinCenter( j ) << " +/- " << ratio->GetXaxis()->GetBinWidth( j )*0.5 << endl; break; }
-          }
-          for ( unsigned short j = min_j; j < ratio->GetXaxis()->GetNbins(); ++j ) {
+          for ( unsigned short j = min_bin; j < ratio->GetXaxis()->GetNbins(); ++j )
             if ( ratio->GetBinContent( j ) > 0.90 ) { cout << "90%--" << p.first << ":::" << ratio->GetXaxis()->GetBinCenter( j ) << " +/- " << ratio->GetXaxis()->GetBinWidth( j )*0.5 << endl; break; }
-          }
-          for ( unsigned short j = min_j; j < ratio->GetXaxis()->GetNbins(); ++j ) {
+          for ( unsigned short j = min_bin; j < ratio->GetXaxis()->GetNbins(); ++j )
             if ( ratio->GetBinContent( j ) > 0.95 ) { cout << "95%--" << p.first << ":::" << ratio->GetXaxis()->GetBinCenter( j ) << " +/- " << ratio->GetXaxis()->GetBinWidth( j )*0.5 << endl; break; }
-          }
-        }*/
+        }
         c.Prettify( ratio );
         ratio->SetMarkerStyle( 24 );
         ratio->SetLineColor( kBlack );
-        ratio->GetYaxis()->SetRangeUser( 0., 1.1 );
+        ratio->GetYaxis()->SetRangeUser( 0.01, 1.29 );
         if ( distrib[i] == "x" ) range->Draw();
         if ( distrib[i] == "y" ) {
           auto ratio2 = dynamic_cast<TH1D*>( h_num_y_win[p.first]->Clone() );
