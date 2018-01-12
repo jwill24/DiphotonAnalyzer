@@ -39,7 +39,6 @@ void analyze_efficiency()
   map<unsigned short,const char*> pot_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
   map<unsigned short,pair<double,double> > pot_fit_limits = { { 2, { 9., 15. } }, { 3, { 7., 15. } }, { 102, { 8., 13. }  }, { 103, { 6.5, 13. } } };
   map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_xi, h_denom_xi;
-  //map<unsigned short,TEfficiency*> eff_x, eff_y, eff_xi;
   double y_bins[] = { -10., -9., -8., -7., -6.,
                       -5., -4.5, -4., -3.5, -3., -2.5, -2.25,
                       -2., -1.75, -1.5, -1.375, -1.25, -1.125, -1., -0.875, -0.75, -0.625, -0.5, -0.375, -0.25, -0.125,
@@ -55,9 +54,6 @@ void analyze_efficiency()
     h_denom_y[p.first] = dynamic_cast<TH1D*>( h_num_y[p.first]->Clone( Form( "h_denom_y_%d", p.first ) ) );
     h_num_xi[p.first] = new TH1D( Form( "h_num_xi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), 40, 0., 0.2 );
     h_denom_xi[p.first] = dynamic_cast<TH1D*>( h_num_xi[p.first]->Clone( Form( "h_denom_xi_%d", p.first ) ) );
-    /*eff_x[p.first] = new TEfficiency( Form( "eff_x_%d", p.first ), Form( ";Track x (%s);Efficiency", p.second ), 40, 0., 20. );
-    eff_y[p.first] = new TEfficiency( Form( "eff_x_%d", p.first ), Form( ";Track y (%s);Efficiency", p.second ), sizeof( y_bins )/sizeof( double )-1, y_bins );
-    eff_xi[p.first] = new TEfficiency( Form( "eff_x_%d", p.first ), Form( ";Track #xi (%s);Efficiency", p.second ), 50, 0., 0.2 );*/
   }
 
   const unsigned long long num_entries = tree->GetEntriesFast();
@@ -84,9 +80,6 @@ void analyze_efficiency()
         h_denom_y[pid]->Fill( trk_y );
         h_denom_xi[pid]->Fill( xi );
       }
-      /*eff_x[pid]->Fill( !is_ref_fill, trk_x );
-      eff_y[pid]->Fill( !is_ref_fill, trk_y );
-      eff_xi[pid]->Fill( !is_ref_fill, xi );*/
     }
   }
 
@@ -160,58 +153,20 @@ void analyze_efficiency()
       { // plot the efficiencies
         Canvas c( Form( "ratio_%s_%s", distrib[i].c_str(), p.second ), top_title.c_str() );
         gStyle->SetOptStat( 0 );
-        //Option_t* estim_mode = "cp v"; // Clopper-Pearson estimator
-        //auto gr = new TGraphAsymmErrors( hist.first[p.first], hist.second[p.first], estim_mode );
-        /*auto gr = new TGraphAsymmErrors( hist.first[p.first], hist.second[p.first] );
-        gr->Draw( "alp" );
-        gr->GetHistogram()->SetTitle( hist.first[p.first]->GetTitle() );
-        c.Prettify( gr->GetHistogram() );
-        gr->GetYaxis()->SetTitle( "Efficiency" );
-        gr->GetYaxis()->SetRangeUser( 0., 1.1 );
-        gr->SetLineColor( kBlack );
-        gr->SetMarkerStyle( 24 );
-        gr->SetMarkerColor( kRed+1 );*/
         auto ratio = dynamic_cast<TH1D*>( hist.first[p.first]->Clone() );
         ratio->SetTitle( TString( ratio->GetTitle() ).ReplaceAll( "Entries", "Efficiency" ) );
         auto den = dynamic_cast<TH1D*>( hist.second[p.first]->Clone() );
-        /*ratio->Sumw2();
-        den->Sumw2();*/
         ratio->Divide( den );
-        //ratio->Draw( "p" );
         ratio->Draw( "e0" );
-        //ratio->Draw( "hist" );
-        //ratio->SetLineStyle( 2 );
         c.Prettify( ratio );
         ratio->SetMarkerStyle( 24 );
         ratio->SetLineColor( kBlack );
         ratio->GetYaxis()->SetRangeUser( 0., 1.1 );
-        //ratio->GetYaxis()->SetTitle( "Efficiency" );
         c.SetGrid( 1, 1 );
         c.Save( "pdf,png", loc_www );
       }
-      /*{ // plot the efficiencies
-        Canvas c( Form( "eff_%s_%s", distrib[i].c_str(), p.second ), top_title.c_str() );
-        auto eff = new TEfficiency( *hist.first[p.first], *hist.second[p.first] );
-        eff->Draw( "alp" );
-        eff->SetMarkerStyle( 24 );
-        c.Save( "pdf,png", loc_www );
-      }*/
     }
     i++;
   }
-  
-  /*vector<map<unsigned short,TEfficiency*> > effs = { { eff_x, eff_y, eff_xi } };
-  i = 0;
-  for ( auto& eff : effs ) {
-    for ( const auto& p : pot_names ) {
-      { // plot the efficiencies
-        Canvas c( Form( "eff_%s_%s", distrib[i].c_str(), p.second ), top_title.c_str() );
-        eff[p.first]->Draw();
-        eff[p.first]->SetMarkerStyle( 24 );
-        c.Save( "pdf,png", loc_www );
-      }
-    }
-    i++;
-  }*/
 }
 
