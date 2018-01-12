@@ -40,7 +40,7 @@ void analyze_efficiency()
 
   map<unsigned short,const char*> pot_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
   map<unsigned short,pair<double,double> > pot_fit_limits = { { 2, { 9., 15. } }, { 3, { 8., 15. } }, { 102, { 8., 13. }  }, { 103, { 6.5, 13. } } };
-  map<unsigned short,double> pot_x_mineff = { { 2, 5.8 }, { 3, 7.3 }, { 102, 5.9 }, { 103, 5.1 } }; // x such as eff(x) > 95%
+  map<unsigned short,double> pot_x_mineff = { { 2, 7.3 }, { 3, 8.0 }, { 102, 5.9 }, { 103, 5.1 } }; // x such as eff(x) > 95%
   map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_y_win, h_denom_y_win, h_num_xi, h_denom_xi;
   map<unsigned short,TH2D*> h2_num_xy, h2_denom_xy;
   double y_bins[] = { -10., -9., -8., -7., -6.,
@@ -52,7 +52,7 @@ void analyze_efficiency()
                        5., 6., 7., 8., 9., 10. };
   for ( const auto& p : pot_names ) {
     h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.2f", p.second ), 40, 0., 20. );
-    //h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.2f", p.second ), 100, 0., 20. );
+    //h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.2f", p.second ), 100, 0., 15. );
     h_denom_x[p.first] = dynamic_cast<TH1D*>( h_num_x[p.first]->Clone( Form( "h_denom_x_%d", p.first ) ) );
     //h_num_y[p.first] = new TH1D( Form( "h_num_y_%d", p.first ), Form( "Track y (%s)@@Entries@@mm?.2f", p.second ), 100, -12.5, 12.5 );
     h_num_y[p.first] = new TH1D( Form( "h_num_y_%d", p.first ), Form( "Track y (%s)@@Entries@@mm?.2f", p.second ), sizeof( y_bins )/sizeof( double )-1, y_bins );
@@ -176,12 +176,15 @@ void analyze_efficiency()
         ratio->Divide( den );
         ratio->Draw( "e0" );
         /*if ( distrib[i] == "x" ) {
-          short min_j = ( p.first % 100 == 0 ) ? 30 : 20;
+          short min_j = ( p.first % 100 == 0 ) ? 55 : 30;
           for ( unsigned short j = min_j; j < ratio->GetXaxis()->GetNbins(); ++j ) {
-            if ( ratio->GetBinContent( j ) > minimum_threshold ) {
-              cout << "--" << p.first << ":::" << ratio->GetXaxis()->GetBinCenter( j ) << " +/- " << ratio->GetXaxis()->GetBinWidth( j )*0.5 << endl;
-              break;
-            }
+            if ( ratio->GetBinContent( j ) > 0.85 ) { cout << "85%--" << p.first << ":::" << ratio->GetXaxis()->GetBinCenter( j ) << " +/- " << ratio->GetXaxis()->GetBinWidth( j )*0.5 << endl; break; }
+          }
+          for ( unsigned short j = min_j; j < ratio->GetXaxis()->GetNbins(); ++j ) {
+            if ( ratio->GetBinContent( j ) > 0.90 ) { cout << "90%--" << p.first << ":::" << ratio->GetXaxis()->GetBinCenter( j ) << " +/- " << ratio->GetXaxis()->GetBinWidth( j )*0.5 << endl; break; }
+          }
+          for ( unsigned short j = min_j; j < ratio->GetXaxis()->GetNbins(); ++j ) {
+            if ( ratio->GetBinContent( j ) > 0.95 ) { cout << "95%--" << p.first << ":::" << ratio->GetXaxis()->GetBinCenter( j ) << " +/- " << ratio->GetXaxis()->GetBinWidth( j )*0.5 << endl; break; }
           }
         }*/
         c.Prettify( ratio );
