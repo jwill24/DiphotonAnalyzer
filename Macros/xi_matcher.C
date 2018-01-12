@@ -2,6 +2,7 @@
 #include "pot_alignment.h"
 #include "xi_reconstruction.h"
 #include "diproton_candidate.h"
+#include "tree_reader.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -17,7 +18,7 @@
 #define MAX_MUON 50
 #define MAX_JET 200
 
-const float max_xi = 0.25;
+const float max_xi = 0.3;
 
 bool is_matched( int n_sigma, float xi_rp, float xi_cs, float err_xi_rp, float err_xi_cs )
 {
@@ -28,7 +29,7 @@ bool is_matched( int n_sigma, float xi_rp, float xi_cs, float err_xi_rp, float e
 }
 void fill_matching( float num_sigma, const std::vector< std::pair<float, float> >& tracks, float limit, float xi_gg, float err_xi_gg, TGraphErrors& gr_match, TGraphErrors& gr_unmatch, TGraphErrors& gr_ooa, std::vector< std::pair<float, float> >& candidates );
 void plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_match, TGraphErrors& gr_ooa, double limits );
-void plot_xispectrum( const char* name, TH1D* spec, double limit );
+void plot_xispectrum( const char* name, TH1D* spec, double limit, double old_limit = -1. );
 void plot_generic( const char* name, TH1* plot, const char* plot_style="", bool logy=false );
 void plot_chisq( const char* name, TH1D* ina, TH1D* ooa );
 void plot_xyaccept( const char* name, TH2D* plot, TH2D* plot_ooa );
@@ -37,7 +38,8 @@ void xi_matcher()
 {
   //TFile f( "Samples/output_Run2016BCG_looseCuts_22jun.root" );
   TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
-  TTree* tr = dynamic_cast<TTree*>( f.Get( "ntp" ) );
+  treeinfo ev;
+  ev.read( dynamic_cast<TTree*>( f.Get( "ntp" ) ) );
 
   //xi_reco::load_file( "TreeProducer/data/ctpps_optics_9mar2017.root" );
   xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
@@ -46,75 +48,8 @@ void xi_matcher()
   const float rel_err_xi_gg = 0.039;
   const float num_sigma = 2.0;
 
-  const float lim_45n = 0.033;
-  const float lim_45f = 0.024;
-  /*const float lim_56n = 0.050;
-  const float lim_56f = 0.037;
-
-  const float lim_45n = 0.034;
-  const float lim_45f = 0.023;*/
-  const float lim_56n = 0.042;
-  const float lim_56f = 0.032;
-
-
-  /*const float lim_56n = 0.050;
-  const float lim_56f = 0.037;*///FIXME!!!
-
-  unsigned int fill_number;
-  tr->SetBranchAddress( "fill_number", &fill_number );
-
-  unsigned int num_proton_track;
-  float proton_track_x[MAX_PROTONS], proton_track_y[MAX_PROTONS];
-  float proton_track_normchi2[MAX_PROTONS];
-  unsigned int proton_track_side[MAX_PROTONS], proton_track_pot[MAX_PROTONS];
-  tr->SetBranchAddress( "num_proton_track", &num_proton_track );
-  tr->SetBranchAddress( "proton_track_x", proton_track_x );
-  tr->SetBranchAddress( "proton_track_y", proton_track_y );
-  tr->SetBranchAddress( "proton_track_side", proton_track_side );
-  tr->SetBranchAddress( "proton_track_pot", proton_track_pot );
-  tr->SetBranchAddress( "proton_track_normchi2", proton_track_normchi2 );
-
-  unsigned int num_diphoton;
-  float diphoton_pt1[MAX_DIPH], diphoton_pt2[MAX_DIPH];
-  float diphoton_eta1[MAX_DIPH], diphoton_eta2[MAX_DIPH];
-  float diphoton_r91[MAX_DIPH], diphoton_r92[MAX_DIPH];
-  float diphoton_mass[MAX_DIPH], diphoton_pt[MAX_DIPH], diphoton_rapidity[MAX_DIPH], diphoton_dphi[MAX_DIPH];
-  float diphoton_vertex_x[MAX_DIPH], diphoton_vertex_y[MAX_DIPH], diphoton_vertex_z[MAX_DIPH];
-  tr->SetBranchAddress( "num_diphoton", &num_diphoton );
-  tr->SetBranchAddress( "diphoton_pt1", diphoton_pt1 );
-  tr->SetBranchAddress( "diphoton_pt2", diphoton_pt2 );
-  tr->SetBranchAddress( "diphoton_eta1", diphoton_eta1 );
-  tr->SetBranchAddress( "diphoton_eta2", diphoton_eta2 );
-  tr->SetBranchAddress( "diphoton_r91", diphoton_r91 );
-  tr->SetBranchAddress( "diphoton_r92", diphoton_r92 );
-  tr->SetBranchAddress( "diphoton_mass", diphoton_mass );
-  tr->SetBranchAddress( "diphoton_pt", diphoton_pt );
-  tr->SetBranchAddress( "diphoton_rapidity", diphoton_rapidity );
-  tr->SetBranchAddress( "diphoton_dphi", diphoton_dphi );
-  tr->SetBranchAddress( "diphoton_vertex_x", diphoton_vertex_x );
-  tr->SetBranchAddress( "diphoton_vertex_y", diphoton_vertex_y );
-  tr->SetBranchAddress( "diphoton_vertex_z", diphoton_vertex_z );
-
-  unsigned int num_electron;
-  float electron_vtx_x[MAX_ELE], electron_vtx_y[MAX_ELE], electron_vtx_z[MAX_ELE];
-  tr->SetBranchAddress( "num_electron", &num_electron );
-  tr->SetBranchAddress( "electron_vtx_x", electron_vtx_x );
-  tr->SetBranchAddress( "electron_vtx_y", electron_vtx_y );
-  tr->SetBranchAddress( "electron_vtx_z", electron_vtx_z );
-
-  unsigned int num_muon;
-  float muon_vtx_x[MAX_ELE], muon_vtx_y[MAX_ELE], muon_vtx_z[MAX_ELE];
-  tr->SetBranchAddress( "num_muon", &num_muon );
-  tr->SetBranchAddress( "muon_vtx_x", muon_vtx_x );
-  tr->SetBranchAddress( "muon_vtx_y", muon_vtx_y );
-  tr->SetBranchAddress( "muon_vtx_z", muon_vtx_z );
-
-  unsigned int num_jet;
-  float jet_pt[MAX_JET];
-  int jet_dipho_match[MAX_JET];
-  tr->SetBranchAddress( "num_jet", &num_jet );
-  tr->SetBranchAddress( "jet_pt", jet_pt );
-  tr->SetBranchAddress( "jet_dipho_match", jet_dipho_match );
+  const float old_lim_45n = 0.033, old_lim_45f = 0.024, old_lim_56n = 0.050, old_lim_56f = 0.037;
+  const float new_lim_45n = 0.034, new_lim_45f = 0.023, new_lim_56n = 0.042, new_lim_56f = 0.032;
 
   TGraphErrors gr_45n_ooa, gr_45n_unmatch, gr_45n_match;
   TGraphErrors gr_45f_ooa, gr_45f_unmatch, gr_45f_match;
@@ -133,21 +68,29 @@ void xi_matcher()
        *h_fwdtrk_chisq_56n_ooa = dynamic_cast<TH1D*>( h_fwdtrk_chisq_45n_ina->Clone( "fwdtrk_chisq_56n_ooa" ) ),
        *h_fwdtrk_chisq_56f_ina = dynamic_cast<TH1D*>( h_fwdtrk_chisq_45n_ina->Clone( "fwdtrk_chisq_56f_ina" ) ),
        *h_fwdtrk_chisq_56f_ooa = dynamic_cast<TH1D*>( h_fwdtrk_chisq_45n_ina->Clone( "fwdtrk_chisq_56f_ooa" ) );
-  TH1D* h_nearfar_xi_45 = new TH1D( "nearfar_xi_45", "#xi(45N)-#xi(45F)\\Events", 100, -0.2, 0.2 );
-  TH1D* h_nearfar_xi_56 = new TH1D( "nearfar_xi_56", "#xi(56N)-#xi(56F)\\Events", 100, -0.2, 0.2 );
-  TH2D* h_nearfar_x_45 = new TH2D( "nearfar_x_45", "x(45N) (cm)\\x(45F) (cm)", 100, 0., 2.5, 100, 0., 2.5 ),
+  TH1D* h_nearfar_xi_45 = new TH1D( "nearfar_xi_45", "#xi(45N)-#xi(45F)@@Events", 100, -0.2, 0.2 );
+  TH1D* h_nearfar_xi_56 = new TH1D( "nearfar_xi_56", "#xi(56N)-#xi(56F)@@Events", 100, -0.2, 0.2 );
+  TH2D* h_nearfar_x_45 = new TH2D( "nearfar_x_45", "x(45N) (cm)@@x(45F) (cm)", 100, 0., 2.5, 100, 0., 2.5 ),
        *h_nearfar_x_45_ooa = dynamic_cast<TH2D*>( h_nearfar_x_45->Clone( "nearfar_x_45_ooa" ) );
-  TH2D* h_nearfar_x_56 = new TH2D( "nearfar_x_56", "x(56N) (cm)\\x(56F) (cm)", 100, 0., 2.5, 100, 0., 2.5 ),
+  TH2D* h_nearfar_x_56 = new TH2D( "nearfar_x_56", "x(56N) (cm)@@x(56F) (cm)", 100, 0., 2.5, 100, 0., 2.5 ),
        *h_nearfar_x_56_ooa = dynamic_cast<TH2D*>( h_nearfar_x_56->Clone( "nearfar_x_56_ooa" ) );
-  TH2D* h_nearfar_y_45 = new TH2D( "nearfar_y_45", "y(45N) (cm)\\y(45F) (cm)", 100, -2.5, 2.5, 100, -2.5, 2.5 ),
+  TH2D* h_nearfar_y_45 = new TH2D( "nearfar_y_45", "y(45N) (cm)@@y(45F) (cm)", 100, -2.5, 2.5, 100, -2.5, 2.5 ),
        *h_nearfar_y_45_ooa = dynamic_cast<TH2D*>( h_nearfar_y_45->Clone( "nearfar_y_56_ooa" ) );
-  TH2D* h_nearfar_y_56 = new TH2D( "nearfar_y_56", "y(56N) (cm)\\y(56F) (cm)", 100, -2.5, 2.5, 100, -2.5, 2.5 ),
+  TH2D* h_nearfar_y_56 = new TH2D( "nearfar_y_56", "y(56N) (cm)@@y(56F) (cm)", 100, -2.5, 2.5, 100, -2.5, 2.5 ),
        *h_nearfar_y_56_ooa = dynamic_cast<TH2D*>( h_nearfar_y_56->Clone( "nearfar_y_56_ooa" ) );
+  TH2D* h_fwdtrk_hitmap_45n = new TH2D( "fwdtrk_xy_45n", "x(45N) (cm)@@y(45N) (cm)", 250, 0., 2.5, 250, -1.25, 1.25 ),
+       *h_fwdtrk_hitmap_45f = new TH2D( "fwdtrk_xy_45f", "x(45F) (cm)@@y(45F) (cm)", 250, 0., 2.5, 250, -1.25, 1.25 ),
+       *h_fwdtrk_hitmap_56n = new TH2D( "fwdtrk_xy_56n", "x(56N) (cm)@@y(56N) (cm)", 250, 0., 2.5, 250, -1.25, 1.25 ),
+       *h_fwdtrk_hitmap_56f = new TH2D( "fwdtrk_xy_56f", "x(56F) (cm)@@y(56F) (cm)", 250, 0., 2.5, 250, -1.25, 1.25 );
+  TH1D* h_fwdtrk_x_45n = new TH1D( "fwdtrk_x_45n", "x(45N)@@Events@@mm?.3f", 40, 1., 5. ),
+       *h_fwdtrk_x_45f = new TH1D( "fwdtrk_x_45f", "x(45F)@@Events@@mm?.3f", 40, 1., 5. ),
+       *h_fwdtrk_x_56n = new TH1D( "fwdtrk_x_56n", "x(56N)@@Events@@mm?.3f", 40, 1., 5. ),
+       *h_fwdtrk_x_56f = new TH1D( "fwdtrk_x_56f", "x(56F)@@Events@@mm?.3f", 40, 1., 5. );
 
-  TH1D h_mpair( "mpair", "m(#gamma#gamma)\\Events\\GeV", 10, 250., 1500. );
-  TH1D h_ypair( "ypair", "Y(#gamma#gamma)\\Events\\?.2f", 10, -2.5, 2.5 );
-  TH1D h_ptpair( "ptpair", "p_{T}(#gamma#gamma)\\Events\\GeV", 50, 0., 100. );
-  TH1D h_acopl( "acopl", "1-#||{#Delta#phi/#pi}\\Events\\?.3f", 20, 0., 0.008 );
+  TH1D h_mpair( "mpair", "m(#gamma#gamma)@@Events@@GeV", 10, 250., 1500. );
+  TH1D h_ypair( "ypair", "Y(#gamma#gamma)@@Events@@?.2f", 10, -2.5, 2.5 );
+  TH1D h_ptpair( "ptpair", "p_{T}(#gamma#gamma)@@Events@@GeV", 50, 0., 100. );
+  TH1D h_acopl( "acopl", "1-#||{#Delta#phi/#pi}@@Events@@?.3f", 20, 0., 0.008 );
 
   const unsigned short num_ptcut_bins = 5, num_dist_bins = 4;
   double extrajets_ptcut[num_ptcut_bins] = { 50., 100., 200., 500., 1000. };
@@ -159,84 +102,91 @@ void xi_matcher()
 
   ofstream file_cands( "events_list.txt" );
 
-  float min_xi_45n = 1., min_xi_45f = 1., min_xi_56n = 1., min_xi_56f = 1.;
   unsigned short num_ooa_45n = 0, num_ooa_45f = 0, num_ooa_56n = 0, num_ooa_56f = 0;
 
-  const unsigned long long num_events = tr->GetEntriesFast();
+  const unsigned long long num_events = ev.tree->GetEntriesFast();
   for ( unsigned long long i=0; i<num_events; i++ ) {
-    tr->GetEntry( i );
-    //cout << "event " << i << ": " << num_proton_track << " proton tracks, " << num_diphoton << " diphoton candidates" << endl;
+    ev.tree->GetEntry( i );
+    //cout << "event " << i << ": " << ev.num_proton_track << " proton tracks, " << ev.num_diphoton << " diphoton candidates" << endl;
 
     // first loop to identify the tracks and their respective pot
 
-    auto align = pot_align::get_alignments( fill_number );
+    auto align = pot_align::get_alignments( ev.fill_number );
 
     vector< pair<float, float> > xi_45n, xi_45f, xi_56n, xi_56f;
     vector< pair<float, float> > xy_45n, xy_45f, xy_56n, xy_56f;
     vector< pair<float, float> > xy_45n_ooa, xy_45f_ooa, xy_56n_ooa, xy_56f_ooa;
 
-    for ( unsigned short j=0; j<num_proton_track; j++ ) {
-      const unsigned short pot_id = 100*proton_track_side[j]+proton_track_pot[j];
-      const auto& al = align[pot_id];
+    for ( unsigned short j=0; j<ev.num_proton_track; j++ ) {
+      const unsigned short pot_id = 100*ev.proton_track_side[j]+ev.proton_track_pot[j];
+      auto al = align[pot_id];
 
       double xi, xi_err;
-      xi_reco::reconstruct( proton_track_x[j]+al.x, proton_track_side[j], proton_track_pot[j], xi, xi_err );
-      if ( proton_track_side[j]==0 && proton_track_pot[j]==2 ) {
-        if ( xi>=lim_45n ) {
-          h_fwdtrk_chisq_45n_ina->Fill( proton_track_normchi2[j] );
+      xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_side[j], ev.proton_track_pot[j], xi, xi_err );
+      if ( ev.proton_track_side[j]==0 && ev.proton_track_pot[j]==2 ) {
+        h_fwdtrk_hitmap_45n->Fill( ( ev.proton_track_x[j]+al.x )*1.e2, ( ev.proton_track_y[j]-al.y )*1.e2 );
+        h_fwdtrk_x_45n->Fill( ( ev.proton_track_x[j]+al.x )*1.e3 );
+        if ( xi >= new_lim_45n ) { // in pot acceptance
+          h_fwdtrk_chisq_45n_ina->Fill( ev.proton_track_normchi2[j] );
         }
         else { // outside pot acceptance
-          cout << "45N: " << fill_number << endl;
-          h_fwdtrk_chisq_45n_ooa->Fill( proton_track_normchi2[j] );
-          xy_45n_ooa.emplace_back( proton_track_x[j]+al.x, proton_track_y[j]-al.y );
+          cout << "45N: " << ev.fill_number << endl;
+          h_fwdtrk_chisq_45n_ooa->Fill( ev.proton_track_normchi2[j] );
+          xy_45n_ooa.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
           num_ooa_45n++;
         }
         xi_45n.emplace_back( xi, xi_err );
-        xy_45n.emplace_back( proton_track_x[j]+al.x, proton_track_y[j]-al.y );
+        xy_45n.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
         h_xispectrum_45n->Fill( xi );
-//cout << "xi45n: " << proton_track_xi[j] << " +/- " << proton_track_xi_error[j] << " / " << xi << " +/- " << xi_err << endl;
+//cout << "xi45n: " << ev.proton_track_xi[j] << " +/- " << ev.proton_track_xi_error[j] << " / " << xi << " +/- " << xi_err << endl;
       }
-      else if ( proton_track_side[j]==0 && proton_track_pot[j]==3 ) {
-        if ( xi>=lim_45f ) {
-          h_fwdtrk_chisq_45f_ina->Fill( proton_track_normchi2[j] );
+      else if ( ev.proton_track_side[j]==0 && ev.proton_track_pot[j]==3 ) {
+        h_fwdtrk_hitmap_45f->Fill( ( ev.proton_track_x[j]+al.x )*1.e2, ( ev.proton_track_y[j]-al.y )*1.e2 );
+        h_fwdtrk_x_45f->Fill( ( ev.proton_track_x[j]+al.x )*1.e3 );
+        if ( xi >= new_lim_45f ) { // in pot acceptance
+          h_fwdtrk_chisq_45f_ina->Fill( ev.proton_track_normchi2[j] );
         }
         else { // outside pot acceptance
-          cout << "45F: " << fill_number << endl;
-          h_fwdtrk_chisq_45f_ooa->Fill( proton_track_normchi2[j] );
-          xy_45f_ooa.emplace_back( proton_track_x[j]+al.x, proton_track_y[j]-al.y );
+          cout << "45F: " << ev.fill_number << endl;
+          h_fwdtrk_chisq_45f_ooa->Fill( ev.proton_track_normchi2[j] );
+          xy_45f_ooa.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
           num_ooa_45f++;
         }
         xi_45f.emplace_back( xi, xi_err );
-        xy_45f.emplace_back( proton_track_x[j]+al.x, proton_track_y[j]-al.y );
+        xy_45f.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
         h_xispectrum_45f->Fill( xi );
       }
-      else if ( proton_track_side[j]==1 && proton_track_pot[j]==2 ) {
-        if ( xi>=lim_56n ) {
-          h_fwdtrk_chisq_56n_ina->Fill( proton_track_normchi2[j] );
+      else if ( ev.proton_track_side[j]==1 && ev.proton_track_pot[j]==2 ) {
+        h_fwdtrk_hitmap_56n->Fill( ( ev.proton_track_x[j]+al.x )*1.e2, ( ev.proton_track_y[j]-al.y )*1.e2 );
+        h_fwdtrk_x_56n->Fill( ( ev.proton_track_x[j]+al.x )*1.e3 );
+        if ( xi >= new_lim_56n ) { // in pot acceptance
+          h_fwdtrk_chisq_56n_ina->Fill( ev.proton_track_normchi2[j] );
         }
         else { // outside pot acceptance
-          cout << "56N: " << fill_number << endl;
-          h_fwdtrk_chisq_56n_ooa->Fill( proton_track_normchi2[j] );
-          xy_56n_ooa.emplace_back( proton_track_x[j]+al.x, proton_track_y[j]-al.y );
+          cout << "56N: " << ev.fill_number << endl;
+          h_fwdtrk_chisq_56n_ooa->Fill( ev.proton_track_normchi2[j] );
+          xy_56n_ooa.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
           num_ooa_56n++;
         }
         xi_56n.emplace_back( xi, xi_err );
-        xy_56n.emplace_back( proton_track_x[j]+al.x, proton_track_y[j]-al.y );
+        xy_56n.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
         h_xispectrum_56n->Fill( xi );
       }
-      else if ( proton_track_side[j]==1 && proton_track_pot[j]==3 ) {
-        if ( xi>=lim_56f ) {
-          h_fwdtrk_chisq_56f_ina->Fill( proton_track_normchi2[j] );
+      else if ( ev.proton_track_side[j]==1 && ev.proton_track_pot[j]==3 ) {
+        h_fwdtrk_hitmap_56f->Fill( ( ev.proton_track_x[j]+al.x )*1.e2, ( ev.proton_track_y[j]-al.y )*1.e2 );
+        h_fwdtrk_x_56f->Fill( ( ev.proton_track_x[j]+al.x )*1.e3 );
+        if ( xi >= new_lim_56f ) { // in pot acceptance
+          h_fwdtrk_chisq_56f_ina->Fill( ev.proton_track_normchi2[j] );
         }
         else { // outside pot acceptance
-          cout << "56F: " << fill_number << endl;
-          h_fwdtrk_chisq_56f_ooa->Fill( proton_track_normchi2[j] );
-          xy_56f_ooa.emplace_back( proton_track_x[j]+al.x, proton_track_y[j]-al.y );
+          cout << "56F: " << ev.fill_number << endl;
+          h_fwdtrk_chisq_56f_ooa->Fill( ev.proton_track_normchi2[j] );
+          xy_56f_ooa.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
           num_ooa_56f++;
         }
-//cout << proton_track_xi[j]-xi << "\txi56f: " << proton_track_xi[j] << " +/- " << proton_track_xi_error[j] << " / " << xi << " +/- " << xi_err << endl;
+//cout << ev.proton_track_xi[j]-xi << "\txi56f: " << ev.proton_track_xi[j] << " +/- " << ev.proton_track_xi_error[j] << " / " << xi << " +/- " << xi_err << endl;
         xi_56f.emplace_back( xi, xi_err );
-        xy_56f.emplace_back( proton_track_x[j]+al.x, proton_track_y[j]-al.y );
+        xy_56f.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
         h_xispectrum_56f->Fill( xi );
       }
     }
@@ -276,35 +226,35 @@ void xi_matcher()
     }
 
     // second loop to identify the diphoton candidates and the corresponding xi values
-    for ( unsigned short j=0; j<num_diphoton; j++ ) {
+    for ( unsigned short j=0; j<ev.num_diphoton; j++ ) {
 
       //----- photon quality cuts
 
-      if ( diphoton_pt1[j]<50. ) continue;
-      if ( diphoton_pt2[j]<50. ) continue;
-      if ( diphoton_eta1[j]>2.5 || ( diphoton_eta1[j]>1.4442 && diphoton_eta1[j]<1.566 ) ) continue;
-      if ( diphoton_eta2[j]>2.5 || ( diphoton_eta2[j]>1.4442 && diphoton_eta2[j]<1.566 ) ) continue;
-      if ( diphoton_r91[j]<0.94 ) continue;
-      if ( diphoton_r92[j]<0.94 ) continue;
+      if ( ev.diphoton_pt1[j] < 75. ) continue;
+      if ( ev.diphoton_pt2[j] < 75. ) continue;
+      if ( ev.diphoton_eta1[j] > 2.5 || ( ev.diphoton_eta1[j] > 1.4442 && ev.diphoton_eta1[j] < 1.566 ) ) continue;
+      if ( ev.diphoton_eta2[j] > 2.5 || ( ev.diphoton_eta2[j] > 1.4442 && ev.diphoton_eta2[j] < 1.566 ) ) continue;
+      if ( ev.diphoton_r91[j] < 0.94 ) continue;
+      if ( ev.diphoton_r92[j] < 0.94 ) continue;
 
       //----- back-to-back photons
 
-      if ( 1.-fabs( diphoton_dphi[j] )/M_PI>0.005 ) continue;
+      if ( 1.-fabs( ev.diphoton_dphi[j] )/M_PI > 0.005 ) continue;
 
       //----- search for associated leptons
 
       const double lepton_mindist = 2.0; // in centimeters
-      TVector3 diph_vtx( diphoton_vertex_x[j], diphoton_vertex_y[j], diphoton_vertex_z[j] );
+      TVector3 diph_vtx( ev.diphoton_vertex_x[j], ev.diphoton_vertex_y[j], ev.diphoton_vertex_z[j] );
       for ( unsigned short k=0; k<num_dist_bins; k++ ) num_extraleptons[k] = 0;
       unsigned short num_close_ele = 0, num_close_muon = 0;
-      for ( unsigned short k=0; k<num_electron; k++ ) {
-        TVector3 ele_vtx( electron_vtx_x[k], electron_vtx_y[k], electron_vtx_z[k] );
+      for ( unsigned short k=0; k<ev.num_electron; k++ ) {
+        TVector3 ele_vtx( ev.electron_vtx_x[k], ev.electron_vtx_y[k], ev.electron_vtx_z[k] );
         const float ele_dist = ( ele_vtx-diph_vtx ).Mag();
         for ( unsigned short l=0; l<num_dist_bins; l++ ) if ( ele_dist<extraleptons_dist[l] ) num_extraleptons[l]++;
         if ( ele_dist<lepton_mindist ) num_close_ele++;
       }
-      for ( unsigned short k=0; k<num_muon; k++ ) {
-        TVector3 mu_vtx( muon_vtx_x[k], muon_vtx_y[k], muon_vtx_z[k] );
+      for ( unsigned short k=0; k<ev.num_muon; k++ ) {
+        TVector3 mu_vtx( ev.muon_vtx_x[k], ev.muon_vtx_y[k], ev.muon_vtx_z[k] );
         const float mu_dist = ( mu_vtx-diph_vtx ).Mag();
         for ( unsigned short l=0; l<num_dist_bins; l++ ) if ( mu_dist<extraleptons_dist[l] ) num_extraleptons[l]++;
         if ( mu_dist<lepton_mindist ) num_close_muon++;
@@ -316,37 +266,37 @@ void xi_matcher()
       const double min_extrajet_pt = 500.;
       unsigned short num_associated_jet = 0;
       for ( unsigned short k=0; k<num_ptcut_bins; k++ ) num_extrajets[k] = 0;
-      for ( unsigned short k=0; k<num_jet; k++ ) {
-        if ( jet_dipho_match[k]!=j ) continue;
-        for ( unsigned short l=0; l<num_ptcut_bins; l++ ) if ( jet_pt[k]>=extrajets_ptcut[l] ) num_extrajets[l]++;
-        if ( jet_pt[k]>min_extrajet_pt ) num_associated_jet++;
+      for ( unsigned short k=0; k<ev.num_jet; k++ ) {
+        if ( ev.jet_dipho_match[k]!=j ) continue;
+        for ( unsigned short l=0; l<num_ptcut_bins; l++ ) if ( ev.jet_pt[k]>=extrajets_ptcut[l] ) num_extrajets[l]++;
+        if ( ev.jet_pt[k]>min_extrajet_pt ) num_associated_jet++;
       }
       for ( unsigned short k=0; k<num_ptcut_bins; k++ ) h_numextrajets[k]->Fill( num_extrajets[k], 1./num_events );
 
       //----- another batch of "exclusivity" cuts
 
-      if ( num_close_ele>0 ) continue;
+/*      if ( num_close_ele>0 ) continue;
       if ( num_close_muon>0 ) continue;
-      if ( num_associated_jet>0 ) continue;
+      if ( num_associated_jet>0 ) continue;*/
 
       //----- reconstruct the energy loss from central system
 
-      const float xip_gg = ( diphoton_pt1[j]*exp( +diphoton_eta1[j] ) + diphoton_pt2[j]*exp( +diphoton_eta2[j] ) ) / sqrt_s;
-      const float xim_gg = ( diphoton_pt1[j]*exp( -diphoton_eta1[j] ) + diphoton_pt2[j]*exp( -diphoton_eta2[j] ) ) / sqrt_s;
+      const float xip_gg = ( ev.diphoton_pt1[j]*exp( +ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( +ev.diphoton_eta2[j] ) ) / sqrt_s;
+      const float xim_gg = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
 
       vector< pair<float, float> > matching_45n, matching_45f, matching_56n, matching_56f;
 
-      fill_matching( num_sigma, xi_45n, lim_45n, xip_gg, xip_gg*rel_err_xi_gg, gr_45n_match, gr_45n_unmatch, gr_45n_ooa, matching_45n );
-      fill_matching( num_sigma, xi_45f, lim_45f, xip_gg, xip_gg*rel_err_xi_gg, gr_45f_match, gr_45f_unmatch, gr_45f_ooa, matching_45f );
-      fill_matching( num_sigma, xi_56n, lim_56n, xim_gg, xim_gg*rel_err_xi_gg, gr_56n_match, gr_56n_unmatch, gr_56n_ooa, matching_56n );
-      fill_matching( num_sigma, xi_56f, lim_56f, xim_gg, xim_gg*rel_err_xi_gg, gr_56f_match, gr_56f_unmatch, gr_56f_ooa, matching_56f );
+      fill_matching( num_sigma, xi_45n, new_lim_45n, xip_gg, xip_gg*rel_err_xi_gg, gr_45n_match, gr_45n_unmatch, gr_45n_ooa, matching_45n );
+      fill_matching( num_sigma, xi_45f, new_lim_45f, xip_gg, xip_gg*rel_err_xi_gg, gr_45f_match, gr_45f_unmatch, gr_45f_ooa, matching_45f );
+      fill_matching( num_sigma, xi_56n, new_lim_56n, xim_gg, xim_gg*rel_err_xi_gg, gr_56n_match, gr_56n_unmatch, gr_56n_ooa, matching_56n );
+      fill_matching( num_sigma, xi_56f, new_lim_56f, xim_gg, xim_gg*rel_err_xi_gg, gr_56f_match, gr_56f_unmatch, gr_56f_ooa, matching_56f );
 
       // at least one tag (all pots, no distinction on the arm)
       if ( matching_45n.size()>0 || matching_45f.size()>0 || matching_56n.size()>0 || matching_56f.size()>0 ) {
-        h_mpair.Fill( diphoton_mass[j] );
-        h_ypair.Fill( diphoton_rapidity[j] );
-        h_ptpair.Fill( diphoton_pt[j] );
-        h_acopl.Fill( 1.0-fabs( diphoton_dphi[j] )/M_PI );
+        h_mpair.Fill( ev.diphoton_mass[j] );
+        h_ypair.Fill( ev.diphoton_rapidity[j] );
+        h_ptpair.Fill( ev.diphoton_pt[j] );
+        h_acopl.Fill( 1.0-fabs( ev.diphoton_dphi[j] )/M_PI );
       }
 
       // at least one tag in each arm (= double tag!)
@@ -378,13 +328,13 @@ void xi_matcher()
         }
         cout << candidates.size() << " candidate(s) in total!" << endl;
         for ( const auto& cand : candidates ) {
-          cout << "masses: diphoton: " << diphoton_mass[j] << ", diphoton: " << cand.mass() << " +/- " << cand.mass_error() << endl;
-          file_cands << "2\t" << diphoton_mass[j] << "\t" << diphoton_rapidity[j] << endl;
+          cout << "masses: diphoton: " << ev.diphoton_mass[j] << ", diphoton: " << cand.mass() << " +/- " << cand.mass_error() << endl;
+          file_cands << "2\t" << ev.diphoton_mass[j] << "\t" << ev.diphoton_rapidity[j] << endl;
         }
       }
       // only one arm tagged
       else if ( ( matching_45n.size()+matching_45f.size()>0 ) || ( matching_56n.size()+matching_56f.size()>0 ) ) {
-        file_cands << "1\t" << diphoton_mass[j] << "\t" << diphoton_rapidity[j] << endl;
+        file_cands << "1\t" << ev.diphoton_mass[j] << "\t" << ev.diphoton_rapidity[j] << endl;
       }
 
     }
@@ -393,8 +343,7 @@ void xi_matcher()
 
   cout << "outside acceptance: 45N: " << num_ooa_45n << ", 45F: " << num_ooa_45f << ", 56N: " << num_ooa_56n << ", 56F: " << num_ooa_56f << endl;
 
-  cout << "minimum xi expected: 45N: " << lim_45n << ", 45F: " << lim_45f << ", 56N: " << lim_56n << ", 56F: " << lim_56f << endl;
-  cout << "minimum xi observed: 45N: " << min_xi_45n << ", 45F: " << min_xi_45f << ", 56N: " << min_xi_56n << ", 56F: " << min_xi_56f << endl;
+  cout << "xi limits: 45N: " << new_lim_45n << ", 45F: " << new_lim_45f << ", 56N: " << new_lim_56n << ", 56F: " << new_lim_56f << endl;
 
   //----- plotting part
 
@@ -403,20 +352,30 @@ void xi_matcher()
   gr_56n_match.SetTitle( "56N" );
   gr_56f_match.SetTitle( "56F" );
 
-  plot_matching( "xi_matching_45n", gr_45n_unmatch, gr_45n_match, gr_45n_ooa, lim_45n );
-  plot_matching( "xi_matching_45f", gr_45f_unmatch, gr_45f_match, gr_45f_ooa, lim_45f );
-  plot_matching( "xi_matching_56n", gr_56n_unmatch, gr_56n_match, gr_56n_ooa, lim_56n );
-  plot_matching( "xi_matching_56f", gr_56f_unmatch, gr_56f_match, gr_56f_ooa, lim_56f );
+  plot_matching( "xi_matching_45n", gr_45n_unmatch, gr_45n_match, gr_45n_ooa, new_lim_45n );
+  plot_matching( "xi_matching_45f", gr_45f_unmatch, gr_45f_match, gr_45f_ooa, new_lim_45f );
+  plot_matching( "xi_matching_56n", gr_56n_unmatch, gr_56n_match, gr_56n_ooa, new_lim_56n );
+  plot_matching( "xi_matching_56f", gr_56f_unmatch, gr_56f_match, gr_56f_ooa, new_lim_56f );
 
-  h_xispectrum_45n->SetTitle( "#xi (45N)\\Events\\?.4f" );
-  h_xispectrum_45f->SetTitle( "#xi (45F)\\Events\\?.4f" );
-  h_xispectrum_56n->SetTitle( "#xi (56N)\\Events\\?.4f" );
-  h_xispectrum_56f->SetTitle( "#xi (56F)\\Events\\?.4f" );
+  h_xispectrum_45n->SetTitle( "#xi (45N)@@Events@@?.4f" );
+  h_xispectrum_45f->SetTitle( "#xi (45F)@@Events@@?.4f" );
+  h_xispectrum_56n->SetTitle( "#xi (56N)@@Events@@?.4f" );
+  h_xispectrum_56f->SetTitle( "#xi (56F)@@Events@@?.4f" );
 
-  plot_xispectrum( "xi_spectrum_45n", h_xispectrum_45n, lim_45n );
-  plot_xispectrum( "xi_spectrum_45f", h_xispectrum_45f, lim_45f );
-  plot_xispectrum( "xi_spectrum_56n", h_xispectrum_56n, lim_56n );
-  plot_xispectrum( "xi_spectrum_56f", h_xispectrum_56f, lim_56f );
+  plot_xispectrum( "xi_spectrum_45n", h_xispectrum_45n, new_lim_45n, old_lim_45n );
+  plot_xispectrum( "xi_spectrum_45f", h_xispectrum_45f, new_lim_45f, old_lim_45f );
+  plot_xispectrum( "xi_spectrum_56n", h_xispectrum_56n, new_lim_56n, old_lim_56n );
+  plot_xispectrum( "xi_spectrum_56f", h_xispectrum_56f, new_lim_56f, old_lim_56n );
+
+  plot_generic( "fwdtrk_hitmap_45n", h_fwdtrk_hitmap_45n, "colz" );
+  plot_generic( "fwdtrk_hitmap_45f", h_fwdtrk_hitmap_45f, "colz" );
+  plot_generic( "fwdtrk_hitmap_56n", h_fwdtrk_hitmap_56n, "colz" );
+  plot_generic( "fwdtrk_hitmap_56f", h_fwdtrk_hitmap_56f, "colz" );
+
+  plot_generic( "fwdtrk_x_45n", h_fwdtrk_x_45n, "" );
+  plot_generic( "fwdtrk_x_45f", h_fwdtrk_x_45f, "" );
+  plot_generic( "fwdtrk_x_56n", h_fwdtrk_x_56n, "" );
+  plot_generic( "fwdtrk_x_56f", h_fwdtrk_x_56f, "" );
 
   plot_generic( "xitagged_mpair", &h_mpair );
   plot_generic( "xitagged_rapidity", &h_ypair );
@@ -457,7 +416,7 @@ void xi_matcher()
       max = TMath::Max( h_numextraleptons[i]->GetMaximum(), max );
     }
     hs.Draw( "p,nostack" );
-    hs.SetTitle( "Number of leptons associated to #gamma#gamma vertex\\Events fraction" );
+    hs.GetHistogram()->SetTitle( "Number of leptons associated to #gamma#gamma vertex@@Events fraction" );
     c.GetLegend()->SetFillStyle( 0 );
     c.GetLegend()->SetLineWidth( 0 );
     hs.SetMaximum( max*1.1 );
@@ -465,7 +424,7 @@ void xi_matcher()
     ln->SetLineStyle( 2 );
     ln->Draw();
     c.Prettify( hs.GetHistogram() );
-    c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/xi_match" );
   }
   {
     Canvas c( "num_extrajets", "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
@@ -481,13 +440,13 @@ void xi_matcher()
       max = TMath::Max( h_numextrajets[i]->GetMaximum(), max );
     }
     hs.Draw( "p,nostack" );
-    hs.SetTitle( "Number of jets associated to #gamma#gamma vertex\\Events fraction" );
+    hs.GetHistogram()->SetTitle( "Number of jets associated to #gamma#gamma vertex@@Events fraction" );
     hs.SetMaximum( max*1.1 );
     auto ln = new TLine( 1., 0., 1., max*1.1 );
     ln->SetLineStyle( 2 );
     ln->Draw();
     c.Prettify( hs.GetHistogram() );
-    c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/xi_match" );
   }
 
 }
@@ -523,14 +482,16 @@ plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_matc
   Canvas c( name, "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
 
   TF1 lim( "lim", "x", 0., max_xi );
-  lim.SetTitle( "#xi(RP)\\#xi(#gamma#gamma)" );
+  lim.SetTitle( "#xi(RP)@@#xi(#gamma#gamma)" );
   lim.Draw("lr+");
-  lim.SetLineColor(4);
-  lim.SetLineWidth(2);
+  lim.SetLineColor( kGray+1 );
+  lim.SetLineWidth( 2 );
 
   int colour = kAzure+10;
   TBox box( 0., 0., limits, max_xi );
-  box.SetFillColor( colour );
+  //box.SetFillColor( colour );
+  box.SetFillStyle( 3004 );
+  box.SetFillColor( kBlack );
   box.SetLineColor( kBlack );
   box.SetLineWidth( 1 );
   box.Draw( "l" );
@@ -554,7 +515,7 @@ plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_matc
   gr_ooa.SetMarkerSize(1.25);
   gr_ooa.Draw( "p same" );
 
-  c.SetLegendX1( 0.4 );
+  c.SetLegendX1( 0.35 );
   c.AddLegendEntry( &gr_match, "Matching events", "lp" );
   c.AddLegendEntry( &gr_unmatch, "Non-matching events", "lp" );
   c.AddLegendEntry( &gr_ooa, "Out of acceptance events", "lp" );
@@ -575,16 +536,17 @@ plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_matc
   c.GetLegend()->SetLineWidth( 0 );
   c.Prettify( lim.GetHistogram() );
 
-  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/xi_match" );
 }
 
 void
-plot_xispectrum( const char* name, TH1D* spec, double limit )
+plot_xispectrum( const char* name, TH1D* spec, double limit, double old_limit )
 {
   Canvas c( name, "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
   gStyle->SetStatX( 0.88 );
-  gStyle->SetStatY( 0.92 );
-  gStyle->SetOptStat( "erm" );
+  gStyle->SetStatY( 0.78 );
+  //gStyle->SetOptStat( "erm" );
+  gStyle->SetOptStat( 0 );
   const double max_y = spec->GetMaximum()*1.1;
   spec->Sumw2();
   spec->Draw( "hist" );
@@ -592,15 +554,27 @@ plot_xispectrum( const char* name, TH1D* spec, double limit )
   spec->SetLineColor( kBlack );
   //spec->SetLineWidth( 2 );
   //spec->SetFillColor( kBlack );
-  TBox lim( 0., 0., limit, max_y );
   spec->Draw( "p same" );
+  TBox lim( 0., 0., limit, max_y );
   lim.SetFillStyle( 3004 );
   lim.SetFillColor( kBlack );
   lim.SetLineColor( kBlack );
   lim.SetLineWidth( 1 );
   lim.Draw( "l" );
+  if ( old_limit > 0. ) {
+    auto old_lim = new TLine( old_limit, 0., old_limit, max_y );
+    old_lim->SetLineColor( kBlue+1 );
+    old_lim->SetLineWidth( 2 );
+    old_lim->Draw();
+  }
+  TGraph gr_lim, gr_oldlim;
+  gr_lim.SetFillStyle( 3004 ); gr_lim.SetFillColor( kBlack );
+  gr_oldlim.SetLineColor( kBlue+1 ); gr_oldlim.SetLineWidth( 2 );
+  c.SetLegendY1( 0.78 );
+  c.AddLegendEntry( &gr_oldlim, "Nominal optics limit", "l" );
+  c.AddLegendEntry( &gr_lim, "Matched limit", "f" );
   c.Prettify( spec );
-  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/xi_match" );
 }
 
 void
@@ -619,7 +593,7 @@ plot_chisq( const char* name, TH1D* ina, TH1D* ooa )
   ooa->SetLineStyle( 1 );
   c.AddLegendEntry( ooa, "Outside acceptance" );
   st.Draw( "hist,nostack" );
-  st.GetHistogram()->SetTitle( "Local track #chi^{2}/ndf (TOTEM strips)\\Events\\?.3f" );
+  st.GetHistogram()->SetTitle( "Local track #chi^{2}/ndf (TOTEM strips)@@Events@@?.3f" );
 
   PaveText lab( 0.8, 0.45, 0.85, 0.5 );
   lab.SetTextSize( 0.075 );
@@ -630,7 +604,7 @@ plot_chisq( const char* name, TH1D* ina, TH1D* ooa )
 
   c.SetLogy();
   c.Prettify( st.GetHistogram() );
-  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/xi_match" );
 }
 
 void
@@ -643,7 +617,7 @@ plot_generic( const char* name, TH1* plot, const char* plot_style, bool logy )
   plot->SetLineColor( kBlack );
   if ( logy ) c.SetLogy();
   c.Prettify( plot );
-  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/xi_match" );
 }
 
 void
@@ -662,6 +636,6 @@ plot_xyaccept( const char* name, TH2D* plot, TH2D* plot_ooa )
   c.GetLegend()->SetFillStyle( 0 );
   c.GetLegend()->SetLineWidth( 0 );
   c.Prettify( plot );
-  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/xi_match" );
 }
 

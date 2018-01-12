@@ -51,8 +51,8 @@ void near_far_tracks_association( TString file=default_ntp_file )
   unsigned int num_vertex;
   tr->SetBranchAddress( "num_vertex", &num_vertex );
 
-  TH1D* h_num_proton = new TH1D( "num_proton", "Forward track multiplicity\\Events", 6, 0., 6. ),
-       *h_num_vtx = new TH1D( "num_vertex", "Vertex multiplicity\\Events", 40, 0., 40. );
+  TH1D* h_num_proton = new TH1D( "num_proton", "Forward track multiplicity@@Events", 6, 0., 6. ),
+       *h_num_vtx = new TH1D( "num_vertex", "Vertex multiplicity@@Events", 40, 0., 40. );
   TGraphErrors h_ximatch_45nf_thr0p1, h_ximatch_45nf_thr0p2, h_ximatch_45nf_thr0p5, h_ximatch_45nf_thr1p0,
                h_ximatch_56nf_thr0p1, h_ximatch_56nf_thr0p2, h_ximatch_56nf_thr0p5, h_ximatch_56nf_thr1p0;
 

@@ -9,7 +9,11 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32( 1000 )
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-'/store/data/Run2016B/MinimumBias/AOD/23Sep2016-v1/50000/040C2700-A388-E611-AF56-00259073E390.root',
+#'/store/data/Run2016B/MinimumBias/AOD/23Sep2016-v1/50000/040C2700-A388-E611-AF56-00259073E390.root',
+#'/store/data/Run2016C/L1MinimumBias/AOD/PromptReco-v2/000/275/656/00000/3AD13D68-3F3B-E611-8BC1-02163E0143EF.root'
+#'/store/data/Run2016C/DoubleEG/AOD/07Aug17-v1/50000/000F79D0-929E-E711-8092-0CC47A4D76B6.root'
+'/store/data/Run2016C/DoubleEG/AOD/23Sep2016-v1/120000/6A69C51A-10B8-E611-88DB-0CC47A78A4A6.root'
+#'/store/data/Run2016C/DoubleEG/AOD/23Sep2016-v1/50000/0089FDD7-1783-E611-A026-90B11C2AA16C.root'
     )
 )
 # Trigger
@@ -17,8 +21,9 @@ process.source = cms.Source("PoolSource",
 #from HLTrigger.HLTfilters.hltHighLevel_cfi import hltHighLevel
 process.load('HLTrigger.HLTfilters.hltHighLevel_cfi')
 process.hltHighLevel.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
-process.hltHighLevel.HLTPaths = ['HLT_L1MinimumBias*']
-process.hltHighLevel.throw = cms.bool(False)
+#process.hltHighLevel.HLTPaths = ['HLT_L1MinimumBias*']
+process.hltHighLevel.HLTPaths = ['*']
+#process.hltHighLevel.throw = cms.bool(False)
 
 process.load('DiphotonAnalyzer.TreeProducer.mbTreeProducer_cfi')
 

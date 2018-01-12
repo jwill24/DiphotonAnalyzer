@@ -43,7 +43,7 @@ void xi_accept()
   map<unsigned short,plots_t> plots_vs_fill;
   plots_t combined_plots;
   for ( const auto& pot : pot_names ) {
-    combined_plots[pot.first] = new TH1D( Form( "xi_spectrum_%s_combined", pot.second.c_str() ), Form( "#xi(%s)\\Events", pot.second.c_str() ), 800, 0., 0.4 );
+    combined_plots[pot.first] = new TH1D( Form( "xi_spectrum_%s_combined", pot.second.c_str() ), Form( "#xi(%s)@@Events", pot.second.c_str() ), 800, 0., 0.4 );
   }
 
   for ( unsigned long long i=0; i<tr->GetEntriesFast(); i++ ) {
@@ -54,7 +54,7 @@ void xi_accept()
       // create the plots for this fill
       plots_t plots;
       for ( const auto& pot : pot_names ) {
-        plots[pot.first] = new TH1D( Form( "xi_spectrum_%s_fill%d", pot.second.c_str(), fill_number ), Form( "#xi(%s)\\Events", pot.second.c_str() ), 100, 0., 0.25 );
+        plots[pot.first] = new TH1D( Form( "xi_spectrum_%s_fill%d", pot.second.c_str(), fill_number ), Form( "#xi(%s)@@Events", pot.second.c_str() ), 100, 0., 0.25 );
       }
       plots_vs_fill.insert( make_pair( fill_number, plots ) );
     }
@@ -142,21 +142,21 @@ void xi_accept()
       gr_accept->SetFillStyle( 3004 );
       gr_accept->Draw( "c" );
       c_combined.Prettify( gr_accept->GetHistogram() );
-      TLine* cut_new = new TLine( xi_cut, 0., xi_cut, y_max ); // damn ROOT, damn...
-      cut_new->SetLineWidth( 2 );
+      auto cut_new = new TLine( xi_cut, 0., xi_cut, y_max ); // damn ROOT, damn...
+      cut_new->SetLineWidth( 3 );
       cut_new->SetLineColor( kBlue-2 );
       cut_new->Draw( "same" );
       /*TLine* cut_new_horiz = new TLine( 0., min_frac, xi_cut, min_frac ); // damn ROOT, damn...
       cut_new_horiz->SetLineWidth( 2 );
       cut_new_horiz->SetLineColor( kBlue-2 );
       cut_new_horiz->Draw( "same" );*/
-      TLine* cut_orig = new TLine( pot.second, 0., pot.second, y_max ); // damn ROOT, damn...
-      cut_orig->SetLineWidth( 2 );
+      auto cut_orig = new TLine( pot.second, 0., pot.second, y_max ); // damn ROOT, damn...
+      cut_orig->SetLineWidth( 3 );
       cut_orig->SetLineStyle( 2 );
       cut_orig->SetLineColor( kRed+1 );
       cut_orig->Draw( "same" );
       if ( pot_id==0 ) {
-        c_combined.AddLegendEntry( cut_orig, "Cuts used in #mu#mu analysis", "l" );
+        c_combined.AddLegendEntry( cut_orig, "Predicted from optics", "l" );
         c_combined.AddLegendEntry( cut_new, "Adapted cuts", "l" );
       }
       pad->SetLogy();

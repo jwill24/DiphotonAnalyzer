@@ -26,10 +26,10 @@ void vertex_study()
   t->SetBranchAddress( "bs_y0", &bs_y0 );
   t->SetBranchAddress( "bs_z0", &bs_z0 );
 
-  TH1D* h_vtx_reco_m = new TH1D( "vtx_reco_m", "m(#gamma#gamma)\\Events\\GeV", 80, 300., 1900. ),
+  TH1D* h_vtx_reco_m = new TH1D( "vtx_reco_m", "m(#gamma#gamma)@@Events@@GeV", 80, 300., 1900. ),
     *h_vtx_bs_m = (TH1D*)h_vtx_reco_m->Clone( "vtx_bs_m" ),
     *h_vtx_orig_m = (TH1D*)h_vtx_reco_m->Clone( "vtx_orig_m" );
-  TH1D* h_mdiff_bs = new TH1D( "mdiff_bs", "#Deltam(#gamma#gamma)\\Events\\GeV?.2f", 200, -25., 25. ),
+  TH1D* h_mdiff_bs = new TH1D( "mdiff_bs", "#Deltam(#gamma#gamma)@@Events@@GeV?.2f", 200, -25., 25. ),
     *h_mdiff_orig = (TH1D*)h_mdiff_bs->Clone( "mdiff_orig" ),
     *h_mdiff_bs_orig = (TH1D*)h_mdiff_bs->Clone( "mdiff_bs_orig" );
 
@@ -39,7 +39,7 @@ void vertex_study()
   TH1D* h_mdiff_shift[num_vtx_pos];
   for ( unsigned short i=0; i<num_vtx_pos; i++ ) {
     vtx_shifts[i] = min_vtx_dist+( max_vtx_dist-min_vtx_dist )*i/( num_vtx_pos-1 );
-    h_mdiff_shift[i] = new TH1D( Form( "mdiff_shift_%d", i ), "#Deltam(#gamma#gamma)\\Events\\GeV?.2f", 200, -25., 25. );
+    h_mdiff_shift[i] = new TH1D( Form( "mdiff_shift_%d", i ), "#Deltam(#gamma#gamma)@@Events@@GeV?.2f", 200, -25., 25. );
     //cout << "vtx shift " << i << " = " << vtx_shifts[i] << endl;
   }
 
@@ -118,7 +118,7 @@ cout << "finished the events loop" << endl;
 
   {
     Canvas c( "mreco_vs_vtxz", top_label );
-    gr_mdiff.SetTitle( "Vertex z (cm)\\m(#gamma#gamma) at given z - m(#gamma#gamma) at #gamma#gamma vertex z (GeV)" );
+    gr_mdiff.SetTitle( "Vertex z (cm)@@m(#gamma#gamma) at given z - m(#gamma#gamma) at #gamma#gamma vertex z (GeV)" );
     gr_mdiff.Draw( "ap" );
     gr_mdiff.SetMarkerStyle( 20 );
     c.Prettify( gr_mdiff.GetHistogram() );

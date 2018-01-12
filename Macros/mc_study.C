@@ -102,28 +102,29 @@ void mc_study()
   float pu_weight;
   t->SetBranchAddress( "pileup_weight", &pu_weight );
 
-  TH1D* h_ptsingle_gen = new TH1D( "pt_gen", "Single photon p_{T}\\Events fraction\\GeV", 100, 0., 1000. ),
+  TH1D* h_ptsingle_gen = new TH1D( "pt_gen", "Single photon p_{T}@@Events fraction@@GeV", 100, 0., 1000. ),
        *h_ptsingle_reco = (TH1D*) h_ptsingle_gen->Clone( "pt_reco" );
-  TH1D* h_ptpair_gen = new TH1D( "ptpair_gen", "Diphoton p_{T}\\Events fraction\\GeV?.2f", 100, 0., 25. ),
+  TH1D* h_ptpair_gen = new TH1D( "ptpair_gen", "Diphoton p_{T}@@Events fraction@@GeV?.2f", 100, 0., 25. ),
        *h_ptpair_reco = (TH1D*) h_ptpair_gen->Clone( "ptpair_reco" );
-  TH1D* h_etasingle_gen = new TH1D( "etasingle_gen", "Leading photon #eta\\Events fraction\\?.2f", 50, -2.5, 2.5 ),
+  TH1D* h_etasingle_gen = new TH1D( "etasingle_gen", "Leading photon #eta@@Events fraction@@?.2f", 50, -2.5, 2.5 ),
        *h_etasingle_reco = (TH1D*) h_etasingle_gen->Clone( "etasingle_reco" );
-  TH1D* h_phisingle_gen = new TH1D( "phisingle_gen", "Leading photon #phi\\Events fraction\\?.2f", 20, -TMath::Pi(), TMath::Pi() ),
+  TH1D* h_phisingle_gen = new TH1D( "phisingle_gen", "Leading photon #phi@@Events fraction@@?.2f", 20, -TMath::Pi(), TMath::Pi() ),
        *h_phisingle_reco = (TH1D*) h_phisingle_gen->Clone( "phisingle_reco" );
-  TH1D* h_energysingle_gen = new TH1D( "energysingle_gen", "Leading photon energy\\Events fraction\\GeV?.2f", 50, 0., 500. ),
+  TH1D* h_energysingle_gen = new TH1D( "energysingle_gen", "Leading photon energy@@Events fraction@@GeV?.2f", 50, 0., 500. ),
        *h_energysingle_reco = (TH1D*) h_energysingle_gen->Clone( "energysingle_reco" );
-  TH1D* h_ptdiff = new TH1D( "ptdiff", "p_{T}^{reco} - p_{T}^{gen}\\Events fraction\\GeV?.2f", 100, -25., 25. );
-  TH1D* h_etadiff = new TH1D( "etadiff", "#eta_{T}^{reco} - #eta_{T}^{gen}\\Events fraction\\GeV?.2f", 100, -0.5, 0.5 );
-  TH2D* h_ptevol = new TH2D( "ptevol", "Generated leading photon p_{T}\\Reconstructed - generated leading photon p_{T}", 250, 0., 1000., 100, -25., 25. );
-  TH1D* h_vtxdist_gen = new TH1D( "vtxdist_gen", "d(generated/reconstructed diphoton vertex)\\Events fraction\\cm?.2f", 200, 0., 20. ),
+  TH1D* h_ptdiff = new TH1D( "ptdiff", "p_{T}^{reco} - p_{T}^{gen}@@Events fraction@@GeV?.2f", 100, -25., 25. );
+  TH1D* h_etadiff = new TH1D( "etadiff", "#eta_{T}^{reco} - #eta_{T}^{gen}@@Events fraction@@GeV?.2f", 100, -0.5, 0.5 );
+  TH2D* h_ptevol = new TH2D( "ptevol", "Generated leading photon p_{T}@@Reconstructed - generated leading photon p_{T}", 250, 0., 1000., 100, -25., 25. );
+  TH1D* h_vtxdist_gen = new TH1D( "vtxdist_gen", "d(generated/reconstructed diphoton vertex)@@Events fraction@@cm?.2f", 200, 0., 20. ),
        *h_vtxdist_gen_purw = (TH1D*) h_vtxdist_gen->Clone( "vtxdist_gen_purw" );
-  TH1D* h_match_mass = new TH1D( "match_mass", "(m_{reco}(#gamma#gamma)-m_{gen}(#gamma#gamma))/m_{gen}(#gamma#gamma)\\Events fraction\\?.3f", 200, -0.5, 0.5 ),
-       *h_match_ptpair = new TH1D( "match_pt", "(p_{T}^{reco}(#gamma#gamma)-p_{T}^{gen}(#gamma#gamma))/p_{T}^{gen}(#gamma#gamma)\\Events fraction", 100, -15., 15. );
-  TH1D* h_diphvtxz_gen = new TH1D( "diphvtx_gen", "Diphoton vertex z\\Events fraction\\cm", 60, -30., 30. ),
+  TH1D* h_match_mass = new TH1D( "match_mass", "(m_{reco}(#gamma#gamma)-m_{gen}(#gamma#gamma))/m_{gen}(#gamma#gamma)@@Events fraction@@?.3f", 200, -0.5, 0.5 ),
+       *h_match_ptpair = new TH1D( "match_pt", "(p_{T}^{reco}(#gamma#gamma)-p_{T}^{gen}(#gamma#gamma))/p_{T}^{gen}(#gamma#gamma)@@Events fraction", 100, -15., 15. );
+  TH1D* h_diphvtxz_gen = new TH1D( "diphvtx_gen", "Diphoton vertex z@@Events fraction@@cm", 60, -30., 30. ),
        *h_diphvtxz_reco = (TH1D*)h_diphvtxz_gen->Clone( "diphvtx_reco" );
-  TH1D* h_mresol = new TH1D( "mass_resol", "(m_{reco}-m_{gen})/m_{gen}\\Events fraction\\?.3f", 100, -0.25, 0.25 );
-  TH1D* h_yresol = new TH1D( "rapidity_resol", "(y_{reco}-y_{gen})/y_{gen}\\Events fraction\\?.3f", 100, -0.25, 0.25 );
-  TH1D* h_xiresol1 = new TH1D( "xi_resol_p1", "(#xi_{reco}-#xi_{gen})/#xi_{gen}\\Events fraction\\?.3f", 100, -0.25, 0.25 ),
+  TH1D* h_mresol = new TH1D( "mass_resol", "(m_{reco}-m_{gen})/m_{gen}@@Events fraction@@?.3f", 100, -0.25, 0.25 );
+  TH1D* h_yresol = new TH1D( "rapidity_resol", "(y_{reco}-y_{gen})/y_{gen}@@Events fraction@@?.3f", 100, -0.25, 0.25 );
+  TH1D* h_phiresol = new TH1D( "phi_resol", "(#phi_{reco}-#phi_{gen})/#phi_{gen}@@Events fraction@@?.4f", 150, -0.015, 0.015 );
+  TH1D* h_xiresol1 = new TH1D( "xi_resol_p1", "(#xi_{reco}-#xi_{gen})/#xi_{gen}@@Events fraction@@?.3f", 100, -0.25, 0.25 ),
        *h_xiresol2 = (TH1D*)h_xiresol1->Clone( "xi_resol_p2" );
 
   const unsigned short num_vtx_pos = 11;
@@ -132,7 +133,7 @@ void mc_study()
   TH1D* h_mdiff_shift[num_vtx_pos];
   for ( unsigned short i=0; i<num_vtx_pos; i++ ) {
     vtx_shifts[i] = min_vtx_dist+( max_vtx_dist-min_vtx_dist )*i/( num_vtx_pos-1 );
-    h_mdiff_shift[i] = new TH1D( Form( "mdiff_shift_%d", i ), "#Deltam(#gamma#gamma)/m_{gen}(#gamma#gamma)\\Events\\GeV?.2f", 2000, -0.5, 0.5 );
+    h_mdiff_shift[i] = new TH1D( Form( "mdiff_shift_%d", i ), "#Deltam(#gamma#gamma)/m_{gen}(#gamma#gamma)@@Events@@GeV?.2f", 2000, -0.5, 0.5 );
     //cout << "vtx shift " << i << " = " << vtx_shifts[i] << endl;
   }
 
@@ -176,6 +177,8 @@ void mc_study()
 
       h_mresol->Fill( ( ( pho1+pho2 ).M()-( pho1_gen+pho2_gen ).M() )/( pho1_gen+pho2_gen ).M(), pu_weight/num_entries );
       h_yresol->Fill( ( ( pho1+pho2 ).Rapidity()-( pho1_gen+pho2_gen ).Rapidity() )/( pho1_gen+pho2_gen ).Rapidity(), pu_weight/num_entries );
+      h_phiresol->Fill( ( pho1.Phi()-pho1_gen.Phi() )/pho1_gen.Phi(), pu_weight/num_entries );
+      h_phiresol->Fill( ( pho2.Phi()-pho2_gen.Phi() )/pho2_gen.Phi(), pu_weight/num_entries );
 
       h_ptsingle_reco->Fill( photon1_pt[j], pu_weight/num_entries );
       h_ptsingle_gen->Fill( gen_photon1_pt[j], pu_weight/num_entries );
@@ -252,7 +255,7 @@ void mc_study()
     }
     gr.Draw( "ap" );
     gr.SetMarkerStyle( 20 );
-    gr.GetHistogram()->SetTitle( "z shift to the generated vertex position (cm)\\m_{gen}(#gamma#gamma)-m_{reco}(#gamma#gamma) (GeV)" );
+    gr.GetHistogram()->SetTitle( "z shift to the generated vertex position (cm)@@m_{gen}(#gamma#gamma)-m_{reco}(#gamma#gamma) (GeV)" );
     gr.GetYaxis()->SetRangeUser( -0.1, 0.1 );
     c.Prettify( gr.GetHistogram() );
     c.Save( "pdf,png", output_dir );
@@ -281,7 +284,7 @@ void mc_study()
     TGraphErrors gr( num_pt_bins, mean_pt_bins, pt_error_mean, err_pt_bins, pt_error_rms );
     gr.Draw( "ap" );
     gr.SetMarkerStyle( 20 );
-    gr.SetTitle( "Single photon p_{T} region\\(p_{T}^{reco}-p_{T}^{gen})/p_{T}^{gen}" );
+    gr.SetTitle( "Single photon p_{T} region@@(p_{T}^{reco}-p_{T}^{gen})/p_{T}^{gen}" );
     gr.SetLineWidth( 2 );
     gr.GetXaxis()->SetRangeUser( pt_bins[0], pt_bins[num_pt_bins] );
     c.Prettify( gr.GetHistogram() );
@@ -354,7 +357,7 @@ void mc_study()
     st.Add( cumul_purw, "hist" );
     c.AddLegendEntry( cumul_purw, "PU reweighting", "l" );
     st.Draw( "nostack" );
-    st.SetTitle( "d(diphoton vtx^{gen}/diphoton vtx^{reco})\\Events fraction (cumulative)\\cm?.2f" );
+    st.SetTitle( "d(diphoton vtx^{gen}/diphoton vtx^{reco})@@Events fraction (cumulative)@@cm?.2f" );
     //c.SetLegendY1( 0.1 );
     st.SetMaximum( 1.35 );
     c.Prettify( st.GetHistogram() );
@@ -406,6 +409,7 @@ void mc_study()
   }
   plot_resol( "mc_study_massresolution", h_mresol, top_title );
   plot_resol( "mc_study_rapidityresolution", h_yresol, top_title );
+  plot_resol( "mc_study_singlephiresolution", h_phiresol, top_title );
 
   {
     Canvas c( "mc_study_xiresolution", top_title );

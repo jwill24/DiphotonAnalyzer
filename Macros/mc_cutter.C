@@ -67,13 +67,13 @@ mc_cutter()
   TH1D* h_ptpair[2], *h_mpair[2], *h_acopl[2];
 
   for ( unsigned short i=0; i<2; i++ ) {
-    h_r9lead[i] = new TH1D( Form( "r9_lead_%i", i ), "Leading photon r_{9}\\Events\\", 100, 0.5, 1.0 );
-    h_r9sublead[i] = new TH1D( Form( "r9_sublead_%i", i ), "Subleading photon r_{9}\\Events\\", 100, 0.5, 1.0 );
-    h_ptlead[i] = new TH1D( Form( "pt_lead_%i", i ), "Leading photon p_{T}\\Events\\GeV", 100, 50., 250. );
-    h_ptsublead[i] = new TH1D( Form( "pt_sublead_%i", i ), "Subleading photon p_{T}\\Events\\GeV", 100, 0.5, 250. );
-    h_ptpair[i] = new TH1D( Form( "ptpair_%i", i ), "Diphoton p_{T}\\Events\\GeV", 100, 0., 50. );
-    h_mpair[i] = new TH1D( Form( "mpair_%i", i ), "Diphoton mass\\Events\\GeV", 100, 300., 1300. );
-    h_acopl[i] = new TH1D( Form( "acopl_%i", i ), "Acoplanarity\\Events\\GeV", 50, 0., 0.25 );
+    h_r9lead[i] = new TH1D( Form( "r9_lead_%i", i ), "Leading photon r_{9}@@Events@@", 100, 0.5, 1.0 );
+    h_r9sublead[i] = new TH1D( Form( "r9_sublead_%i", i ), "Subleading photon r_{9}@@Events@@", 100, 0.5, 1.0 );
+    h_ptlead[i] = new TH1D( Form( "pt_lead_%i", i ), "Leading photon p_{T}@@Events@@GeV", 100, 50., 250. );
+    h_ptsublead[i] = new TH1D( Form( "pt_sublead_%i", i ), "Subleading photon p_{T}@@Events@@GeV", 100, 0.5, 250. );
+    h_ptpair[i] = new TH1D( Form( "ptpair_%i", i ), "Diphoton p_{T}@@Events@@GeV", 100, 0., 50. );
+    h_mpair[i] = new TH1D( Form( "mpair_%i", i ), "Diphoton mass@@Events@@GeV", 100, 300., 1300. );
+    h_acopl[i] = new TH1D( Form( "acopl_%i", i ), "Acoplanarity@@Events@@GeV", 50, 0., 0.25 );
   }
 
   for ( unsigned short i=0; i<num_samples; i++ ) {

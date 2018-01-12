@@ -31,7 +31,7 @@ process.load('DiphotonAnalyzer.TreeProducer.TreeProducer_cfi')
 # set some parameters to the run
 process.treeProducer.minPtSinglePhoton = cms.double(50.)
 process.treeProducer.minMassDiPhoton = cms.double(50.)
-process.treeProducer.maxMassDiPhoton = cms.untracked.double(200.)
+#process.treeProducer.maxMassDiPhoton = cms.untracked.double(200.)
 process.treeProducer.minR9SinglePhoton = cms.double(0.)
 process.treeProducer.triggersList = process.hltHighLevel.HLTPaths
 

@@ -43,7 +43,7 @@ void plot_alignment()
   for ( unsigned short i=0; i<num_rp; i++ ) {
     Canvas c( Form( "alignment_offsets_x_%s", rp_names[i] ), Form( "CT-PPS 2016, %s pot", rp_names[i] ) );
     gr_x[i].Draw( "ap" );
-    gr_x[i].SetTitle( "LHC fill number\\x-shift (mm)" );
+    gr_x[i].SetTitle( "LHC fill number@@x-shift (mm)" );
     gr_x[i].SetMarkerStyle( 24 );
     gr_x[i].GetYaxis()->SetRangeUser( -4.5, 0.5 );
     c.Prettify( gr_x[i].GetHistogram() );

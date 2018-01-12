@@ -21,7 +21,7 @@ void analyze_one_event()
 
   const TVector3 diphoton_vertex( 0.0517226, 0.100587, 3.57555 );
 
-  TH1D* h_muon_dist_incl = new TH1D( "muon_dist_incl", "Distance to the track\\Events\\cm?.2f", 100, 0., 10. ),
+  TH1D* h_muon_dist_incl = new TH1D( "muon_dist_incl", "Distance to the track@@Events@@cm?.2f", 100, 0., 10. ),
        *h_electron_dist_incl = ( TH1D* )h_muon_dist_incl->Clone( "electron_dist_incl" );
 
   for ( ev.toBegin(); !ev.atEnd(); ++ev ) {

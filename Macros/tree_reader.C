@@ -191,69 +191,69 @@ void tree_reader( TString file=default_ntp_file )
   tr->SetBranchAddress( "jet_vtx_z", jet_vtx_z );
   //
 
-  TH1D* h_2dmatch_mpp_over_mgg = new TH1D( "mpp_over_mgg", "m_{pp}^{missing} / m_{#gamma#gamma} for double-tag events\\Events\\?.2f", 30, -2., 4. ),
-       *h_2dmatch_ypp_minus_ygg = new TH1D( "ypp_minus_ygg", "y_{pp}^{missing} - y_{#gamma#gamma} for double-tag events\\Events\\?.2f", 50, -2.5, 2.5 ),
-       *h_2dmatch_mpair = new TH1D( "mpair_2dmatch", "Diphoton mass (2D matching)\\Events\\GeV", 17, 300., 2000. ),
-       *h_2dmatch_ptpair = new TH1D( "ptpair_2dmatch", "Diphoton p_{T} (2D matching)\\Events\\GeV", 10, 0., 200. ),
-       *h_2dmatch_r9single_leadpho = new TH1D( "r9single_2dmatch_leadpho", "Single photon r_{9}\\Events\\?.2f", 25, 0.75, 1. ),
+  TH1D* h_2dmatch_mpp_over_mgg = new TH1D( "mpp_over_mgg", "m_{pp}^{missing} / m_{#gamma#gamma} for double-tag events@@Events@@?.2f", 30, -2., 4. ),
+       *h_2dmatch_ypp_minus_ygg = new TH1D( "ypp_minus_ygg", "y_{pp}^{missing} - y_{#gamma#gamma} for double-tag events@@Events@@?.2f", 50, -2.5, 2.5 ),
+       *h_2dmatch_mpair = new TH1D( "mpair_2dmatch", "Diphoton mass (2D matching)@@Events@@GeV", 17, 300., 2000. ),
+       *h_2dmatch_ptpair = new TH1D( "ptpair_2dmatch", "Diphoton p_{T} (2D matching)@@Events@@GeV", 10, 0., 200. ),
+       *h_2dmatch_r9single_leadpho = new TH1D( "r9single_2dmatch_leadpho", "Single photon r_{9}@@Events@@?.2f", 25, 0.75, 1. ),
        *h_2dmatch_r9single_subleadpho = (TH1D*)h_2dmatch_r9single_leadpho->Clone( "r9single_2dmatch_subleadpho" );
-  TH1D* h_met = new TH1D( "met", "Missing E_{T}\\Events\\GeV?.0f", 50, 0., 200. ),
+  TH1D* h_met = new TH1D( "met", "Missing E_{T}@@Events@@GeV?.0f", 50, 0., 200. ),
        *h_met_1tag = (TH1D*)h_met->Clone( "met_1tag" ),
        *h_met_2tag = (TH1D*)h_met->Clone( "met_2tag" );
   // diphoton only
-  TH1D* h_num_diphoton = new TH1D( "num_diphoton", "Diphoton multiplicity\\Event", 5, 0., 5. ),
+  TH1D* h_num_diphoton = new TH1D( "num_diphoton", "Diphoton multiplicity@@Event", 5, 0., 5. ),
        *h_num_diphoton_1tag = (TH1D*)h_num_diphoton->Clone( "num_diphoton_1tag" ),
        *h_num_diphoton_2tag = (TH1D*)h_num_diphoton->Clone( "num_diphoton_2tag" );
-  TH1D* h_diphoton_pt = new TH1D( "diphoton_pt", "Diphoton p_{T}\\Events\\GeV?.0f", 40, 0., 400. ),
+  TH1D* h_diphoton_pt = new TH1D( "diphoton_pt", "Diphoton p_{T}@@Events@@GeV?.0f", 40, 0., 400. ),
        *h_diphoton_pt_1tag = (TH1D*)h_diphoton_pt->Clone( "diphoton_pt_1tag" ),
        *h_diphoton_pt_2tag = (TH1D*)h_diphoton_pt->Clone( "diphoton_pt_2tag" );
-  TH1D* h_diphoton_pt_zoom = new TH1D( "diphoton_pt_zoom", "Diphoton p_{T}\\Events\\GeV?.0f", 10, 0., 10. ),
+  TH1D* h_diphoton_pt_zoom = new TH1D( "diphoton_pt_zoom", "Diphoton p_{T}@@Events@@GeV?.0f", 10, 0., 10. ),
        *h_diphoton_pt_zoom_1tag = (TH1D*)h_diphoton_pt_zoom->Clone( "diphoton_pt_zoom_1tag" ),
        *h_diphoton_pt_zoom_2tag = (TH1D*)h_diphoton_pt_zoom->Clone( "diphoton_pt_zoom_2tag" );
-  TH1D* h_diphoton_leadpt = new TH1D( "leadphoton_pt", "Leading photon p_{T}\\Events\\GeV?.0f", ( 750.-min_pt_photon )/20, min_pt_photon, 750. ),
+  TH1D* h_diphoton_leadpt = new TH1D( "leadphoton_pt", "Leading photon p_{T}@@Events@@GeV?.0f", ( 750.-min_pt_photon )/20, min_pt_photon, 750. ),
        *h_diphoton_leadpt_1tag = (TH1D*)h_diphoton_leadpt->Clone( "leadphoton_pt_1tag" ),
        *h_diphoton_leadpt_2tag = (TH1D*)h_diphoton_leadpt->Clone( "leadphoton_pt_2tag" );
-  TH1D* h_diphoton_subleadpt = new TH1D( "subleadphoton_pt", "Subleading photon p_{T}\\Events\\GeV?.0f", ( 750.-min_pt_photon )/20, min_pt_photon, 750. ),
+  TH1D* h_diphoton_subleadpt = new TH1D( "subleadphoton_pt", "Subleading photon p_{T}@@Events@@GeV?.0f", ( 750.-min_pt_photon )/20, min_pt_photon, 750. ),
        *h_diphoton_subleadpt_1tag = (TH1D*)h_diphoton_subleadpt->Clone( "subleadphoton_pt_1tag" ),
        *h_diphoton_subleadpt_2tag = (TH1D*)h_diphoton_subleadpt->Clone( "subleadphoton_pt_2tag" );
-  TH1D* h_diphoton_leadeta = new TH1D( "leadphoton_eta", "Leading photon #eta\\Events\\?.3f", 40, -2.5, 2.5 ),
+  TH1D* h_diphoton_leadeta = new TH1D( "leadphoton_eta", "Leading photon #eta@@Events@@?.3f", 40, -2.5, 2.5 ),
        *h_diphoton_leadeta_1tag = (TH1D*)h_diphoton_leadeta->Clone( "leadphoton_eta_1tag" ),
        *h_diphoton_leadeta_2tag = (TH1D*)h_diphoton_leadeta->Clone( "leadphoton_eta_2tag" );
-  TH1D* h_diphoton_subleadeta = new TH1D( "subleadphoton_eta", "Subleading photon #eta\\Events\\?.3f", 40, -2.5, 2.5 ),
+  TH1D* h_diphoton_subleadeta = new TH1D( "subleadphoton_eta", "Subleading photon #eta@@Events@@?.3f", 40, -2.5, 2.5 ),
        *h_diphoton_subleadeta_1tag = (TH1D*)h_diphoton_subleadeta->Clone( "subleadphoton_eta_1tag" ),
        *h_diphoton_subleadeta_2tag = (TH1D*)h_diphoton_subleadeta->Clone( "subleadphoton_eta_2tag" );
-  TH1D* h_diphoton_dphi = new TH1D( "diphoton_dphi", "Diphoton 1-|#Delta#phi/#pi|\\Events\\?.2f", 50, 0., 1. ),
+  TH1D* h_diphoton_dphi = new TH1D( "diphoton_dphi", "Diphoton 1-|#Delta#phi/#pi|@@Events@@?.2f", 50, 0., 1. ),
        *h_diphoton_dphi_1tag = (TH1D*)h_diphoton_dphi->Clone( "diphoton_dphi_1tag" ),
        *h_diphoton_dphi_2tag = (TH1D*)h_diphoton_dphi->Clone( "diphoton_dphi_2tag" );
-  TH1D* h_diphoton_dphi_zoom = new TH1D( "diphoton_dphi_zoom", "Diphoton 1-|#Delta#phi/#pi|\\Events\\?.2f", 20, 0., 0.1 ),
+  TH1D* h_diphoton_dphi_zoom = new TH1D( "diphoton_dphi_zoom", "Diphoton 1-|#Delta#phi/#pi|@@Events@@?.2f", 20, 0., 0.1 ),
        *h_diphoton_dphi_zoom_1tag = (TH1D*)h_diphoton_dphi_zoom->Clone( "diphoton_dphi_zoom_1tag" ),
        *h_diphoton_dphi_zoom_2tag = (TH1D*)h_diphoton_dphi_zoom->Clone( "diphoton_dphi_zoom_2tag" );
-  TH1D* h_diphoton_mass = new TH1D( "diphoton_mass", "Diphoton mass\\Events\\GeV?.0f", ( int )( ( 2000.-min_mass_diphoton )/25 ), min_mass_diphoton, 2000. ),
+  TH1D* h_diphoton_mass = new TH1D( "diphoton_mass", "Diphoton mass@@Events@@GeV?.0f", ( int )( ( 2000.-min_mass_diphoton )/25 ), min_mass_diphoton, 2000. ),
        *h_diphoton_mass_1tag = (TH1D*)h_diphoton_mass->Clone( "diphoton_mass_1tag" ),
        *h_diphoton_mass_2tag = (TH1D*)h_diphoton_mass->Clone( "diphoton_mass_2tag" );
-  TH1D* h_diphoton_mass_withmet = new TH1D( "diphotonmet_mass", "Diphoton + missing E_{T} mass\\Events\\GeV?.0f", ( int )( ( 2500.-min_mass_diphoton )/40 ), min_mass_diphoton, 2500. ),
+  TH1D* h_diphoton_mass_withmet = new TH1D( "diphotonmet_mass", "Diphoton + missing E_{T} mass@@Events@@GeV?.0f", ( int )( ( 2500.-min_mass_diphoton )/40 ), min_mass_diphoton, 2500. ),
        *h_diphoton_mass_withmet_1tag = (TH1D*)h_diphoton_mass_withmet->Clone( "diphotonmet_mass_1tag" ),
        *h_diphoton_mass_withmet_2tag = (TH1D*)h_diphoton_mass_withmet->Clone( "diphotonmet_mass_2tag" );
-  TH1D* h_diphoton_mass_incl = new TH1D( "diphotonincl_mass", "Diphoton + other objects mass\\Events\\GeV?.0f", ( int )( ( 3500.-min_mass_diphoton )/50 ), min_mass_diphoton, 3500. ),
+  TH1D* h_diphoton_mass_incl = new TH1D( "diphotonincl_mass", "Diphoton + other objects mass@@Events@@GeV?.0f", ( int )( ( 3500.-min_mass_diphoton )/50 ), min_mass_diphoton, 3500. ),
        *h_diphoton_mass_incl_1tag = (TH1D*)h_diphoton_mass_incl->Clone( "diphotonincl_mass_1tag" ),
        *h_diphoton_mass_incl_2tag = (TH1D*)h_diphoton_mass_incl->Clone( "diphotonincl_mass_2tag" );
-  TH1D* h_diphoton_rap = new TH1D( "diphoton_rap", "Diphoton rapidity\\Events\\?.1f", 40, -2.5, 2.5 ),
+  TH1D* h_diphoton_rap = new TH1D( "diphoton_rap", "Diphoton rapidity@@Events@@?.1f", 40, -2.5, 2.5 ),
        *h_diphoton_rap_1tag = (TH1D*)h_diphoton_rap->Clone( "diphoton_rap_1tag" ),
        *h_diphoton_rap_2tag = (TH1D*)h_diphoton_rap->Clone( "diphoton_rap_2tag" );
-  TH1D* h_diphoton_ntrk = new TH1D( "diphoton_ntrk", "Number of tracks on diphoton vertex\\Events\\?.1f", 20, 0., 20. ),
+  TH1D* h_diphoton_ntrk = new TH1D( "diphoton_ntrk", "Number of tracks on diphoton vertex@@Events@@?.1f", 20, 0., 20. ),
        *h_diphoton_ntrk_1tag = (TH1D*)h_diphoton_ntrk->Clone( "diphoton_ntrk_1tag" ),
        *h_diphoton_ntrk_2tag = (TH1D*)h_diphoton_ntrk->Clone( "diphoton_ntrk_2tag" );
-  TH1D* h_diphoton_vtxz = new TH1D( "diphoton_vtxz", "Diphoton longitudinal vertex position\\Events\\cm?.1f", 40, -10., 10. ),
+  TH1D* h_diphoton_vtxz = new TH1D( "diphoton_vtxz", "Diphoton longitudinal vertex position@@Events@@cm?.1f", 40, -10., 10. ),
        *h_diphoton_vtxz_1tag = (TH1D*)h_diphoton_vtxz->Clone( "diphoton_vtxz_1tag" ),
        *h_diphoton_vtxz_2tag = (TH1D*)h_diphoton_vtxz->Clone( "diphoton_vtxz_2tag" );
   // vertexing study
-  TH1D* h_num_vtx = new TH1D( "num_vtx", "Number of primary vertices in event\\Events", 40, 0., 40. ),
+  TH1D* h_num_vtx = new TH1D( "num_vtx", "Number of primary vertices in event@@Events", 40, 0., 40. ),
        *h_num_vtx_1tag = (TH1D*)h_num_vtx->Clone( "num_vtx_1tag" ),
        *h_num_vtx_2tag = (TH1D*)h_num_vtx->Clone( "num_vtx_2tag" );
-  TH1D* h_vtxz = new TH1D( "vtxz", "Longitudinal primary vertices position\\Events\\cm", 30, -15., 15. ),
+  TH1D* h_vtxz = new TH1D( "vtxz", "Longitudinal primary vertices position@@Events@@cm", 30, -15., 15. ),
        *h_vtxz_1tag = (TH1D*)h_vtxz->Clone( "vtxz_1tag" ),
        *h_vtxz_2tag = (TH1D*)h_vtxz->Clone( "vtxz_2tag" );
-  TH1D* h_num_vtx_1mm = new TH1D( "num_vtx_1mm", "Number of primary vertices near diphoton vertex\\Events", 12, 0., 12. ),
+  TH1D* h_num_vtx_1mm = new TH1D( "num_vtx_1mm", "Number of primary vertices near diphoton vertex@@Events", 12, 0., 12. ),
        *h_num_vtx_2mm = (TH1D*)h_num_vtx_1mm->Clone( "num_vtx_2mm" ),
        *h_num_vtx_5mm = (TH1D*)h_num_vtx_1mm->Clone( "num_vtx_5mm" ),
        *h_num_vtx_1cm = (TH1D*)h_num_vtx_1mm->Clone( "num_vtx_1cm" ),
@@ -261,38 +261,38 @@ void tree_reader( TString file=default_ntp_file )
        *h_num_vtx_2mm_excl = (TH1D*)h_num_vtx_1mm->Clone( "num_vtx_excl_2mm" ),
        *h_num_vtx_5mm_excl = (TH1D*)h_num_vtx_1mm->Clone( "num_vtx_excl_5mm" ),
        *h_num_vtx_1cm_excl = (TH1D*)h_num_vtx_1mm->Clone( "num_vtx_excl_1cm" );
-  TH1D* h_diphoton_closestvtx = new TH1D( "diphoton_closestvtx", "Distance diphoton/nearest vertex\\Events\\cm?.1f", 25, 0., 5.0 ),
+  TH1D* h_diphoton_closestvtx = new TH1D( "diphoton_closestvtx", "Distance diphoton/nearest vertex@@Events@@cm?.1f", 25, 0., 5.0 ),
        *h_diphoton_closestvtx_1tag = (TH1D*)h_diphoton_closestvtx->Clone( "diphoton_closestvtx_1tag" ),
        *h_diphoton_closestvtx_2tag = (TH1D*)h_diphoton_closestvtx->Clone( "diphoton_closestvtx_2tag" );
-  TH1D* h_electron_pt_1mm = new TH1D( "electron_pt_1mm", "Close electron E_{T}\\Events\\GeV", 25, 0., 500. ),
+  TH1D* h_electron_pt_1mm = new TH1D( "electron_pt_1mm", "Close electron E_{T}@@Events@@GeV", 25, 0., 500. ),
        *h_electron_pt_2mm = (TH1D*)h_electron_pt_1mm->Clone( "electron_pt_2mm" ),
        *h_electron_pt_5mm = (TH1D*)h_electron_pt_1mm->Clone( "electron_pt_5mm" ),
        *h_electron_pt_1cm = (TH1D*)h_electron_pt_1mm->Clone( "electron_pt_1cm" );
-  TH1D* h_muon_pt_1mm = new TH1D( "muon_pt_1mm", "Close muon p_{T}\\Events\\GeV", 25, 0., 250. ),
+  TH1D* h_muon_pt_1mm = new TH1D( "muon_pt_1mm", "Close muon p_{T}@@Events@@GeV", 25, 0., 250. ),
        *h_muon_pt_2mm = (TH1D*)h_muon_pt_1mm->Clone( "muon_pt_2mm" ),
        *h_muon_pt_5mm = (TH1D*)h_muon_pt_1mm->Clone( "muon_pt_5mm" ),
        *h_muon_pt_1cm = (TH1D*)h_muon_pt_1mm->Clone( "muon_pt_1cm" );
-  TH1D* h_jet_pt_1mm = new TH1D( "jet_pt_1mm", "Close jet p_{T}\\Events\\GeV", 50, 0., 500. ),
+  TH1D* h_jet_pt_1mm = new TH1D( "jet_pt_1mm", "Close jet p_{T}@@Events@@GeV", 50, 0., 500. ),
        *h_jet_pt_2mm = (TH1D*)h_jet_pt_1mm->Clone( "jet_pt_2mm" ),
        *h_jet_pt_5mm = (TH1D*)h_jet_pt_1mm->Clone( "jet_pt_5mm" ),
        *h_jet_pt_1cm = (TH1D*)h_jet_pt_1mm->Clone( "jet_pt_1cm" );
   //  JW
-  TH1D* h_electron_pt = new TH1D("electron_pt", "Close electrons' #Sigma(E_{T})\\Events\\GeV", 50, 0., 250.),
+  TH1D* h_electron_pt = new TH1D("electron_pt", "Close electrons' #Sigma(E_{T})@@Events@@GeV", 50, 0., 250.),
        *h_electron_pt_1tag = (TH1D*)h_electron_pt->Clone( "electron_pt_1tag" ),
        *h_electron_pt_2tag = (TH1D*)h_electron_pt->Clone( "electron_pt_2tag" );
-  TH1D* h_muon_pt = new TH1D("muon_pt", "Close muons' #Sigma(p_{T})\\Events\\GeV", 30, 0., 150.),
+  TH1D* h_muon_pt = new TH1D("muon_pt", "Close muons' #Sigma(p_{T})@@Events@@GeV", 30, 0., 150.),
        *h_muon_pt_1tag = (TH1D*)h_muon_pt->Clone( "muon_pt_1tag" ),
        *h_muon_pt_2tag = (TH1D*)h_muon_pt->Clone( "muon_pt_2tag" );
-  TH1D* h_jet_pt = new TH1D("jet_pt", "Close jets' #Sigma(p_{T})\\Events\\GeV", 30, 0., 150.),
+  TH1D* h_jet_pt = new TH1D("jet_pt", "Close jets' #Sigma(p_{T})@@Events@@GeV", 30, 0., 150.),
        *h_jet_pt_1tag = (TH1D*)h_jet_pt->Clone( "jet_pt_1tag" ),
        *h_jet_pt_2tag = (TH1D*)h_jet_pt->Clone( "jet_pt_2tag" );
   //
-  TH2D* h_met_vs_pt = new TH2D( "met_vs_pt", "Missing E_{T} (GeV)\\Diphoton p_{T} (GeV)", 40, 0., 400., 40, 0., 400. ),
+  TH2D* h_met_vs_pt = new TH2D( "met_vs_pt", "Missing E_{T} (GeV)@@Diphoton p_{T} (GeV)", 40, 0., 400., 40, 0., 400. ),
        *h_met_vs_pt_2tag = (TH2D*)h_met_vs_pt->Clone( "met_vs_pt_2tag" ),
-       *h_metx_vs_mety = new TH2D( "metx_vs_mety", "#slash{E}_{T,x} (GeV)\\#slash{E}_{T,y} (GeV)", 50, -100., 100., 50, -100., 100. ),
+       *h_metx_vs_mety = new TH2D( "metx_vs_mety", "#slash{E}_{T,x} (GeV)@@#slash{E}_{T,y} (GeV)", 50, -100., 100., 50, -100., 100. ),
        *h_metx_vs_mety_1tag = (TH2D*)h_metx_vs_mety->Clone( "metx_vs_mety_1tag" ),
        *h_metx_vs_mety_2tag = (TH2D*)h_metx_vs_mety->Clone( "metx_vs_mety_2tag" );
-  TH2D* h_mggmet_vs_mgg = new TH2D( "mggmet_vs_mgg", "Diphoton + #slash{E}_{T} mass (GeV)\\Diphoton mass (GeV)", ( int )( ( 2000.-min_mass_diphoton )/50 ), min_mass_diphoton, 2000., ( int )( ( 2000.-min_mass_diphoton )/50 ), min_mass_diphoton, 2000. );
+  TH2D* h_mggmet_vs_mgg = new TH2D( "mggmet_vs_mgg", "Diphoton + #slash{E}_{T} mass (GeV)@@Diphoton mass (GeV)", ( int )( ( 2000.-min_mass_diphoton )/50 ), min_mass_diphoton, 2000., ( int )( ( 2000.-min_mass_diphoton )/50 ), min_mass_diphoton, 2000. );
   // balances
   TGraphErrors h_ptgg_vs_mpp, h_ptgg_vs_mgg;
   TGraphErrors h_mgg_vs_mpp, h_mgg_vs_mpp_candm, h_mgg_vs_mpp_candy,
@@ -303,10 +303,10 @@ void tree_reader( TString file=default_ntp_file )
                h_yggincl_vs_ypp, h_yggincl_vs_ypp_candm, h_yggincl_vs_ypp_candy;
   TGraphErrors h_2dmatch_withmet_metvspt;
   // proton reco study
-  TH1D* h_num_proton = new TH1D( "num_proton", "Forward track multiplicity\\Events", 6, 0., 6. ),
+  TH1D* h_num_proton = new TH1D( "num_proton", "Forward track multiplicity@@Events", 6, 0., 6. ),
        *h_num_proton_45 = (TH1D*)h_num_proton->Clone( "num_proton_45" ),
        *h_num_proton_56 = (TH1D*)h_num_proton->Clone( "num_proton_56" );
-  TH1D* h_diproton_mass = new TH1D( "diproton_mass", "Diproton mass\\Events\\GeV", 40, 300., 2300. );
+  TH1D* h_diproton_mass = new TH1D( "diproton_mass", "Diproton mass@@Events@@GeV", 40, 300., 2300. );
 
   const unsigned short num_bins = 50;
   const float max_bin_dist = 5.;
@@ -318,7 +318,7 @@ void tree_reader( TString file=default_ntp_file )
     dist_bin[i] = max_bin_dist*i/( num_bins+1 );
   }
 
-  TH1D* gr_veto_ele = new TH1D( "gr_veto_ele", "Veto on distance to diphoton vertex (cm)\\#LT# nearby objects#GT / event / diphoton cand.", num_bins-1, dist_bin ),
+  TH1D* gr_veto_ele = new TH1D( "gr_veto_ele", "Veto on distance to diphoton vertex (cm)@@#LT# nearby objects#GT / event / diphoton cand.", num_bins-1, dist_bin ),
        *gr_veto_mu = ( TH1D* )gr_veto_ele->Clone( "gr_veto_mu" ),
        *gr_veto_jet = ( TH1D* )gr_veto_ele->Clone( "gr_veto_jet" ),
        *gr_veto_ele_ptcut = ( TH1D* )gr_veto_ele->Clone( "gr_veto_ele_ptcut" ),
@@ -879,7 +879,7 @@ void tree_reader( TString file=default_ntp_file )
     plt.plot_3hists( "jet_pt", h_jet_pt, h_jet_pt_1tag, h_jet_pt_2tag );
     //
 
-    //plt.plot_balances( "presel_diphoton_pt_vs_diproton_mass", "Diphoton p_{T} (GeV)\\Diproton mass (GeV)", &h_ptgg_vs_mpp );
+    //plt.plot_balances( "presel_diphoton_pt_vs_diproton_mass", "Diphoton p_{T} (GeV)@@Diproton mass (GeV)", &h_ptgg_vs_mpp );
 
     {
       Plotter::HistsMap hm;
@@ -951,43 +951,43 @@ void tree_reader( TString file=default_ntp_file )
       gm.push_back( make_pair( "Exclusive diphotons", &h_mgg_vs_mpp ) );
       gm.push_back( make_pair( Form( "Mass match (%.0f#sigma)", n_sigma_2d ), &h_mgg_vs_mpp_candm ) );
       gm.push_back( make_pair( Form( "Rapidity match (%.0f#sigma)", n_sigma_2d ), &h_mgg_vs_mpp_candy ) );
-      plt.plot_balances( "presel_mass_balance", "Diphoton mass (GeV)\\Diproton missing mass (GeV)", gm, min_mass_diphoton, 2500. );
+      plt.plot_balances( "presel_mass_balance", "Diphoton mass (GeV)@@Diproton missing mass (GeV)", gm, min_mass_diphoton, 2500. );
     }
     {
       Plotter::GraphsMap gm;
       gm.push_back( make_pair( "Exclusive diphotons", &h_mggmet_vs_mpp ) );
       gm.push_back( make_pair( Form( "Mass match (%.0f#sigma)", n_sigma_2d ), &h_mggmet_vs_mpp_candm ) );
       gm.push_back( make_pair( Form( "Rapidity match (%.0f#sigma)", n_sigma_2d ), &h_mggmet_vs_mpp_candy ) );
-      plt.plot_balances( "presel_mass_balance_withmet", "Diphoton + #slash{E}_{T} mass (GeV)\\Diproton missing mass (GeV)", gm, min_mass_diphoton, 3000. );
+      plt.plot_balances( "presel_mass_balance_withmet", "Diphoton + #slash{E}_{T} mass (GeV)@@Diproton missing mass (GeV)", gm, min_mass_diphoton, 3000. );
     }
     {
       Plotter::GraphsMap gm;
       gm.push_back( make_pair( "Exclusive diphotons", &h_mggincl_vs_mpp ) );
       gm.push_back( make_pair( Form( "Mass match (%.0f#sigma)", n_sigma_2d ), &h_mggincl_vs_mpp_candm ) );
       gm.push_back( make_pair( Form( "Rapidity match (%.0f#sigma)", n_sigma_2d ), &h_mggincl_vs_mpp_candy ) );
-      plt.plot_balances( "presel_mass_balance_incl", "Diphoton + surrounding objects mass (GeV)\\Diproton missing mass (GeV)", gm, min_mass_diphoton, 3000. );
+      plt.plot_balances( "presel_mass_balance_incl", "Diphoton + surrounding objects mass (GeV)@@Diproton missing mass (GeV)", gm, min_mass_diphoton, 3000. );
     }
     {
       Plotter::GraphsMap gm;
       gm.push_back( make_pair( "Exclusive diphotons", &h_ygg_vs_ypp ) );
       gm.push_back( make_pair( Form( "Mass match (%.0f#sigma)", n_sigma_2d ), &h_ygg_vs_ypp_candm ) );
       gm.push_back( make_pair( Form( "Rapidity match (%.0f#sigma)", n_sigma_2d ), &h_ygg_vs_ypp_candy ) );
-      plt.plot_balances( "presel_rapidity_balance", "Diphoton rapidity\\Diproton rapidity", gm, -3., 3. );
+      plt.plot_balances( "presel_rapidity_balance", "Diphoton rapidity@@Diproton rapidity", gm, -3., 3. );
     }
     {
       Plotter::GraphsMap gm;
       gm.push_back( make_pair( "Exclusive diphotons", &h_yggmet_vs_ypp ) );
       gm.push_back( make_pair( Form( "Mass match (%.0f#sigma)", n_sigma_2d ), &h_yggmet_vs_ypp_candm ) );
       gm.push_back( make_pair( Form( "Rapidity match (%.0f#sigma)", n_sigma_2d ), &h_yggmet_vs_ypp_candy ) );
-      plt.plot_balances( "presel_rapidity_balance_withmet", "Diphoton + #slash{E}_{T} rapidity\\Diproton rapidity", gm, -1., 1. );
+      plt.plot_balances( "presel_rapidity_balance_withmet", "Diphoton + #slash{E}_{T} rapidity@@Diproton rapidity", gm, -1., 1. );
     }
     {
       Plotter::GraphsMap gm;
       gm.push_back( make_pair( "Exclusive diphotons", &h_yggincl_vs_ypp ) );
       gm.push_back( make_pair( Form( "Mass match (%.0f#sigma)", n_sigma_2d ), &h_yggincl_vs_ypp_candm ) );
       gm.push_back( make_pair( Form( "Rapidity match (%.0f#sigma)", n_sigma_2d ), &h_yggincl_vs_ypp_candy ) );
-      plt.plot_balances( "presel_rapidity_balance_incl", "Diphoton + surrounding objects rapidity\\Diproton rapidity", gm, -1.5, 1.5 );
-      plt.plot_balances( "presel_rapidity_balance_incl_zoom", "Diphoton + surrounding objects rapidity\\Diproton rapidity", gm, -0.5, 0.5 );
+      plt.plot_balances( "presel_rapidity_balance_incl", "Diphoton + surrounding objects rapidity@@Diproton rapidity", gm, -1.5, 1.5 );
+      plt.plot_balances( "presel_rapidity_balance_incl_zoom", "Diphoton + surrounding objects rapidity@@Diproton rapidity", gm, -0.5, 0.5 );
     }
 
     //----- EXCLUSIVE DIPHOTONS SELECTION -----
@@ -1099,8 +1099,8 @@ void tree_reader( TString file=default_ntp_file )
   }
   {
     Plotter::GraphsMap gm; gm.push_back( make_pair( "Matching with #slash{E}_{T}", &h_2dmatch_withmet_metvspt ) );
-    //plt.plot_balances( "match2d_withmet_ptvsmetbalance", "Diphoton p_{T} (GeV)\\#slash{E}_{T} (GeV)", &h_2dmatch_withmet_metvspt, 0., 150. );
-    plt.plot_balances( "match2d_withmet_ptvsmetbalance", "Diphoton p_{T} (GeV)\\#slash{E}_{T} (GeV)", gm, 0., 150. );
+    //plt.plot_balances( "match2d_withmet_ptvsmetbalance", "Diphoton p_{T} (GeV)@@#slash{E}_{T} (GeV)", &h_2dmatch_withmet_metvspt, 0., 150. );
+    plt.plot_balances( "match2d_withmet_ptvsmetbalance", "Diphoton p_{T} (GeV)@@#slash{E}_{T} (GeV)", gm, 0., 150. );
   }
   {
     Canvas c( "match2d_inclusive_ptpair", top_label );

@@ -14,7 +14,7 @@
     {
       "type": "signal",
       "name": "Excl. #gamma#gamma#rightarrow#gamma#gamma",
-      "colour": 3, // kGreen
+      "colour": 417, // kGreen+1
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_r9gt0.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root",
@@ -33,7 +33,7 @@
     },*/
     {
       "type": "background",
-      "colour": 432, // kCyan
+      "colour": 433, // kCyan+1
       "name": "Incl. Z#gamma",
       "path": "Samples/output_ZGTo2LG_13TeV_amcatnlo_pythia8_v2.root",
       "cross_section": 117.864,
@@ -42,7 +42,7 @@
     {
       "type": "background",
       "name": "Incl. W#gamma",
-      "colour": 600, // kBlue
+      "colour": 601, // kBlue+1
       "path": "Samples/output_WGToLNuG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_v2.root",
       "cross_section": 405.271,
       "num_events": 6102260
@@ -50,7 +50,7 @@
     {
       "type": "background",
       "name": "Incl. #gamma + j",
-      "colour": 5, // kYellow
+      "colour": 800, // kOrange
       "path": "Samples/output_GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v2.root",
       "cross_section": 863.1088, //16792*0.0514,
       //"num_events": 72342882
@@ -59,27 +59,24 @@
     {
       "type": "background",
       "name": "Inclusive #gamma#gamma + j (NLO)",
-      "colour": 2, // kRed
-      "path": "Samples/output_DiPhotonJets_MGG-80toInf_amcatnlo_v3.root",
+      "colour": 633, // kRed+1
+      "path": "Samples/output_DiPhotonJets_MGG-80toInf_amcatnlo_v4.root",
       "cross_section": 135.1,
       "num_events": 35617475
     },
-    /*{
-      "type": "background",
-      "name": "Incl. #gamma#gamma + j (LO+boxes)",
-      "colour": 2, // kRed
-      "path": "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root",
-      "cross_section": 84.4,
-      "num_events": 57924220
-    },*/
     {
       "type": "background",
       "name": "QCD (e-#gamma enriched)",
-      "path": "Samples/output_QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v2.root",
-      "colour": 6, // kMagenta
+      "path": "Samples/output_QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v4.root",
+      "colour": 617, // kMagenta+1
       //"cross_section": 113400.0,
       "cross_section": 108240.0, // https://twiki.cern.ch/twiki/bin/viewauth/CMS/SummaryTable1G25ns
       "num_events": 20632076
+    },
+    {
+      "type": "background",
+      "name": "#gamma#gamma #rightarrow e^{+}e^{-} (elastic)",
+      "path": 
     },
     /*{
       "type": "background",
