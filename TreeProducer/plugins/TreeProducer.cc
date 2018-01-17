@@ -443,7 +443,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
         ev_.proton_track_x[ev_.num_proton_track] = trk.getX0() * 1.e-3; // store in m
         ev_.proton_track_y[ev_.num_proton_track] = trk.getY0() * 1.e-3; // store in m
         ev_.proton_track_side[ev_.num_proton_track] = side; // 0 = left (45) ; 1 = right (56)
-        ev_.proton_track_pot[ev_.num_proton_track] = pot; // 2 = 210m ; 3 = 220m
+        ev_.proton_track_pot[ev_.num_proton_track] = pot; // 2 = 210n ; 3 = 210f
 
         ev_.proton_track_chi2[ev_.num_proton_track] = trk.getChiSquared();
         ev_.proton_track_normchi2[ev_.num_proton_track] = trk.getChiSquaredOverNDF();
