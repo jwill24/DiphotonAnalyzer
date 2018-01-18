@@ -7,7 +7,5 @@
 <use name="PhysicsTools/UtilAlgos"/>
 <use name="PhysicsTools/Utilities"/>
 <use name="HLTrigger/HLTcore"/>
-<use name="flashgg/DataFormats"/>
-<use name="DiphotonAnalyzer/TreeProducer"/>
 <use name="CLHEP"/>
 <flags EDM_PLUGIN="1"/>
