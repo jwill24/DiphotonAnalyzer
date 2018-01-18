@@ -43,7 +43,7 @@
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
-#include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
 //                               JW
 #include "flashgg/DataFormats/interface/Electron.h"
 #include "flashgg/DataFormats/interface/Muon.h"
@@ -79,7 +79,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 
     void analyzeTriggers( const edm::Event&, const edm::EventSetup& );
     
-    edm::EDGetTokenT<edm::DetSetVector<TotemRPLocalTrack> > totemRPTracksToken_;
+    edm::EDGetTokenT<std::vector<CTPPSLocalTrackLite> > ctppsLocalTracksToken_;
     edm::EDGetTokenT<edm::View<flashgg::DiPhotonCandidate> > diphotonToken_;
     edm::EDGetTokenT<edm::View<flashgg::Met> > metToken_;
     edm::EDGetTokenT<edm::View<reco::Vertex> > vtxToken_;
@@ -119,35 +119,35 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 };
 
 TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
-  totemRPTracksToken_ ( consumes<edm::DetSetVector<TotemRPLocalTrack> > ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
-  diphotonToken_      ( consumes<edm::View<flashgg::DiPhotonCandidate> >( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
-  metToken_           ( consumes<edm::View<flashgg::Met> >              ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
-  vtxToken_           ( consumes<edm::View<reco::Vertex> >              ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
-  beamSpotToken_      ( consumes<reco::BeamSpot>                        ( iConfig.getParameter<edm::InputTag>( "beamSpotLabel" ) ) ),
+  ctppsLocalTracksToken_( consumes<std::vector<CTPPSLocalTrackLite> >     ( iConfig.getParameter<edm::InputTag>( "ctppsTracksLabel") ) ),
+  diphotonToken_        ( consumes<edm::View<flashgg::DiPhotonCandidate> >( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
+  metToken_             ( consumes<edm::View<flashgg::Met> >              ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
+  vtxToken_             ( consumes<edm::View<reco::Vertex> >              ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
+  beamSpotToken_        ( consumes<reco::BeamSpot>                        ( iConfig.getParameter<edm::InputTag>( "beamSpotLabel" ) ) ),
 //                               JW
-  electronToken_      ( consumes<edm::View<flashgg::Electron> >         ( iConfig.getParameter<edm::InputTag>( "electronLabel") ) ),
-  muonToken_          ( consumes<edm::View<flashgg::Muon> >             ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
-  jetToken_           ( consumes<edm::View<std::vector<flashgg::Jet> > >( iConfig.getParameter<edm::InputTag>( "jetLabel") ) ),
+  electronToken_        ( consumes<edm::View<flashgg::Electron> >         ( iConfig.getParameter<edm::InputTag>( "electronLabel") ) ),
+  muonToken_            ( consumes<edm::View<flashgg::Muon> >             ( iConfig.getParameter<edm::InputTag>( "muonLabel") ) ),
+  jetToken_             ( consumes<edm::View<std::vector<flashgg::Jet> > >( iConfig.getParameter<edm::InputTag>( "jetLabel") ) ),
 //
-  genPartToken_       ( consumes<edm::View<reco::GenParticle> >         ( iConfig.getParameter<edm::InputTag>( "genPartLabel" ) ) ),
-  genPhoToken_        ( consumes<edm::View<pat::PackedGenParticle> >    ( iConfig.getParameter<edm::InputTag>( "genPhoLabel" ) ) ),
-  pileupToken_        ( consumes<edm::View<PileupSummaryInfo> >         ( iConfig.getUntrackedParameter<edm::InputTag>( "pileupLabel", edm::InputTag( "slimmedAddPileupInfo" ) ) ) ),
-  triggerResultsToken_( consumes<edm::TriggerResults>                   ( iConfig.getParameter<edm::InputTag>( "triggerResults" ) ) ),
-  isData_             ( iConfig.getParameter<bool>       ( "isData" ) ),
-  sqrtS_              ( iConfig.getParameter<double>     ( "sqrtS" ) ),
-  singlePhotonMinPt_  ( iConfig.getParameter<double>     ( "minPtSinglePhoton" ) ),
-  singlePhotonMaxEta_ ( iConfig.getParameter<double>     ( "maxEtaSinglePhoton" ) ),
-  singlePhotonMinR9_  ( iConfig.getParameter<double>     ( "minR9SinglePhoton" ) ),
-  photonPairMinMass_  ( iConfig.getParameter<double>     ( "minMassDiPhoton" ) ),
-  photonPairMaxMass_  ( iConfig.getUntrackedParameter<double>( "maxMassDiPhoton", -1. ) ),
-  filename_           ( iConfig.getParameter<std::string>( "outputFilename" ) ),
-  maxGenLevelDR_      ( iConfig.getParameter<double>     ( "maxGenLevelDeltaR" ) ),
-  puMCpath_           ( iConfig.getUntrackedParameter<std::string>( "pileupMCPath", "pileup" ) ),
-  puDatapath_         ( iConfig.getUntrackedParameter<std::string>( "pileupDataPath", "pileup" ) ),
-  hltMenuLabel_       ( iConfig.getParameter<std::string>( "hltMenuLabel" ) ),
-  triggersList_       ( iConfig.getParameter<std::vector<std::string> >( "triggersList" ) ),
-  hlt_prescale_       ( iConfig, consumesCollector(), *this ),
-  hlt_matcher_        ( iConfig.getParameter<std::vector<std::string> >( "triggersList" ) ),
+  genPartToken_         ( consumes<edm::View<reco::GenParticle> >         ( iConfig.getParameter<edm::InputTag>( "genPartLabel" ) ) ),
+  genPhoToken_          ( consumes<edm::View<pat::PackedGenParticle> >    ( iConfig.getParameter<edm::InputTag>( "genPhoLabel" ) ) ),
+  pileupToken_          ( consumes<edm::View<PileupSummaryInfo> >         ( iConfig.getUntrackedParameter<edm::InputTag>( "pileupLabel", edm::InputTag( "slimmedAddPileupInfo" ) ) ) ),
+  triggerResultsToken_  ( consumes<edm::TriggerResults>                   ( iConfig.getParameter<edm::InputTag>( "triggerResults" ) ) ),
+  isData_               ( iConfig.getParameter<bool>       ( "isData" ) ),
+  sqrtS_                ( iConfig.getParameter<double>     ( "sqrtS" ) ),
+  singlePhotonMinPt_    ( iConfig.getParameter<double>     ( "minPtSinglePhoton" ) ),
+  singlePhotonMaxEta_   ( iConfig.getParameter<double>     ( "maxEtaSinglePhoton" ) ),
+  singlePhotonMinR9_    ( iConfig.getParameter<double>     ( "minR9SinglePhoton" ) ),
+  photonPairMinMass_    ( iConfig.getParameter<double>     ( "minMassDiPhoton" ) ),
+  photonPairMaxMass_    ( iConfig.getUntrackedParameter<double>( "maxMassDiPhoton", -1. ) ),
+  filename_             ( iConfig.getParameter<std::string>( "outputFilename" ) ),
+  maxGenLevelDR_        ( iConfig.getParameter<double>     ( "maxGenLevelDeltaR" ) ),
+  puMCpath_             ( iConfig.getUntrackedParameter<std::string>( "pileupMCPath", "pileup" ) ),
+  puDatapath_           ( iConfig.getUntrackedParameter<std::string>( "pileupDataPath", "pileup" ) ),
+  hltMenuLabel_         ( iConfig.getParameter<std::string>( "hltMenuLabel" ) ),
+  triggersList_         ( iConfig.getParameter<std::vector<std::string> >( "triggersList" ) ),
+  hlt_prescale_         ( iConfig, consumesCollector(), *this ),
+  hlt_matcher_          ( iConfig.getParameter<std::vector<std::string> >( "triggersList" ) ),
   file_( 0 ), tree_( 0 )
 
 {
@@ -426,30 +426,20 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
   //----- forward RP tracks -----
 
   if ( isData_ ) {
-    edm::Handle<edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
-    iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
-
-    typedef std::pair<unsigned int, const TotemRPLocalTrack&> localtrack_t; // RP id -> local track object
+    edm::Handle<std::vector<CTPPSLocalTrackLite> > ctppsLocalTracks;
+    iEvent.getByToken( ctppsLocalTracksToken_, ctppsLocalTracks );
 
     ev_.num_proton_track = 0;
-    for ( const auto& dsv : *rpLocalTracks ) {
-      const TotemRPDetId detid( TotemRPDetId::decToRawId( dsv.detId()*10 ) );
-      const unsigned short side = detid.arm(),
-                           pot = detid.romanPot();
+    for ( const auto& trk : *ctppsLocalTracks ) {
+      const TotemRPDetId detid( trk.getRPId() );
+      const unsigned short side = detid.arm(), pot = detid.rp();
 
-      for ( const auto& trk : dsv ) {
-        if ( !trk.isValid() ) { continue; }
+      ev_.proton_track_x[ev_.num_proton_track] = trk.getX() * 1.e-3; // store in m
+      ev_.proton_track_y[ev_.num_proton_track] = trk.getY() * 1.e-3; // store in m
+      ev_.proton_track_side[ev_.num_proton_track] = side; // 0 = left (45) ; 1 = right (56)
+      ev_.proton_track_pot[ev_.num_proton_track] = pot; // 2 = 210n ; 3 = 210f
 
-        ev_.proton_track_x[ev_.num_proton_track] = trk.getX0() * 1.e-3; // store in m
-        ev_.proton_track_y[ev_.num_proton_track] = trk.getY0() * 1.e-3; // store in m
-        ev_.proton_track_side[ev_.num_proton_track] = side; // 0 = left (45) ; 1 = right (56)
-        ev_.proton_track_pot[ev_.num_proton_track] = pot; // 2 = 210n ; 3 = 210f
-
-        ev_.proton_track_chi2[ev_.num_proton_track] = trk.getChiSquared();
-        ev_.proton_track_normchi2[ev_.num_proton_track] = trk.getChiSquaredOverNDF();
-
-        ev_.num_proton_track++;
-      }
+      ev_.num_proton_track++;
     }
   } 
   //                               JW

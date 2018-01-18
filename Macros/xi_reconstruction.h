@@ -2,30 +2,34 @@
 #define DiphotonAnalyzer_Macros_xi_reconstruction_h
 
 #include "TSpline.h"
+#include <map>
 
 namespace xi_reco
 {
-  TSpline* sp[4];
+  std::map<unsigned short,TSpline*> splines;
+  std::map<unsigned short,std::pair<double,double> > dispersions; // RP -> ( disp, err_disp )
+
+  void set_dispersions( const std::map<unsigned short,std::pair<double,double> >& disp ) { dispersions = disp; }
 
   void
   load_file( const char* filename )
   {
-    TFile* file = new TFile( filename );
-    sp[0] = dynamic_cast<TSpline*>( file->Get( "s_x_to_xi_L_1_N" )->Clone() ); //45N
-    sp[1] = dynamic_cast<TSpline*>( file->Get( "s_x_to_xi_L_1_F" )->Clone() ); //45F
-    sp[2] = dynamic_cast<TSpline*>( file->Get( "s_x_to_xi_R_1_N" )->Clone() ); //56N
-    sp[3] = dynamic_cast<TSpline*>( file->Get( "s_x_to_xi_R_1_F" )->Clone() ); //56F
+    auto file = TFile::Open( filename );
+    splines = std::map<unsigned short,TSpline*>( {
+      { 2, dynamic_cast<TSpline*>( file->Get( "s_x_to_xi_L_1_N" )->Clone() ) }, //45N
+      { 3, dynamic_cast<TSpline*>( file->Get( "s_x_to_xi_L_1_F" )->Clone() ) }, //45F
+      { 102, dynamic_cast<TSpline*>( file->Get( "s_x_to_xi_R_1_N" )->Clone() ) }, //56N
+      { 103, dynamic_cast<TSpline*>( file->Get( "s_x_to_xi_R_1_F" )->Clone() ) } //56F
+    } );
     delete file;
   }
 
   TSpline*
   get_spline( unsigned int arm, unsigned int pot )
   {
-    if ( arm==0 && pot==2 ) return sp[0];
-    if ( arm==0 && pot==3 ) return sp[1];
-    if ( arm==1 && pot==2 ) return sp[2];
-    if ( arm==1 && pot==3 ) return sp[3];
-    return 0;
+    auto it_sp = splines.find( 100*arm+pot );
+    if ( it_sp == splines.end() ) return 0;
+    return it_sp->second;
   }
 
   void
@@ -46,6 +50,19 @@ namespace xi_reco
     const double si_xi_from_x = sp->Eval( x+si_x )-xi;
     const double si_xi_from_D_x = si_rel_D * xi;
     xi_err = sqrt( si_xi_from_x*si_xi_from_x + si_xi_from_D_x*si_xi_from_D_x );
+  }
+
+  void
+  reconstruct_lin( double x, unsigned int arm, unsigned int pot, double& xi, double& xi_err )
+  {
+    xi = xi_err = 0;
+    if ( dispersions.count( 100*arm+pot ) == 0 ) return;
+
+    const auto disp = dispersions.at( 100*arm+pot ); // ( disp, err_disp )
+    const double de_x = 150.e-6; // alignment uncertainty
+
+    xi = x/disp.first;
+    err_xi = sqrt( pow( de_x/disp.first, 2 )+pow( disp.second*xi, 2 ) );
   }
 }
 

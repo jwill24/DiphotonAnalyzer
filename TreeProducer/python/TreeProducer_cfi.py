@@ -25,10 +25,10 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     minMassDiPhoton = cms.double(500.),
 
     # totem RP information extraction
-    totemRPTracksLabel = cms.InputTag('totemRPLocalTrackFitter'),
+    ctppsTracksLabel = cms.InputTag('ctppsLocalTrackLiteProducer'),
     useXiInterpolation = cms.bool(True),
     xiInterpolationFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/ctpps_optics_9mar2017.root'),
-    fillNumLUTFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/fill_run_lut_v2.dat'),
+    fillNumLUTFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/fill_run_lut_v3.dat'),
     alignmentLUTFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/alignment_collection_v2.out'),
 
     # generator-level input collections
