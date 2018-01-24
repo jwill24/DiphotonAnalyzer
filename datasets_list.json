@@ -7,7 +7,9 @@
       //"path": "Samples/output_Run2016BCG_looseCuts_10mar_xifix.root",
       //"path": "Samples/output_Run2016BCG_looseCuts_9may.root",
       //"path": "Samples/output_Run2016BCG_looseCuts_22jun.root",
-      "path": "Samples/output_Run2016BCG_looseCuts_28jun.root",
+      //"path": "Samples/output_Run2016BCG_looseCuts_28jun.root",
+      //"path": "Samples/output_Run2016BCGH_looseCuts_19jan.root",
+      "path": "Samples/output_Run2016H_looseCuts_19jan.root",
       "cross_section": 1.0,
       "num_events": 0
     },

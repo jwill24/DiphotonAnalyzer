@@ -38,6 +38,7 @@ void xi_matcher()
 {
   //TFile f( "Samples/output_Run2016BCG_looseCuts_22jun.root" );
   TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
+  //TFile f( "output_Run2016H_looseCuts_19jan.root" );
   treeinfo ev;
   ev.read( dynamic_cast<TTree*>( f.Get( "ntp" ) ) );
 

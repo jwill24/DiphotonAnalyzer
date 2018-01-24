@@ -11,11 +11,11 @@ struct MBTreeEvent
   void create( TTree* tree ) {
     if ( !tree ) return;
 
-    tree->Branch( "run_id", &run_id, "run_id/i");
-    tree->Branch( "fill_number", &fill_number, "fill_number/i");
-    tree->Branch( "lumisection", &lumisection, "lumisection/i");
-    tree->Branch( "bunch_crossing", &bunch_crossing, "bunch_crossing/i");
-    tree->Branch( "event_number", &event_number, "event_number/l");
+    tree->Branch( "run_id", &run_id, "run_id/i" );
+    tree->Branch( "fill_number", &fill_number, "fill_number/i" );
+    tree->Branch( "lumisection", &lumisection, "lumisection/i" );
+    tree->Branch( "bunch_crossing", &bunch_crossing, "bunch_crossing/i" );
+    tree->Branch( "event_number", &event_number, "event_number/l" );
 
     tree->Branch( "num_strips_track", &num_strips_track, "num_strips_track/i" );
     tree->Branch( "strips_track_x", strips_track_x, "strips_track_x[num_strips_track]/F" );
@@ -43,6 +43,43 @@ struct MBTreeEvent
     tree->Branch( "bs_dxdz", &bs_dxdz, "bs_dxdz/F" );
     tree->Branch( "bs_beam_width_x", &bs_beam_width_x, "bs_beam_width_x/F" );
     tree->Branch( "bs_beam_width_y", &bs_beam_width_y, "bs_beam_width_y/F" );
+  }
+
+  void attach( TTree* tree ) {
+    if ( !tree ) return;
+
+    tree->SetBranchAddress( "run_id", &run_id );
+    tree->SetBranchAddress( "fill_number", &fill_number );
+    tree->SetBranchAddress( "lumisection", &lumisection );
+    tree->SetBranchAddress( "bunch_crossing", &bunch_crossing );
+    tree->SetBranchAddress( "event_number", &event_number);
+
+    tree->SetBranchAddress( "num_strips_track", &num_strips_track );
+    tree->SetBranchAddress( "strips_track_x", strips_track_x );
+    tree->SetBranchAddress( "strips_track_y", strips_track_y );
+    tree->SetBranchAddress( "strips_track_tx", strips_track_tx );
+    tree->SetBranchAddress( "strips_track_ty", strips_track_ty );
+    tree->SetBranchAddress( "strips_track_arm", strips_track_arm );
+    tree->SetBranchAddress( "strips_track_pot", strips_track_pot );
+    tree->SetBranchAddress( "strips_track_chi2", strips_track_chi2 );
+    tree->SetBranchAddress( "strips_track_normchi2", strips_track_normchi2 );
+
+    tree->SetBranchAddress( "num_vertex", &num_vertex );
+    tree->SetBranchAddress( "vertex_x", vertex_x );
+    tree->SetBranchAddress( "vertex_y", vertex_y );
+    tree->SetBranchAddress( "vertex_z", vertex_z );
+    tree->SetBranchAddress( "vertex_tracks", vertex_tracks );
+    tree->SetBranchAddress( "vertex_tracks_wgt0p75", vertex_tracks_wgt0p75 );
+    tree->SetBranchAddress( "vertex_tracks_wgt0p90", vertex_tracks_wgt0p90 );
+    tree->SetBranchAddress( "vertex_tracks_wgt0p95", vertex_tracks_wgt0p95 );
+
+    tree->SetBranchAddress( "bs_x0", &bs_x0 );
+    tree->SetBranchAddress( "bs_y0", &bs_y0 );
+    tree->SetBranchAddress( "bs_z0", &bs_z0 );
+    tree->SetBranchAddress( "bs_sigma_z", &bs_sigma_z );
+    tree->SetBranchAddress( "bs_dxdz", &bs_dxdz );
+    tree->SetBranchAddress( "bs_beam_width_x", &bs_beam_width_x );
+    tree->SetBranchAddress( "bs_beam_width_y", &bs_beam_width_y );
   }
 
   void clear() {
