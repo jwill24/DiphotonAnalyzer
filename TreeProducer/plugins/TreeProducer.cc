@@ -433,9 +433,9 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
     ev_.num_proton_track = 0;
     for ( const auto& dsv : *rpLocalTracks ) {
-      const TotemRPDetId detid( TotemRPDetId::decToRawId( dsv.detId()*10 ) );
+      const TotemRPDetId detid( dsv.detId()*10 );
       const unsigned short side = detid.arm(),
-                           pot = detid.romanPot();
+                           pot = detid.rp();
 
       for ( const auto& trk : dsv ) {
         if ( !trk.isValid() ) { continue; }

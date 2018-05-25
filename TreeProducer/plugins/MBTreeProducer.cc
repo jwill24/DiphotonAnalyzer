@@ -161,8 +161,8 @@ MBTreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup
 
   ev_.num_strips_track = 0;
   for ( const auto& dsv : *rpLocalTracks) {
-    const TotemRPDetId detid( TotemRPDetId::decToRawId( dsv.detId()*10 ) );
-    const unsigned short arm = detid.arm(), pot = detid.romanPot();
+    const TotemRPDetId detid( dsv.detId()*10 );
+    const unsigned short arm = detid.arm(), pot = detid.rp();
 
     for ( const auto& trk : dsv ) {
       if ( !trk.isValid() ) continue;

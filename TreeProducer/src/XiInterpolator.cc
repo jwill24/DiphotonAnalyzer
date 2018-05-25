@@ -1,3 +1,5 @@
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
+
 #include "DiphotonAnalyzer/TreeProducer/interface/XiInterpolator.h"
 
 namespace ProtonUtils
@@ -56,14 +58,14 @@ namespace ProtonUtils
   }
 
   void
-  XiInterpolator::computeXiLinear( const TotemRPDetId& detid, const TotemRPLocalTrack& trk, float& xi, float& err_xi )
+  XiInterpolator::computeXiLinear( const CTPPSDetId& detid, const TotemRPLocalTrack& trk, float& xi, float& err_xi )
   {
     xi = err_xi = 0.;
 
     if ( !trk.isValid() ) return;
 
     // retrieve the alignment parameters
-    const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rpCopyNumber() );
+    const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.getRPId() );
 
     // retrieve the proper dispersion constants
     float dx_n, dx_f;
@@ -79,12 +81,12 @@ namespace ProtonUtils
     // apply the alignment
     const float x_corr = ( trk.getX0() + ac.x ) * 1.e-3;
 
-    if ( detid.romanPot()==3 ) { // far pot
+    if ( detid.rp()==3 ) { // far pot
       xi = x_corr / dx_f;
       err_xi = std::sqrt( std::pow( de_x/dx_f, 2 )
                         + std::pow( de_rel_dx * xi, 2 ) );
     }
-    if ( detid.romanPot()==2 ) { // near pot
+    if ( detid.rp()==2 ) { // near pot
       xi = x_corr / dx_n;
       err_xi = std::sqrt( std::pow( de_x/dx_n, 2 )
                         + std::pow( de_rel_dx * xi, 2 ) );
@@ -92,7 +94,7 @@ namespace ProtonUtils
   }
 
   void
-  XiInterpolator::computeXiSpline( const TotemRPDetId& detid, const TotemRPLocalTrack& trk, float& xi, float& err_xi )
+  XiInterpolator::computeXiSpline( const CTPPSDetId& detid, const TotemRPLocalTrack& trk, float& xi, float& err_xi )
   {
     xi = err_xi = 0.;
 
@@ -101,7 +103,7 @@ namespace ProtonUtils
     std::cout << "--> alignment parameters:\n" << align_ << std::endl;
 
     // retrieve the alignment parameters
-    const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.rpCopyNumber() );
+    const CTPPSAlCa::RPAlignmentConstants::Quantities ac = align_.quantities( detid.getRPId() );
 
     std::cout << "--> for this pot:\n" << ac << std::endl;
 
@@ -109,12 +111,12 @@ namespace ProtonUtils
     TSpline3 *interp = 0;
     switch ( detid.arm() ) { // 0 = sector 45, 1 = sector 56
       case 0: {
-        if ( detid.romanPot()==2 ) interp = isLN_;
-        if ( detid.romanPot()==3 ) interp = isLF_;
+        if ( detid.rp()==2 ) interp = isLN_;
+        if ( detid.rp()==3 ) interp = isLF_;
       } break;
       case 1: {
-        if ( detid.romanPot()==2 ) interp = isRN_;
-        if ( detid.romanPot()==3 ) interp = isRF_;
+        if ( detid.rp()==2 ) interp = isRN_;
+        if ( detid.rp()==3 ) interp = isRF_;
       } break;
       default: return;
     }

@@ -1,6 +1,7 @@
 <use name="FWCore/MessageLogger"/>
 <use name="DataFormats/PatCandidates"/>
 <use name="flashgg/DataFormats"/>
+<use name="DataFormats/CTPPSDetId"/>
 <use name="CLHEP"/>
 <export>
   <lib name="1"/>
