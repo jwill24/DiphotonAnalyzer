@@ -13,8 +13,8 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     metLabel = cms.InputTag('flashggMets'),
     diphotonLabel = cms.InputTag('flashggDiPhotons'),
     vertexLabel = cms.InputTag('offlineSlimmedPrimaryVertices'),
-    electronLabel = cms.InputTag('flashggElectrons'),
-    muonLabel = cms.InputTag('flashggMuons'),
+    electronLabel = cms.InputTag('flashggSelectedElectrons'),
+    muonLabel = cms.InputTag('flashggSelectedMuons'),
     jetLabel = cms.InputTag('flashggFinalJets'),
     beamSpotLabel = cms.InputTag('offlineBeamSpot'),
 
@@ -22,7 +22,7 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     minPtSinglePhoton = cms.double(50.),
     minR9SinglePhoton = cms.double(0.94),
     maxEtaSinglePhoton = cms.double(2.5),
-    minMassDiPhoton = cms.double(500.),
+    minMassDiPhoton = cms.double(350.),
 
     # totem RP information extraction
     totemRPTracksLabel = cms.InputTag('totemRPLocalTrackFitter'),
@@ -32,6 +32,7 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     alignmentLUTFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/alignment_collection_v2.out'),
 
     # generator-level input collections
+    generatorLabel = cms.InputTag('generator'),
     genPartLabel = cms.InputTag('flashggPrunedGenParticles'),
     genPhoLabel = cms.InputTag('flashggGenPhotons'),
     maxGenLevelDeltaR = cms.double(5.0),

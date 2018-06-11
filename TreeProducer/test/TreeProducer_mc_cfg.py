@@ -16,7 +16,8 @@ process.source = cms.Source("PoolSource",
 #'/store/group/phys_pps/diphoton/VBFHToGG_M125_13TeV_amcatnlo_pythia8/lforthom-microAOD-ctpps_VBFHToGG_M125_13TeV_amcatnlo_pythia8_v1/170315_142732/0000/myMicroAODOutputFile_63.root'
 #'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_elastic.root'
 #'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_singleinelastic.root'
-'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_doubleinelastic.root'
+#'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_doubleinelastic.root'
+'/store/group/phys_pps/diphoton/juwillia/GGToGG_bSM-AA1e-14_Pt-50_M-300_13TeV-fpmc-herwig6/GGtoGG_e-14_realistic_microAOD/180426_225340/0000/myMicroAODOutputFile_24.root'
     )
 )
 

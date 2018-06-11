@@ -39,8 +39,8 @@ struct TreeEvent
       tree->Branch( "proton_track_x", proton_track_x, "proton_track_x[num_proton_track]/F" );
       tree->Branch( "proton_track_y", proton_track_y, "proton_track_y[num_proton_track]/F" );
       tree->Branch( "proton_track_side", proton_track_side, "proton_track_side[num_proton_track]/i" );
-      tree->Branch( "proton_track_chi2", proton_track_chi2, "proton_track_chi2[num_proton_track]/F" );
-      tree->Branch( "proton_track_normchi2", proton_track_normchi2, "proton_track_normchi2[num_proton_track]/F" );
+      //tree->Branch( "proton_track_chi2", proton_track_chi2, "proton_track_chi2[num_proton_track]/F" );
+      //tree->Branch( "proton_track_normchi2", proton_track_normchi2, "proton_track_normchi2[num_proton_track]/F" );
       tree->Branch( "proton_track_pot", proton_track_pot, "proton_track_pot[num_proton_track]/i" );
     }
     if ( !data ) {
@@ -123,6 +123,15 @@ struct TreeEvent
       tree->Branch( "diphoton_genvertex_smeared_z", &diphoton_genvertex_smeared_z, "diphoton_genvertex_smeared_z/F" );
     }
 
+    if ( !data ) {
+      tree->Branch( "gen_pdgId", &gen_pdgId, "gen_pdgID/F" );
+      tree->Branch( "gen_pt", &gen_pdgId, "gen_pt/F" );
+      tree->Branch( "gen_eta", &gen_pdgId, "gen_eta/F" );
+      tree->Branch( "gen_phi", &gen_pdgId, "gen_phi/F" );
+      tree->Branch( "gen_energy", &gen_pdgId, "gen_energy/F" );
+      tree->Branch( "gen_weight", &gen_weight, "gen_weight/F" );
+    }
+
     tree->Branch( "num_electron", &num_electron, "num_electron/i" );
     tree->Branch( "electron_pt", electron_pt, "electron_pt[num_electron]/F" );
     tree->Branch( "electron_eta", electron_eta, "electron_eta[num_electron]/F" );
@@ -198,8 +207,8 @@ struct TreeEvent
       tree->SetBranchAddress( "proton_track_x", proton_track_x );
       tree->SetBranchAddress( "proton_track_y", proton_track_y );
       tree->SetBranchAddress( "proton_track_side", proton_track_side );
-      tree->SetBranchAddress( "proton_track_chi2", proton_track_chi2 );
-      tree->SetBranchAddress( "proton_track_normchi2", proton_track_normchi2 );
+      //tree->SetBranchAddress( "proton_track_chi2", proton_track_chi2 );
+      //tree->SetBranchAddress( "proton_track_normchi2", proton_track_normchi2 );
       tree->SetBranchAddress( "proton_track_pot", proton_track_pot );
     }
     if ( !data ) {
@@ -279,6 +288,15 @@ struct TreeEvent
       tree->SetBranchAddress( "diphoton_genvertex_smeared_x", &diphoton_genvertex_smeared_x );
       tree->SetBranchAddress( "diphoton_genvertex_smeared_y", &diphoton_genvertex_smeared_y );
       tree->SetBranchAddress( "diphoton_genvertex_smeared_z", &diphoton_genvertex_smeared_z );
+    }
+
+    if ( !data ) {
+      tree->SetBranchAddress( "gen_pdgId", &gen_pdgId );
+      tree->SetBranchAddress( "gen_pt", &gen_pt );
+      tree->SetBranchAddress( "gen_phi", &gen_phi );
+      tree->SetBranchAddress( "gen_eta", &gen_eta );
+      tree->SetBranchAddress( "gen_energy", &gen_energy );
+      tree->SetBranchAddress( "gen_weight", &gen_weight );
     }
 
     tree->SetBranchAddress( "num_electron", &num_electron );
@@ -476,6 +494,8 @@ struct TreeEvent
 
   float diphoton_genvertex_x, diphoton_genvertex_y, diphoton_genvertex_z;
   float diphoton_genvertex_smeared_x, diphoton_genvertex_smeared_y, diphoton_genvertex_smeared_z;
+
+  float gen_pdgId, gen_pt, gen_phi, gen_eta, gen_energy, gen_weight;
 
   float met, met_phi, met_significance;
 

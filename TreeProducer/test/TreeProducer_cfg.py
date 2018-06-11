@@ -15,7 +15,9 @@ process.source = cms.Source("PoolSource",
 #'/store/group/phys_higgs/cmshgg/lforthom/flashgg/pps_run2016/Moriond16WSFinal-106-g90923ae/DoubleEG/pps_run2016-Moriond16WSFinal-106-g90923ae-v0-Run2016B-PromptReco-v2/160624_003754/0000/myMicroAODOutputFile_2.root',
 #'/store/group/phys_higgs/cmshgg/lforthom/flashgg/DoubleEG/pps_lforthom-miniAOD_run2016B_v2/160831_083550/0000/myMicroAODOutputFile_881.root',
 #'/store/group/phys_higgs/cmshgg/lforthom/flashgg/DoubleEG/pps_lforthom-miniAOD_run2016B_v5/161208_215044/0000/myMicroAODOutputFile_881.root'
-'/store/group/phys_pps/diphoton/DoubleEG/lforthom-microAOD-ctpps_Run2016C-23Sep2016_v3/170303_022624/0000/myMicroAODOutputFile_64.root',
+#'/store/group/phys_pps/diphoton/DoubleEG/lforthom-microAOD-ctpps_Run2016C-23Sep2016_v3/170303_022624/0000/myMicroAODOutputFile_64.root',
+#'/store/group/phys_pps/diphoton/juwillia/GGToGG_bSM-AA1e-14_Pt-50_M-300_13TeV-fpmc-herwig6/GGtoGG_e-14_realistic_microAOD/180426_225340/0000/myMicroAODOutputFile_24.root'
+'/store/group/phys_pps/diphoton/DoubleEG/DoubleEG_microAOD_run2017B/180517_175342/0000/myMicroAODOutputFile_2.root'
     )
 )
 
