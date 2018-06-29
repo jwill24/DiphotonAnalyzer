@@ -1,5 +1,6 @@
 #include "TFile.h"
 #include "TTree.h"
+#include "TH1.h"
 #include "TH2.h"
 #include "TLorentzVector.h"
 #include "TStyle.h"
@@ -9,24 +10,16 @@
 #include "Plotter.h"
 #include "EventsSelector.h"
 
-#include "pot_alignment.h"
-#include "xi_reconstruction.h"
+//#include "pot_alignment.h"
+//#include "xi_reconstruction.h"
 
 #include "diproton_candidate.h"
 
 #include <fstream>
 #include <iostream>
 
-#define out_path "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp"
-//#define default_ntp_file "Samples/output_Run2016B_mgg-ov-500.root"
-//#define default_ntp_file "Samples/output_Run2016BC_looseCuts.root"
-//#define default_ntp_file "Samples/output_Run2016BCG_looseCuts_prelim.root"
-//#define default_ntp_file "Samples/output_Run2016BC_looseCuts_7mar.root"
-//#define default_ntp_file "Samples/output_Run2016BC_looseCuts_9mar_xifix.root"
-//#define default_ntp_file "test.root"
-//#define default_ntp_file "Samples/output_Run2016BCG_looseCuts_10mar_xifix.root"
-//#define default_ntp_file "Samples/output_Run2016BCG_looseCuts_9may.root"
-#define default_ntp_file "Samples/output_Run2016BCG_looseCuts_28jun.root"
+#define out_path "/afs/cern.ch/work/j/juwillia/CMSSW_9_4_5_cand1/src/DiphotonAnalyzer"
+#define default_ntp_file "/afs/cern.ch/work/j/juwillia/CMSSW_9_4_5_cand1/src/DiphotonAnalyzer/ntp_2017B.root"
 
 float photon_rel_energy_scale( const float& pt, const float& eta, const float& r9 );
 bool is_matched( int n_sigma, float xi_rp, float xi_cs, float err_xi_rp, float err_xi_cs );
@@ -37,10 +30,12 @@ enum Pot { nearPot = 2, farPot = 3 };
 void tree_reader( TString file=default_ntp_file )
 {
   gSystem->Load( "libEventFilterUtilities.so" );
-  EventsSelector ev_selector( "/afs/cern.ch/user/l/lforthom/public/Cert_271036-284044_13TeV_PromptReco_Collisions16_JSON_PPSruns_preTS2.txt" );
+  //EventsSelector ev_selector( "/afs/cern.ch/work/j/juwillia/CMSSW_9_4_5_cand1_Old/src/flashgg/Cert_ppsRuns2017.json" );
 
-  xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
-  pot_align::load_file( "TreeProducer/data/alignment_collection_v2.out" );
+  //xi_reco::load_file( "TreeProducer/data/optics_17may22.root" );
+  //pot_align::load_file( "TreeProducer/data/alignment_2017_preTS2.out" );
+  //xi_reco::load_file( "TreeProducer/data/ctpps_optics_9mar2017.root" );
+
 
   TFile f( file );
   if ( !f.IsOpen() ) return;
@@ -50,7 +45,7 @@ void tree_reader( TString file=default_ntp_file )
               lumi_g = 7.487318307770;
 
   //const float lumi = ( file.Contains( "2016BCG" ) ) ? lumi_b+lumi_c+lumi_g : lumi_b+lumi_c;
-  const float lumi = 9.412003739742; // pre-TS2 runs with horizontal RPs inserted
+  const float lumi = 17.54194; // pre-TS2 runs with horizontal RPs inserted 2017
   const float rel_err_xigg = 0.028;
 
   //----- cuts -----
@@ -58,13 +53,13 @@ void tree_reader( TString file=default_ntp_file )
   const float max_dist_vtx_inclobjects = 2.0, // in cm
               min_pt_photon = 50.,
               //min_r9_photon = 0.94,
-              min_r9_photon = 0.85, //FIXME
+              min_r9_photon = 0.90, //FIXME
               max_eta_photon = 2.5,
               min_etaveto_photon = 1.4442,
               max_etaveto_photon = 1.566,
               min_mass_diphoton = 300.;
-  const float max_pt_diphoton = 50.,
-              max_acopl = 0.01;
+  const float max_pt_diphoton = 100.,
+              max_acopl = 0.03;
   const float oth_obj_minpt = 150.;
   const float n_sigma_1d = 2.0, // xi matching sigma number
               n_sigma_2d = 2.0;
@@ -115,7 +110,7 @@ void tree_reader( TString file=default_ntp_file )
   tr->SetBranchAddress( "diphoton_sigeove2", diphoton_sigeove2 );
   unsigned int diphoton_vertex_vtx1mmdist[5], diphoton_vertex_vtx2mmdist[5], diphoton_vertex_vtx5mmdist[5], diphoton_vertex_vtx1cmdist[5];
   float diphoton_vertex_nearestvtxdist[5];
-  unsigned int diphoton_vertex_tracks[5];
+  //unsigned int diphoton_vertex_tracks[5];
   tr->SetBranchAddress( "diphoton_vertex_x", diphoton_vertex_x );
   tr->SetBranchAddress( "diphoton_vertex_y", diphoton_vertex_y );
   tr->SetBranchAddress( "diphoton_vertex_z", diphoton_vertex_z );
@@ -124,7 +119,7 @@ void tree_reader( TString file=default_ntp_file )
   tr->SetBranchAddress( "diphoton_vertex_vtx5mmdist", diphoton_vertex_vtx5mmdist );
   tr->SetBranchAddress( "diphoton_vertex_vtx1cmdist", diphoton_vertex_vtx1cmdist );
   tr->SetBranchAddress( "diphoton_vertex_nearestvtxdist", diphoton_vertex_nearestvtxdist );
-  tr->SetBranchAddress( "diphoton_vertex_tracks", diphoton_vertex_tracks );
+  //tr->SetBranchAddress( "diphoton_vertex_tracks", diphoton_vertex_tracks );
   // proton quantities
   unsigned int num_proton;
   const unsigned short max_pr = 20;
@@ -337,9 +332,9 @@ void tree_reader( TString file=default_ntp_file )
     tr->GetEntry( i );
 
     //if ( run_id>280385 ) { continue; } // skip post-TS2 runs
-    if ( !ev_selector.isSelected( run_id, lumisection, event_number ) ) continue;
+    //if ( !ev_selector.isSelected( run_id, lumisection, event_number ) ) continue;
 
-    auto align = pot_align::get_alignments( fill_number );
+    //auto align = pot_align::get_alignments( fill_number );
 
     //----- diphotons retrieval part -----
 
@@ -351,28 +346,48 @@ void tree_reader( TString file=default_ntp_file )
     // first fill the proton hitmaps outside the diphoton loop
     for ( unsigned int j=0; j<num_proton; j++ ) {
       const unsigned short pot_id = 100*proton_side[j]+proton_pot[j];
-      const auto& al = align[pot_id];
-      double xi, xi_err;
-      xi_reco::reconstruct( proton_x[j]+al.x, proton_side[j], proton_pot[j], xi, xi_err );
-
+      //const auto& al = align[pot_id];
+      double xi = 0.;
+      //xi_reco::reconstruct( proton_x[j]+al.x, proton_side[j], proton_pot[j], xi, xi_err );
+ 
+      //Using preliminary 2017 optics and alignment parameters
+      double xi_err[2] = {0.0, 0.0};
+      Double_t align_quant[4] = {-4.205, -0.370, -0.275, -4.205}; //{45F, 45N, 56N, 56F}
+      Double_t dispersion_quant[4] =  {7.766, 7.766, 5.731,  5.731}; //{45F, 45N, 56N, 56F}
+      
+      // 0=45(L), 1=56(R), 2=N, 3=F
+      if ( proton_pot[j] != 3 ) continue; 
+      if ( proton_x[j] <4.205 ) continue;
       if ( proton_side[j]==0 && proton_pot[j]==2 ) {
-        fwdtrk_45n.emplace_back( xi, xi_err );
-        num_proton_45++;
+	xi = ( proton_x[j] + align_quant[1] )/dispersion_quant[1];
+	//cout << "x: " << proton_x[j] << " align_quant: " << align_quant[1] << " dispersion: " << dispersion_quant[1] << " ---> " << "xi: " << xi << endl;
+	fwdtrk_45n.emplace_back( xi, xi_err[0] );
+	num_proton_45++;
       }
       if ( proton_side[j]==0 && proton_pot[j]==3 ) {
-        fwdtrk_45f.emplace_back( xi, xi_err );
-        num_proton_45++;
+	xi = ( proton_x[j] + align_quant[0] )/dispersion_quant[0];
+	cout << "x: " << proton_x[j] << " align_quant: " << align_quant[0] << " dispersion: " << dispersion_quant[0] << " ---> " << "xi: " << xi << endl;
+	fwdtrk_45f.emplace_back( xi, xi_err[0] );
+	num_proton_45++;
       }
       if ( proton_side[j]==1 && proton_pot[j]==2 ) {
-        fwdtrk_56n.emplace_back( xi, xi_err );
-        num_proton_56++;
+	xi = ( proton_x[j] + align_quant[2] )/dispersion_quant[2];
+	//cout << "x: " << proton_x[j] << " align_quant: " << align_quant[2] << " dispersion: " << dispersion_quant[2] << " ---> " << "xi: " << xi << endl;
+	fwdtrk_56n.emplace_back( xi, xi_err[1] );
+	num_proton_56++;
       }
       if ( proton_side[j]==1 && proton_pot[j]==3 ) {
-        fwdtrk_56f.emplace_back( xi, xi_err );
-        num_proton_56++;
+	xi = ( proton_x[j] + align_quant[3] )/dispersion_quant[3];
+	cout << "x: " << proton_x[j] << " align_quant: " << align_quant[3] << " dispersion: " << dispersion_quant[3] << " ---> " << "xi: " << xi << endl;
+	fwdtrk_56f.emplace_back( xi, xi_err[1] );
+	num_proton_56++;
       }
+      
+      //cout << "side: " << proton_side[j] << " pot: " << proton_pot[j] << " xi: " << xi << endl;
+      
+      
     }
-
+    
     for ( unsigned short i=0; i<num_bins; i++ ) {
       num_ele_bin[i] = num_mu_bin[i] = num_jet_bin[i] = 0;
       num_ele_ptcut_bin[i] = num_mu_ptcut_bin[i] = num_jet_ptcut_bin[i] = 0;
@@ -384,17 +399,21 @@ void tree_reader( TString file=default_ntp_file )
     for ( const auto& trk45 : fwdtrk_45n ) {
       for ( const auto& trk56 : fwdtrk_56n ) {
         candidates.emplace_back( trk45.first, trk45.second, trk56.first, trk56.second );
+	//cout << "trk45.first: " << trk45.first << " trk45.second: " << trk45.second << " trk56.first: " << trk56.first << " trk56.second: " << trk56.second <<endl;
       }
       for ( const auto& trk56 : fwdtrk_56f ) {
         candidates.emplace_back( trk45.first, trk45.second, trk56.first, trk56.second );
+	//cout << "trk45.first: " << trk45.first << " trk45.second: " << trk45.second << " trk56.first: " << trk56.first << " trk56.second: " << trk56.second <<endl;
       }
     }
     for ( const auto& trk45 : fwdtrk_45f ) {
       for ( const auto& trk56 : fwdtrk_56n ) {
         candidates.emplace_back( trk45.first, trk45.second, trk56.first, trk56.second );
+	//cout << "trk45.first: " << trk45.first << " trk45.second: " << trk45.second << " trk56.first: " << trk56.first << " trk56.second: " << trk56.second <<endl;
       }
       for ( const auto& trk56 : fwdtrk_56f ) {
         candidates.emplace_back( trk45.first, trk45.second, trk56.first, trk56.second );
+	//cout << "trk45.first: " << trk45.first << " trk45.second: " << trk45.second << " trk56.first: " << trk56.first << " trk56.second: " << trk56.second <<endl;
       }
     }
 
@@ -554,7 +573,7 @@ void tree_reader( TString file=default_ntp_file )
       h_diphoton_mass_withmet->Fill( diphoton_plus_met_mass );
       h_diphoton_mass_incl->Fill( diphoton_incl_mass );
       h_diphoton_rap->Fill( diphoton_rapidity[j] );
-      h_diphoton_ntrk->Fill( diphoton_vertex_tracks[j] );
+      //h_diphoton_ntrk->Fill( diphoton_vertex_tracks[j] );
       h_diphoton_dphi->Fill( acopl );
       h_diphoton_dphi_zoom->Fill( acopl );
       h_diphoton_leadpt->Fill( diphoton_pt1[j] );
@@ -598,7 +617,7 @@ void tree_reader( TString file=default_ntp_file )
         h_diphoton_mass_incl_1tag->Fill( diphoton_incl_mass );
         h_diphoton_rap_1tag->Fill( diphoton_rapidity[j] );
         h_diphoton_closestvtx_1tag->Fill( min_dist_vtx );
-        h_diphoton_ntrk_1tag->Fill( diphoton_vertex_tracks[j] );
+        //h_diphoton_ntrk_1tag->Fill( diphoton_vertex_tracks[j] );
         h_diphoton_dphi_1tag->Fill( acopl );
         h_diphoton_dphi_zoom_1tag->Fill( acopl );
         h_diphoton_leadpt_1tag->Fill( diphoton_pt1[j] );
@@ -624,7 +643,7 @@ void tree_reader( TString file=default_ntp_file )
         h_diphoton_mass_incl_2tag->Fill( diphoton_incl_mass );
         h_diphoton_rap_2tag->Fill( diphoton_rapidity[j] );
         h_diphoton_closestvtx_2tag->Fill( min_dist_vtx );
-        h_diphoton_ntrk_2tag->Fill( diphoton_vertex_tracks[j] );
+        //h_diphoton_ntrk_2tag->Fill( diphoton_vertex_tracks[j] );
         h_diphoton_dphi_2tag->Fill( acopl );
         h_diphoton_dphi_zoom_2tag->Fill( acopl );
         h_diphoton_leadpt_2tag->Fill( diphoton_pt1[j] );
@@ -659,7 +678,7 @@ void tree_reader( TString file=default_ntp_file )
       //if ( has_ele || has_muon || has_jet ) continue; //FIXME FIXME FIXME FIXME FIXME
       //if ( diphoton_pt[j]>max_pt_diphoton ) continue;
       if ( acopl>max_acopl ) continue;
-      if ( diphoton_pt1[j]/diphoton_pt2[j]<0.95 ) continue; // matches Fichet, Royon et al
+      if ( diphoton_pt1[j]/diphoton_pt2[j]<0.90 ) continue; // matches Fichet, Royon et al
       if ( has_ele || has_muon || has_jet ) continue; //FIXME FIXME FIXME FIXME FIXME
       //if ( diphoton_pt[j]>max_pt_diphoton ) continue;
 
@@ -675,7 +694,7 @@ void tree_reader( TString file=default_ntp_file )
       unsigned short cand_2tag_id = 0;
       for ( const auto& cand : candidates ) { // double-tag candidates
         h_diproton_mass->Fill( cand.mass() );
-
+	//cout << "Diproton mass: " << cand.mass() << " Diproton rap: " << cand.rapidity() << endl;
         double diphoton_mass_err = diphoton_mass[j]*0.03;
         double diphoton_rapidity_err = diphoton_rapidity[j]*0.0; //FIXME
 
@@ -847,6 +866,7 @@ void tree_reader( TString file=default_ntp_file )
   {
     //----- preselection level -----
 
+    /*
     plt.plot_3hists( "presel_diphoton_mult", h_num_diphoton, h_num_diphoton_1tag, h_num_diphoton_2tag );
 
     plt.plot_3hists( "presel_diphoton_mass", h_diphoton_mass, h_diphoton_mass_1tag, h_diphoton_mass_2tag );
@@ -858,8 +878,6 @@ void tree_reader( TString file=default_ntp_file )
     plt.plot_3hists( "presel_diphoton_sublead_pt", h_diphoton_subleadpt, h_diphoton_subleadpt_1tag, h_diphoton_subleadpt_2tag );
     plt.plot_3hists( "presel_diphoton_vtxz", h_diphoton_vtxz, h_diphoton_vtxz_1tag, h_diphoton_vtxz_2tag );
 
-    /*h_diphoton_leadeta->GetYaxis()->SetRangeUser(0., 55.);
-    h_diphoton_subleadeta->GetYaxis()->SetRangeUser(0., 55.);*/
     h_diphoton_leadeta->SetMinimum( 0. );
     h_diphoton_subleadeta->SetMinimum( 0. );
 
@@ -880,6 +898,7 @@ void tree_reader( TString file=default_ntp_file )
     //
 
     //plt.plot_balances( "presel_diphoton_pt_vs_diproton_mass", "Diphoton p_{T} (GeV)@@Diproton mass (GeV)", &h_ptgg_vs_mpp );
+
 
     {
       Plotter::HistsMap hm;
@@ -941,6 +960,7 @@ void tree_reader( TString file=default_ntp_file )
       gm.push_back( std::make_pair( Form( "jets, p_{T} > %.f GeV", oth_obj_minpt ), gr_veto_jet_ptcut ) );
       plt.draw_multiplot( "presel_veto-ptcut_eff_dist", gm );
     }
+    */
 
     cout << "total candidates: " << h_mgg_vs_mpp.Integral() << endl
          << " -> with mass matching: " << h_mgg_vs_mpp_candm.Integral() << endl

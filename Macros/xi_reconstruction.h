@@ -59,8 +59,19 @@ namespace xi_reco
     if ( dispersions.count( 100*arm+pot ) == 0 ) return;
 
     const auto disp = dispersions.at( 100*arm+pot ); // ( disp, err_disp )
-    const double de_x = 150.e-6; // alignment uncertainty
 
+    //Attempt for preliminary 2017 dispersions
+    if ( 100*arm+pot == 003 ){
+      disp.first = -7.766;
+      disp.second = 0.25
+	}
+    else if ( 100*arm+pot ==103 ){
+      disp.first = -5.7731;
+      disp.second = 0.25
+	}
+    else continue;
+    const double de_x = 150.e-6; // alignment uncertainty
+    
     xi = x/disp.first;
     xi_err = sqrt( pow( de_x/disp.first, 2 )+pow( disp.second*xi, 2 ) );
     //xi_err = xi * sqrt( ( pow( de_x/x, 2 )+pow( disp.second, 2 ) ) );

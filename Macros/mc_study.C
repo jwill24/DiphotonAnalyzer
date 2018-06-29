@@ -30,7 +30,8 @@ void mc_study()
 
   //const char* file = "Samples/output_0000_GammaGammaToGammaGamma_13TeV_fpmc.root";
   //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
-  const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root";
+  //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root";
+  const char* file = "/afs/cern.ch/work/j/juwillia/CMSSW_9_4_5_cand1/src/DiphotonAnalyzer/ntp_2017B.root";
   //const char* file = "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root";
   TFile f( file );
   TTree* t = dynamic_cast<TTree*>( f.Get( "ntp" ) );
