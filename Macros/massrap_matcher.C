@@ -22,6 +22,8 @@
 #define MAX_MUON 50
 #define MAX_JET 200
 
+using namespace std;
+
 const float max_xi = 0.25;
 struct track_t {
   track_t() : xi( 0. ), err_xi( 0. ), x( 0. ), y( 0. ) {}
@@ -43,6 +45,10 @@ map<string,float> pots_accept = { { "45N", 0.033 }, { "45F", 0.024 }, { "56N", 0
 
 void massrap_matcher()
 {
+
+  ofstream myfile;
+  myfile.open ("events.txt");
+
   TFile f( "/afs/cern.ch/work/j/juwillia/CMSSW_9_4_5_cand1/src/DiphotonAnalyzer/ntp_2017BCDEF.root" );
   TTree* tr = dynamic_cast<TTree*>( f.Get( "ntp" ) );
 
@@ -96,62 +102,71 @@ void massrap_matcher()
     tr->GetEntry( i );
 
     // first loop to identify the tracks and their respective pot
-    //auto align = pot_align::get_alignments( ev.fill_number );
 
     vector<track_t> xi_45n, xi_45f, xi_56n, xi_56f;
 
+    double side_event[20] = {0};
+    double xi_event[20] = {0};
+
     for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
       const unsigned short pot_id = 100*ev.proton_track_side[j]+ev.proton_track_pot[j];
-      //const auto& al = align[pot_id];
 
       const unsigned short raw_id = 100*ev.proton_track_side[j] + ev.proton_track_pot[j];
 
       //----- reconstruct the kinematics
-      //double xi, xi_err;
-      //xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_side[j], ev.proton_track_pot[j], xi, xi_err );
-
       double xi = 0.;
       double xi_err = 0.0;
       double trk_x_corr = 0.0;
       Double_t align_quant[4] = {-4.205, -0.370, -0.275, -4.205}; //{45F, 45N, 56N, 56F}                                                                              
-      //Double_t dispersion_quant[4] =  {7.766, 7.766, 5.731,  5.731}; //{45F, 45N, 56N, 56F} 
 
       const auto cond = cond_fac.get( edm::EventID( ev.run_id, ev.lumisection, ev.event_number ) );
       double xangle = cond.crossing_angle;
 
 
       //----- associate each track to a RP
-      if      ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 2 ) {
-	//xi = ( ev.proton_track_x[j] + align_quant[1] )/dispersion_quant[1];
+      if ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 2 ) {
 	trk_x_corr = ev.proton_track_x[j] + align_quant[1];
 	reco.reconstruct( xangle, raw_id, trk_x_corr, xi, xi_err );
 	xi_err = xi*0.10;
 	xi_45n.emplace_back( xi, xi_err, ev.proton_track_x[j]+align_quant[1], ev.proton_track_y[j] );
       }
       else if ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 3 ) {
-	//xi = ( ev.proton_track_x[j] + align_quant[0] )/dispersion_quant[0];
 	trk_x_corr = ev.proton_track_x[j] + align_quant[0];
 	reco.reconstruct( xangle, raw_id, trk_x_corr, xi, xi_err );
 	xi_err = xi*0.10;
 	xi_45f.emplace_back( xi, xi_err, ev.proton_track_x[j]+align_quant[0], ev.proton_track_y[j] );
       }
       else if ( ev.proton_track_side[j] == 1 && ev.proton_track_pot[j] == 2 ) {
-	//xi = ( ev.proton_track_x[j] + align_quant[2] )/dispersion_quant[2];
 	trk_x_corr = ev.proton_track_x[j] + align_quant[2];
 	reco.reconstruct( xangle, raw_id, trk_x_corr, xi, xi_err );
 	xi_err = xi*0.10;
 	xi_56n.emplace_back( xi, xi_err, ev.proton_track_x[j]+align_quant[2], ev.proton_track_y[j] );
       }
       else if ( ev.proton_track_side[j] == 1 && ev.proton_track_pot[j] == 3 ) {
-	//xi = ( ev.proton_track_x[j] + align_quant[3] )/dispersion_quant[3];
 	trk_x_corr = ev.proton_track_x[j] + align_quant[3];
 	reco.reconstruct( xangle, raw_id, trk_x_corr, xi, xi_err );
 	xi_err = xi*0.10;
 	xi_56f.emplace_back( xi, xi_err, ev.proton_track_x[j]+align_quant[3], ev.proton_track_y[j] );
       }
-
-      //if ( ev.event_number == 105923847 ) cout << "One of the matching: " << " xi- " << xi << " side- " << ev.proton_track_side[j] << endl;
-      //cout << "side: " << ev.proton_track_side[j] << " pot: " << ev.proton_track_pot[j] << " xi: " << xi << endl;
+      /*
+      if ( ev.run_id==299480 && ev.event_number == 671674545 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==301323 && ev.event_number == 105923847 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==302228 && ev.event_number == 264955221 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==306135 && ev.event_number == 217151781 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305365 && ev.event_number == 330564983 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305311 && ev.event_number == 147063817 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305365 && ev.event_number == 1283544527 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305406 && ev.event_number == 671645983 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305377 && ev.event_number == 490928181 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305406 && ev.event_number == 1262699272 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305832 && ev.event_number == 350215677 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305840 && ev.event_number == 550294406 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305840 && ev.event_number == 1289737820 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      if ( ev.run_id==305898 && ev.event_number == 356795048 ) cout << "One of the matching: " << " xi: " << xi << " side: " << ev.proton_track_side[j] << endl;
+      */
+      side_event[j] = ev.proton_track_side[j];
+      xi_event[j] = xi;
+      //cout << "side = " << ev.proton_track_side[j] << " xi = " << xi << endl;
     }
 
     //----- merge 2 tracks in one if N-F pot content is similar
@@ -176,7 +191,6 @@ void massrap_matcher()
     vector<diproton_candidate_t> candidates;
     for ( const auto trk45 : xi_45 ) {
       for ( const auto trk56 : xi_56 ) {
-        //candidates.emplace_back( trk45.first, trk45.second, trk56.first, trk56.second );
         candidates.emplace_back( trk45.first, trk45.first*0.1, trk56.first, trk56.first*0.1 );
       }
     }
@@ -188,8 +202,8 @@ void massrap_matcher()
 
       //----- photon quality cuts
 
-      if ( ev.diphoton_pt1[j] < 50. ) continue;
-      if ( ev.diphoton_pt2[j] < 50. ) continue;
+      if ( ev.diphoton_pt1[j] < 75. ) continue;
+      if ( ev.diphoton_pt2[j] < 75. ) continue;
       if ( ev.diphoton_eta1[j] > 2.5 || ( ev.diphoton_eta1[j] > 1.4442 && ev.diphoton_eta1[j] < 1.566 ) ) continue;
       if ( ev.diphoton_eta2[j] > 2.5 || ( ev.diphoton_eta2[j] > 1.4442 && ev.diphoton_eta2[j] < 1.566 ) ) continue;
       if ( ev.diphoton_r91[j] < 0.94 ) continue;
@@ -251,21 +265,42 @@ void massrap_matcher()
       float diphoton_mass_error = ev.diphoton_mass[j]*0.02;
       float diphoton_rapidity_error = fabs( ev.diphoton_rapidity[j] )*0.061;
 
+
       for ( const auto cand : candidates ) {
         h_mass_all->Fill( cand.mass() );
         h_rap_all->Fill( cand.rapidity() );
         bool mass_match = is_matched( num_sigma, cms.M(), cand.mass(), diphoton_mass_error, cand.mass_error() );
         bool rap_match = is_matched( num_sigma, cms.Rapidity(), cand.rapidity(), diphoton_rapidity_error, cand.rapidity_error() );
+	
+	// print statements for all events
+	if ( cand.mass() > 100. && cand.mass() < 4000. ) {
+	  myfile << "R:L:E ---> " << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;                
+	  myfile << "masses: central system: " << cms.M() << ", diphoton: " << ev.diphoton_mass[j] << " +/- " << diphoton_mass_error << ", diproton: " << cand.mass() << " +/- " << cand.mass_error() << endl; 
+	  myfile << "rapidities: central system: " << cms.Rapidity() << ", diphoton: " << ev.diphoton_rapidity[j] << " +/- " << diphoton_rapidity_error << ", diproton: " << cand.rapidity() << " +/- " << cand.rapidity_error() << endl;        
+	  myfile << "xip:" << xip << " xim: " << xim << endl;
+	  //cout << "side_event[0]: " << side_event[0] << " xi_event[0]: " << xi_event[0] << endl;
+	  for ( int t=0; t < 20; t++ ) {
+	    if ( xi_event[t] > 0.0 ) {
+	      myfile << "side: " << side_event[t] << " xi: " << xi_event[t] << endl;
+	    }
+	  }
+	  
+	  //cout << "test1" << endl;
+	}
+	
         if ( mass_match && rap_match ) {
-          cout << "@@@ DOUBLE TAGGING" << endl;
-          cout << "masses: central system: " << cms.M() << ", diphoton: " << ev.diphoton_mass[j] << " +/- " << diphoton_mass_error << ", diproton: " << cand.mass() << " +/- " << cand.mass_error() << endl;
-          cout << "rapidities: central system: " << cms.Rapidity() << ", diphoton: " << ev.diphoton_rapidity[j] << " +/- " << diphoton_rapidity_error << ", diproton: " << cand.rapidity() << " +/- " << cand.rapidity_error() << endl;
-	  cout << "R:L:E ---> " << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;
+	  /*
+	    cout << "@@@ DOUBLE TAGGING" << endl;
+	    cout << "masses: central system: " << cms.M() << ", diphoton: " << ev.diphoton_mass[j] << " +/- " << diphoton_mass_error << ", diproton: " << cand.mass() << " +/- " << cand.mass_error() << endl;
+	    cout << "rapidities: central system: " << cms.Rapidity() << ", diphoton: " << ev.diphoton_rapidity[j] << " +/- " << diphoton_rapidity_error << ", diproton: " << cand.rapidity() << " +/- " << cand.rapidity_error() << endl;
+	    cout << "R:L:E ---> " << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;
+	    cout << "xip:" << xip << " xim: " << xim << " N tracks left: " << xi_45.size() << " N tracks right: " << xi_56.size() << endl;
+	  */
           gr_mass_massrapmatch.SetPoint( num_massrapmatch, cand.mass(), cms.M() );
           gr_mass_massrapmatch.SetPointError( num_massrapmatch, cand.mass_error(), diphoton_mass_error );
           gr_rap_massrapmatch.SetPoint( num_massrapmatch, cand.rapidity(), cms.Rapidity() );
           gr_rap_massrapmatch.SetPointError( num_massrapmatch, cand.rapidity_error(), diphoton_rapidity_error );
-
+	  
 	  //h_theta->Fill();
 	  h_eta->Fill( ev.diphoton_eta1[j] );
 	  h_eta->Fill( ev.diphoton_eta2[j] );
@@ -274,7 +309,7 @@ void massrap_matcher()
 	  h_pt->Fill( ev.diphoton_pt2[j] );
 	  h_numjets->Fill( ev.num_jet );
 	  h_numleps->Fill( ev.num_muon + ev.num_electron );
-
+	  
           num_massrapmatch++;
         }
         else if ( mass_match ) { // only match in mass
@@ -303,6 +338,8 @@ void massrap_matcher()
 
     }
   }
+  myfile.close();
+  
   cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " << num_massmatch << "\n\trap match: " << num_rapmatch << "\n\tboth match: " << num_massrapmatch << endl;
 
   //----- plotting part
