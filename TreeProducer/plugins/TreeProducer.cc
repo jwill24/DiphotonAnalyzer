@@ -55,7 +55,7 @@
 
 #include "DiphotonAnalyzer/TreeProducer/interface/HLTMatcher.h"
 #include "DiphotonAnalyzer/TreeProducer/interface/SelectionUtils.h"
-#include "DiphotonAnalyzer/TreeProducer/interface/FillNumberLUTHandler.h"
+//#include "DiphotonAnalyzer/TreeProducer/interface/FillNumberLUTHandler.h"
 #include "DiphotonAnalyzer/TreeProducer/interface/TreeEvent.h"
 
 #include "TFile.h"
@@ -113,7 +113,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     HLTPrescaleProvider hlt_prescale_;
     HLTMatcher hlt_matcher_;
 
-    std::unique_ptr<CTPPSAlCa::FillNumberLUTHandler> fillLUTHandler_;
+  //std::unique_ptr<CTPPSAlCa::FillNumberLUTHandler> fillLUTHandler_;
     std::unique_ptr<edm::LumiReWeighting> lumiReweighter_;
 
     TFile* file_;
@@ -163,9 +163,9 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
     std::cout << ">> Pileup reweighting will be used with files:\n\t" << puMCfile_.fullPath() << " for MC ;\n\t" << puDatafile_.fullPath() << " for data" << std::endl;
     lumiReweighter_ = std::make_unique<edm::LumiReWeighting>( puMCfile_.fullPath(), puDatafile_.fullPath(), puMCpath_, puDatapath_ );
   }
-  else {
-    fillLUTHandler_ = std::make_unique<CTPPSAlCa::FillNumberLUTHandler>( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() );
-  }
+  //else {
+  //fillLUTHandler_ = std::make_unique<CTPPSAlCa::FillNumberLUTHandler>( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() );
+  //}
 
   file_ = new TFile( filename_.c_str(), "recreate" );
   file_->cd();
@@ -204,11 +204,12 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
   ev_.event_number = iEvent.id().event();
 
   // get the fill number from the run id <-> fill number LUT
+  /*
   if ( fillLUTHandler_ ) {
     ev_.fill_number = fillLUTHandler_->getFillNumber( iEvent.id().run() );
   }
   else ev_.fill_number = 1;
-
+  */
   //----- gen-level information -----
 
   edm::Handle<edm::View<pat::PackedGenParticle> > genPhotons;
@@ -455,7 +456,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
       //const TotemRPDetId detid( dsv.getRPId()*10 );
       const CTPPSDetId detid( trk.getRPId() );
       const unsigned short side = detid.arm(),
-                           pot = detid.rp();
+	pot = detid.rp(),
+	station = detid.station();
 
 
       //for ( const auto& trk : dsv ) {
@@ -465,6 +467,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
         ev_.proton_track_y[ev_.num_proton_track] = trk.getY()/10.; // store in m
         ev_.proton_track_side[ev_.num_proton_track] = side; // 0 = left (45) ; 1 = right (56)
         ev_.proton_track_pot[ev_.num_proton_track] = pot; // 2 = 210n ; 3 = 210f
+	ev_.proton_track_station[ev_.num_proton_track] = station; // 0 = 210; 2 = 220
 
         //ev_.proton_track_chi2[ev_.num_proton_track] = trk.getChiSquared();
         //ev_.proton_track_normchi2[ev_.num_proton_track] = trk.getChiSquaredOverNDF();

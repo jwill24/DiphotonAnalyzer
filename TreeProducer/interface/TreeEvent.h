@@ -42,6 +42,7 @@ struct TreeEvent
       //tree->Branch( "proton_track_chi2", proton_track_chi2, "proton_track_chi2[num_proton_track]/F" );
       //tree->Branch( "proton_track_normchi2", proton_track_normchi2, "proton_track_normchi2[num_proton_track]/F" );
       tree->Branch( "proton_track_pot", proton_track_pot, "proton_track_pot[num_proton_track]/i" );
+      tree->Branch( "proton_track_station", proton_track_station, "proton_track_station[num_proton_track]/i" );
     }
     if ( !data ) {
       tree->Branch( "num_gen_photon", &num_gen_photon, "num_gen_photon/i" );
@@ -210,6 +211,7 @@ struct TreeEvent
       //tree->SetBranchAddress( "proton_track_chi2", proton_track_chi2 );
       //tree->SetBranchAddress( "proton_track_normchi2", proton_track_normchi2 );
       tree->SetBranchAddress( "proton_track_pot", proton_track_pot );
+      tree->SetBranchAddress( "proton_track_station", proton_track_station );
     }
     if ( !data ) {
       tree->SetBranchAddress( "num_gen_photon", &num_gen_photon );
@@ -360,6 +362,7 @@ struct TreeEvent
       proton_track_chi2[i] = proton_track_normchi2[i] = -1.;
       proton_track_side[i] = 2; //invalid
       proton_track_pot[i] = 0;
+      proton_track_station[i] = 3; //invalid
     }
 
     num_diphoton = 0;
@@ -443,7 +446,7 @@ struct TreeEvent
   unsigned int num_proton_track;
   float proton_track_x[MAX_PROTON_TRK], proton_track_y[MAX_PROTON_TRK];
   float proton_track_chi2[MAX_PROTON_TRK], proton_track_normchi2[MAX_PROTON_TRK];
-  unsigned int proton_track_side[MAX_PROTON_TRK], proton_track_pot[MAX_PROTON_TRK];
+  unsigned int proton_track_side[MAX_PROTON_TRK], proton_track_pot[MAX_PROTON_TRK], proton_track_station[MAX_PROTON_TRK];
 
   unsigned int num_electron;
   float electron_pt[MAX_ELECTRON], electron_eta[MAX_ELECTRON], electron_phi[MAX_ELECTRON], electron_energy[MAX_ELECTRON];
