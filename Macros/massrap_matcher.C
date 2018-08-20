@@ -67,7 +67,6 @@ void massrap_matcher()
   align_file_path << getenv( "CMSSW_BASE" ) << "/src/CTPPSAnalysisTools/Alignment/data/2017/alignments_30jan2017.txt";
   align_fac.feedAlignments( align_file_path.str().c_str() );
   
-  //const float rel_err_xi_gg = 0.039;
   const float num_sigma = 2.0;
 
   TreeEvent ev;
@@ -107,24 +106,21 @@ void massrap_matcher()
 
     vector<track_t> xi_45n, xi_45f, xi_56n, xi_56f;
 
-    double side_event[20] = {0};
-    double xi_event[20] = {0};
-
-    //cout << "------->Event: " << ev.event_number << endl;
+    double side_event[33] = {0};
+    double xi_event[33] = {0};
 
     for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
       const unsigned short pot_id = 100*ev.proton_track_side[j] + 10*ev.proton_track_station[j] + ev.proton_track_pot[j];
       const unsigned short raw_id = 100*ev.proton_track_side[j] + 10*ev.proton_track_station[j] + ev.proton_track_pot[j];
       
-      
       if ( pot_id != 3 && pot_id != 23 && pot_id != 103 && pot_id != 123 ){
 	count = count + 1;
-	if ( pot_id != 16 && pot_id != 116 ){
-	  cout << "wrong pot_id: " << pot_id << endl;
-	}
+	cout << "run: " << ev.run_id << " num tracks: " << ev.num_proton_track << endl; 
+	cout << "side: " << ev.proton_track_side[j] << " station: " << ev.proton_track_station[j] << " pot: " << ev.proton_track_pot[j] << endl;
+	cout << "" << endl;
 	continue;
-	}
-
+      }
+      
       //----- reconstruct the kinematics
       double xi = 0.;
       double xi_err = 0.0;
@@ -166,7 +162,6 @@ void massrap_matcher()
 
       side_event[j] = ev.proton_track_side[j];
       xi_event[j] = xi;
-      //cout << "pot = " << pot_id << " xi: " << xi << endl;
     }
 
     //----- merge 2 tracks in one if N-F pot content is similar
@@ -182,10 +177,9 @@ void massrap_matcher()
 
     vector<diproton_candidate_t> candidates;
     //for ( const auto trk45 : xi_45 ) {
-       //for ( const auto trk56 : xi_56 ) {
-	
+       //for ( const auto trk56 : xi_56 ) {	
 	//candidates.emplace_back( trk45.first, trk45.second, trk56.first, trk56.second );
-	
+       
 	//arr_45.emplace_back( trk45.first );
 	//arr_56.emplace_back( trk56.first );
     
@@ -232,24 +226,6 @@ void massrap_matcher()
       const float xip = ( ev.diphoton_pt1[j]*exp( +ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( +ev.diphoton_eta2[j] ) ) / sqrt_s,
                   xim = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
 
-      //if ( ( xim < pots_accept["56N"] && xim < pots_accept["56F"] ) || xim > 0.15 ) continue;
-      //if ( ( xip < pots_accept["45N"] && xip < pots_accept["45F"] ) || xip > 0.15 ) continue;
-
-      //----- search for associated leptons
-
-      /*const double lepton_mindist = 5.0; // in centimeters
-      TVector3 diph_vtx( ev.diphoton_vertex_x[j], ev.diphoton_vertex_y[j], ev.diphoton_vertex_z[j] );
-      unsigned short num_close_ele = 0, num_close_muon = 0;
-      for ( unsigned short k = 0; k < ev.num_electron; ++k ) {
-        TVector3 ele_vtx( electron_vtx_x[k], electron_vtx_y[k], electron_vtx_z[k] );
-        const float ele_dist = ( ele_vtx-diph_vtx ).Mag();
-        if ( ele_dist < lepton_mindist ) num_close_ele++;
-      }
-      for ( unsigned short k = 0; k < ev.num_muon; ++k ) {
-        TVector3 mu_vtx( muon_vtx_x[k], muon_vtx_y[k], muon_vtx_z[k] );
-        const float mu_dist = ( mu_vtx-diph_vtx ).Mag();
-        if ( mu_dist < lepton_mindist ) num_close_muon++;
-      }*/
 
       //----- search for associated jets
 
@@ -258,16 +234,6 @@ void massrap_matcher()
       pho2.SetPtEtaPhiM( ev.diphoton_pt2[j], ev.diphoton_eta2[j], ev.diphoton_phi2[j], 0. );
       TLorentzVector cms = pho1+pho2;
 
-
-      //const double min_extrajet_pt = 500.;
-      /*unsigned short num_associated_jet = 0;
-      for ( unsigned short k = 0; k < ev.num_jet; ++k ) {
-        if ( jet_dipho_match[k] != j ) continue;
-        //if ( jet_pt[k] > min_extrajet_pt ) num_associated_jet++;
-        TLorentzVector jet;
-        jet.SetPtEtaPhiE( jet_pt[k], jet_eta[k], jet_phi[k], jet_energy[k] );
-        cms += jet;
-      }*/
 
       //----- another batch of "exclusivity" cuts
 
@@ -457,107 +423,6 @@ void plot_matching( const char* name, TGraphErrors& gr_nomatch, TGraphErrors& gr
   c.Save( "pdf,png", "/eos/user/j/juwillia/www/2017data" );
 }
 
-
-/*void
-plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_match, TGraphErrors& gr_ooa, double limits )
-{
-  Canvas c( name, "CMS+TOTEM Preliminary 2017, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
-
-  TF1 lim( "lim", "x", 0., max_xi );
-  lim.SetTitle( "#xi(RP)@@#xi(#gamma#gamma)" );
-  lim.Draw("lr+");
-  lim.SetLineColor(4);
-  lim.SetLineWidth(2);
-
-  int colour = kAzure+10;
-  TBox box( 0., 0., limits, max_xi );
-  box.SetFillColor( colour );
-  box.SetLineColor( kBlack );
-  box.SetLineWidth( 1 );
-  box.Draw( "l" );
-
-  lim.Draw( "lr,same" );
-
-  gr_unmatch.SetLineWidth(2);
-  gr_unmatch.SetMarkerStyle(22);
-  gr_unmatch.SetMarkerSize(1.25);
-  gr_unmatch.Draw("p same");
-
-  gr_match.SetLineColor(2);
-  gr_match.SetLineWidth(2);
-  gr_match.SetMarkerColor(2);
-  gr_match.SetMarkerStyle(20);
-  gr_match.SetMarkerSize(1.25);
-  gr_match.Draw( "p same" );
-
-  gr_ooa.SetLineWidth(2);
-  gr_ooa.SetMarkerStyle(25);
-  gr_ooa.SetMarkerSize(1.25);
-  gr_ooa.Draw( "p same" );
-
-  c.SetLegendX1( 0.4 );
-  c.AddLegendEntry( &gr_match, "Matching events", "lp" );
-  c.AddLegendEntry( &gr_unmatch, "Non-matching events", "lp" );
-  c.AddLegendEntry( &gr_ooa, "Out of acceptance events", "lp" );
-  c.AddLegendEntry( &box, "No acceptance for RP", "f" );
-
-  PaveText lab( 0.8, 0.2, 0.85, 0.25 );
-  lab.SetTextSize( 0.075 );
-  lab.SetFillStyle( 0 );
-  lab.SetLineWidth( 0 );
-  lab.AddText( gr_match.GetTitle() );
-  lab.Draw( "same" );
-
-  lim.GetYaxis()->SetRangeUser( 0., max_xi );
-
-  TH2D *axiiis = new TH2D( Form( "axiiis_%s", name ), "", 10, 0, max_xi, 10, 0, max_xi );
-  axiiis->Draw( "sameaxis" );
-  c.GetLegend()->SetFillStyle( 0 );
-  c.GetLegend()->SetLineWidth( 0 );
-  c.Prettify( lim.GetHistogram() );
-
-  c.Save( "pdf,png", "/afs/cern.ch/work/j/juwillia/CMSSW_9_4_5_cand1/src/DiphotonAnalyzer/tmp" );
-}
-
-void
-plot_xispectrum( const char* name, TH1D* spec, double limit )
-{
-  Canvas c( name, "CMS+TOTEM Preliminary 2017, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
-  gStyle->SetStatX( 0.88 );
-  gStyle->SetStatY( 0.92 );
-  gStyle->SetOptStat( "erm" );
-  const double max_y = spec->GetMaximum()*1.1;
-  spec->Sumw2();
-  spec->Draw( "hist" );
-  spec->GetYaxis()->SetRangeUser( 0., max_y );
-  spec->SetLineColor( kBlack );
-  //spec->SetLineWidth( 2 );
-  //spec->SetFillColor( kBlack );
-  TBox lim( 0., 0., limit, max_y );
-  spec->Draw( "p same" );
-  lim.SetFillStyle( 3003 );
-  lim.SetFillColor( kBlack );
-  lim.SetLineColor( kBlack );
-  lim.SetLineWidth( 1 );
-  lim.Draw( "l" );
-  c.Prettify( spec );
-  c.Save( "pdf,png", "/afs/cern.ch/work/j/juwillia/CMSSW_9_4_5_cand1/src/DiphotonAnalyzer/tmp" );
-}
-
-void
-plot_generic( const char* name, TH1* plot, const char* plot_style, bool logy )
-{
-  Canvas c( name, "CMS+TOTEM Preliminary 2017, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
-  plot->Sumw2();
-  plot->Draw( plot_style );
-  plot->SetMarkerStyle( 20 );
-  plot->SetLineColor( kBlack );
-  if ( logy ) c.SetLogy();
-  c.Prettify( plot );
-  c.Save( "pdf,png", "/afs/cern.ch/work/j/juwillia/CMSSW_9_4_5_cand1/src/DiphotonAnalyzer/tmp" );
-}
-*/
-  
 vector<pair<float,float> > merge_nearfar( const vector<track_t>& near_tracks, const vector<track_t>& far_tracks, float xdiff_cut ) {
   vector<pair<float,float> > out;
   set<unsigned short> matched_far_ids;

@@ -6,7 +6,7 @@
 struct TreeEvent
 {
   static constexpr unsigned short MAX_HLT = 10;
-  static constexpr unsigned short MAX_PROTON_TRK = 20;
+  static constexpr unsigned short MAX_PROTON_TRK = 35;
   static constexpr unsigned short MAX_DIPHOTON = 10;
   //                               JW
   static constexpr unsigned short MAX_ELECTRON = 20;
