@@ -37,6 +37,7 @@ bool is_matched( int n_sigma, float x1, float x2, float err_x1, float err_x2 )
 
  return ( delta/combined_error<=n_sigma );
 }
+
 void plot_matching( const char* name, TGraphErrors&, TGraphErrors&, TGraphErrors&, TGraphErrors&, double min, double max, double xleg=0.5 );
 vector<pair<float,float> > merge_nearfar( const vector<track_t>& near_tracks, const vector<track_t>& far_tracks, float xdiff_cut=0.01 );
 
@@ -110,6 +111,9 @@ void massrap_matcher()
     double side_event[33] = {0};
     double xi_event[33] = {0};
 
+    const auto cond = cond_fac.get( edm::EventID( ev.run_id, ev.lumisection, ev.event_number ) );
+    double xangle = cond.crossing_angle;
+
     for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
       const unsigned short pot_id = 100*ev.proton_track_side[j] + 10*ev.proton_track_station[j] + ev.proton_track_pot[j];
       const unsigned short raw_id = 100*ev.proton_track_side[j] + 10*ev.proton_track_station[j] + ev.proton_track_pot[j];
@@ -124,10 +128,9 @@ void massrap_matcher()
       double xi_err = 0.0;
       double trk_x_corr = 0.0;
 
-      const auto cond = cond_fac.get( edm::EventID( ev.run_id, ev.lumisection, ev.event_number ) );
+      //const auto cond = cond_fac.get( edm::EventID( ev.run_id, ev.lumisection, ev.event_number ) );
       const ctpps::alignment_t align = align_fac.get( edm::EventID( ev.run_id, ev.lumisection, ev.event_number ), pot_id );
       double align_quant = align.x_align;;
-      double xangle = cond.crossing_angle;
 
       
       //----- associate each track to a RP
@@ -175,72 +178,81 @@ void massrap_matcher()
     //---- identify the diproton candidates
 
     vector<diproton_candidate_t> candidates;
-    for ( const auto trk45 : xi_45 ) {
-      for ( const auto trk56 : xi_56 ) {	
-	candidates.emplace_back( trk45.first, trk45.first*0.1, trk56.first, trk56.first*0.1 );       
-	//float_t max_45 = 0.0;
-	//float_t max_56 = 0.0;
-	//for (unsigned int i = 0; i < xi_45.size(); i++) {
-	//for (unsigned int j = 0; j < xi_56.size(); j++) {
-	//if ( xi_45[i].first > max_45 ) max_45 = xi_45[i].first;
-	//if ( xi_56[j].first > max_56 ) max_56 = xi_56[j].first;
-      }
-    }
-    
-    //float_t xi_45m = max_45;
-    //float_t xi_56m = max_56;
-    
-    
-    //candidates.emplace_back( xi_45m, xi_45m*0.1, xi_56m, xi_56m*0.1 );
-    
-    //cout << candidates.size() << " diproton candidate(s) in total!" << endl;
+    //for ( const auto trk45 : xi_45 ) {
+    //for ( const auto trk56 : xi_56 ) {	
+	//candidates.emplace_back( trk45.first, trk45.first*0.1, trk56.first, trk56.first*0.1 );       
 
-    //----- identify the diphoton candidates
+	float_t max_45 = 0.0;
+	float_t max_56 = 0.0;
+	for (unsigned int i = 0; i < xi_45.size(); i++) {
+	  for (unsigned int j = 0; j < xi_56.size(); j++) {
+	    if ( xi_45[i].first > max_45 ) max_45 = xi_45[i].first;
+	    if ( xi_56[j].first > max_56 ) max_56 = xi_56[j].first;
+	  }
+	}
+	
+	float_t xi_45m = max_45;
+	float_t xi_56m = max_56;
+	
+	
+	candidates.emplace_back( xi_45m, xi_45m*0.1, xi_56m, xi_56m*0.1 );
+	
+	//cout << candidates.size() << " diproton candidate(s) in total!" << endl;
+	
+	//----- identify the diphoton candidates
+	
+	for ( unsigned short j = 0; j < ev.num_diphoton; ++j ) {
+	  
+	  //----- photon quality cuts
+	  
+	  
+	  if ( ev.diphoton_pt1[j] < 75. ) continue;
+	  if ( ev.diphoton_pt2[j] < 75. ) continue;
+	  if ( ev.diphoton_eta1[j] > 2.5 || ( ev.diphoton_eta1[j] > 1.4442 && ev.diphoton_eta1[j] < 1.566 ) ) continue;
+	  if ( ev.diphoton_eta2[j] > 2.5 || ( ev.diphoton_eta2[j] > 1.4442 && ev.diphoton_eta2[j] < 1.566 ) ) continue;
+	  if ( ev.diphoton_r91[j] < 0.94 ) continue;
+	  if ( ev.diphoton_r92[j] < 0.94 ) continue;
+	  if ( ev.diphoton_mass[j] < 350. ) continue;
+	  
+	  h_acop->Fill( 1.-fabs( ev.diphoton_dphi[j] )/M_PI );
+	  
+	  //----- back-to-back photons
+	  
+	  if ( 1.-fabs( ev.diphoton_dphi[j] )/M_PI > 0.005 ) continue;
+	  
+	  h_mass->Fill( ev.diphoton_mass[j] );
 
-    for ( unsigned short j = 0; j < ev.num_diphoton; ++j ) {
+	  //----- veto on track multiplicity
 
-      //----- photon quality cuts
+	  if ( xi_45.size() > 5 || xi_56.size() > 5 ) continue;
 
+	  
+	  const float xip = ( ev.diphoton_pt1[j]*exp( +ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( +ev.diphoton_eta2[j] ) ) / sqrt_s,
+	    xim = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
+	  
+	  
+	  //----- search for associated jets
+	  
+	  TLorentzVector pho1, pho2;
+	  pho1.SetPtEtaPhiM( ev.diphoton_pt1[j], ev.diphoton_eta1[j], ev.diphoton_phi1[j], 0. );
+	  pho2.SetPtEtaPhiM( ev.diphoton_pt2[j], ev.diphoton_eta2[j], ev.diphoton_phi2[j], 0. );
+	  TLorentzVector cms = pho1+pho2;
+	  
+	  
+	  //----- another batch of "exclusivity" cuts
+	  
+	  //Veto on close jets and leptons
+	  /*
+	  if ( num_close_ele > 0 ) continue;
+	  if ( num_close_muon > 0 ) continue;
+	  if ( num_associated_jet > 0 ) continue;
+	  */
 
-      if ( ev.diphoton_pt1[j] < 75. ) continue;
-      if ( ev.diphoton_pt2[j] < 75. ) continue;
-      if ( ev.diphoton_eta1[j] > 2.5 || ( ev.diphoton_eta1[j] > 1.4442 && ev.diphoton_eta1[j] < 1.566 ) ) continue;
-      if ( ev.diphoton_eta2[j] > 2.5 || ( ev.diphoton_eta2[j] > 1.4442 && ev.diphoton_eta2[j] < 1.566 ) ) continue;
-      if ( ev.diphoton_r91[j] < 0.94 ) continue;
-      if ( ev.diphoton_r92[j] < 0.94 ) continue;
-      if ( ev.diphoton_mass[j] < 350. ) continue;
-
-      h_acop->Fill( 1.-fabs( ev.diphoton_dphi[j] )/M_PI );
-
-      //----- back-to-back photons
-
-      if ( 1.-fabs( ev.diphoton_dphi[j] )/M_PI > 0.005 ) continue;
-
-      h_mass->Fill( ev.diphoton_mass[j] );
-      
-      const float xip = ( ev.diphoton_pt1[j]*exp( +ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( +ev.diphoton_eta2[j] ) ) / sqrt_s,
-                  xim = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
-
-
-      //----- search for associated jets
-
-      TLorentzVector pho1, pho2;
-      pho1.SetPtEtaPhiM( ev.diphoton_pt1[j], ev.diphoton_eta1[j], ev.diphoton_phi1[j], 0. );
-      pho2.SetPtEtaPhiM( ev.diphoton_pt2[j], ev.diphoton_eta2[j], ev.diphoton_phi2[j], 0. );
-      TLorentzVector cms = pho1+pho2;
-
-
-      //----- another batch of "exclusivity" cuts
-
-      /*if ( num_close_ele > 0 ) continue;
-      if ( num_close_muon > 0 ) continue;*/
-      //if ( num_associated_jet > 0 ) continue;
-
-      //----- reconstruct the energy loss from central system
-
-      float diphoton_mass_error = ev.diphoton_mass[j]*0.02;
-      float diphoton_rapidity_error = fabs( ev.diphoton_rapidity[j] )*0.061;
-
+	  //----- reconstruct the energy loss from central system
+	  
+	  float diphoton_mass_error = ev.diphoton_mass[j]*0.02;
+	  float diphoton_rapidity_error = fabs( ev.diphoton_rapidity[j] )*0.061;
+	  
 
       for ( const auto cand : candidates ) {
         h_mass_all->Fill( cand.mass() );
@@ -268,6 +280,8 @@ void massrap_matcher()
 	    cout << "rapidities: central system: " << cms.Rapidity() << ", diphoton: " << ev.diphoton_rapidity[j] << " +/- " << diphoton_rapidity_error << ", diproton: " << cand.rapidity() << " +/- " << cand.rapidity_error() << endl;
 	    cout << "R:L:E ---> " << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;
 	    cout << "xip:" << xip << " xim: " << xim << " N tracks left: " << xi_45.size() << " N tracks right: " << xi_56.size() << endl;
+	    cout << "lead photon pT: " << ev.diphoton_pt1[j] << " sublead photon pT: " << ev.diphoton_pt2[j] << endl;
+	    cout << "LHC crossing angle: " << xangle << endl;
 
           gr_mass_massrapmatch.SetPoint( num_massrapmatch, cand.mass(), cms.M() );
           gr_mass_massrapmatch.SetPointError( num_massrapmatch, cand.mass_error(), diphoton_mass_error );
