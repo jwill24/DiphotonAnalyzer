@@ -1,9 +1,10 @@
 #include "Canvas.h"
 #include "diproton_candidate.h"
 #include "CTPPSAnalysisTools/Reconstruction/interface/LHCConditionsFactory.h"
-#include "CTPPSAnalysisTools/Reconstruction/interface/XiReconstructor.h"
+//#include "CTPPSAnalysisTools/Reconstruction/interface/XiReconstructor.h"
 #include "CTPPSAnalysisTools/Alignment/interface/AlignmentsFactory.h"
 
+#include "DiphotonAnalyzer/Macros/xi_reconstruction_2017.h"
 #include "DiphotonAnalyzer/TreeProducer/interface/TreeEvent.h"
 
 #include "TFile.h"
@@ -56,8 +57,8 @@ void massrap_matcher()
   cond_file2_path << getenv( "CMSSW_BASE" ) << "/src/CTPPSAnalysisTools/Reconstruction/data/2017/xangle_afterTS2.csv";
   cond_fac.feedConditions( cond_file1_path.str().c_str() );
   cond_fac.feedConditions( cond_file2_path.str().c_str() );
-  
-  ctpps::XiReconstructor reco;
+
+  xi_reco::xi_reconstruction_2017 reco;
   ostringstream disp_file_path;
   disp_file_path << getenv( "CMSSW_BASE" ) << "/src/CTPPSAnalysisTools/Reconstruction/data/2017/dispersions.txt";
   reco.feedDispersions( disp_file_path.str().c_str() );
@@ -115,9 +116,6 @@ void massrap_matcher()
       
       if ( pot_id != 3 && pot_id != 23 && pot_id != 103 && pot_id != 123 ){
 	count = count + 1;
-	cout << "run: " << ev.run_id << " num tracks: " << ev.num_proton_track << endl; 
-	cout << "side: " << ev.proton_track_side[j] << " station: " << ev.proton_track_station[j] << " pot: " << ev.proton_track_pot[j] << endl;
-	cout << "" << endl;
 	continue;
       }
       
@@ -162,6 +160,7 @@ void massrap_matcher()
 
       side_event[j] = ev.proton_track_side[j];
       xi_event[j] = xi;
+      //cout << "xangle: " << xangle << " xi: " << xi << endl;
     }
 
     //----- merge 2 tracks in one if N-F pot content is similar
@@ -176,27 +175,23 @@ void massrap_matcher()
     //---- identify the diproton candidates
 
     vector<diproton_candidate_t> candidates;
-    //for ( const auto trk45 : xi_45 ) {
-       //for ( const auto trk56 : xi_56 ) {	
-	//candidates.emplace_back( trk45.first, trk45.second, trk56.first, trk56.second );
-       
-	//arr_45.emplace_back( trk45.first );
-	//arr_56.emplace_back( trk56.first );
-    
-    float_t max_45 = 0.0;
-    float_t max_56 = 0.0;
-    for (unsigned int i = 0; i < xi_45.size(); i++) {
-      for (unsigned int j = 0; j < xi_56.size(); j++) {
-	if ( xi_45[i].first > max_45 ) max_45 = xi_45[i].first;
-	if ( xi_56[j].first > max_56 ) max_56 = xi_56[j].first;
+    for ( const auto trk45 : xi_45 ) {
+      for ( const auto trk56 : xi_56 ) {	
+	candidates.emplace_back( trk45.first, trk45.first*0.1, trk56.first, trk56.first*0.1 );       
+	//float_t max_45 = 0.0;
+	//float_t max_56 = 0.0;
+	//for (unsigned int i = 0; i < xi_45.size(); i++) {
+	//for (unsigned int j = 0; j < xi_56.size(); j++) {
+	//if ( xi_45[i].first > max_45 ) max_45 = xi_45[i].first;
+	//if ( xi_56[j].first > max_56 ) max_56 = xi_56[j].first;
       }
     }
     
-    float_t xi_45m = max_45;
-    float_t xi_56m = max_56;
+    //float_t xi_45m = max_45;
+    //float_t xi_56m = max_56;
     
     
-    candidates.emplace_back( xi_45m, xi_45m*0.1, xi_56m, xi_56m*0.1 );
+    //candidates.emplace_back( xi_45m, xi_45m*0.1, xi_56m, xi_56m*0.1 );
     
     //cout << candidates.size() << " diproton candidate(s) in total!" << endl;
 
