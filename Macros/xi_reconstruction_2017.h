@@ -70,27 +70,33 @@ namespace xi_reco
     
     void reconstruct( double xangle, unsigned short pot, double x_aligned, double& xi, double& xi_err ) const {
       if ( pot == 103 || pot == 123 ) {
+	/*
 	if ( xangle == 120 ) xi = -0.01* xtoxib1_120->Eval( x_aligned );
 	else if ( xangle == 130 ) xi = -0.01* xtoxib1_130->Eval( x_aligned );
 	else if ( xangle == 140 ) xi = -0.01* xtoxib1_140->Eval( x_aligned );
-	else if ( xangle > 120 && xangle < 140 ) xi = fabs( xtoxib1_120->Eval( x_aligned ) + ( ( ( 120. - xangle )/( 120. - 140. ) )*( xtoxib1_140->Eval( x_aligned )-xtoxib1_120->Eval( x_aligned ) ) ) );
-	else {
-	  const auto& disp_vs_pot = disp_vs_xa_.at( xangle );
-	  const dispersion_t disp = disp_vs_pot.at( pot );
-	  xi = x_aligned/( -disp.value );
-	}
+	else if ( xangle < 120 ) xi = fabs( xtoxib1_120->Eval( x_aligned ) + ( ( ( xangle - 120. )/( 120. - 140. ) )*( xtoxib1_140->Eval( x_aligned )-xtoxib1_120->Eval( x_aligned ) ) ) );
+	else if ( xangle > 120 && xangle < 150 ) xi = fabs( xtoxib1_120->Eval( x_aligned ) + ( ( ( 120. - xangle )/( 120. - 140. ) )*( xtoxib1_140->Eval( x_aligned )-xtoxib1_120->Eval( x_aligned ) ) ) );
+	*/
+	//else {
+	const auto& disp_vs_pot = disp_vs_xa_.at( xangle );
+	const dispersion_t disp = disp_vs_pot.at( pot );
+	xi = x_aligned/( -disp.value );
+	  //}
       }
       
       if ( pot == 3 || pot == 23 ) {
+	/*
 	if ( xangle == 120 ) xi = -0.01* xtoxib2_120->Eval( x_aligned );
 	else if ( xangle == 130 ) xi = -0.01* xtoxib2_130->Eval( x_aligned );
 	else if ( xangle == 140 ) xi = -0.01* xtoxib2_140->Eval( x_aligned );
-	else if ( xangle > 120 && xangle < 140 ) xi = fabs( xtoxib2_120->Eval( x_aligned ) + ( ( ( 120. - xangle )/( 120. - 140. ) )*( xtoxib2_140->Eval( x_aligned )-xtoxib2_120->Eval( x_aligned ) ) ) );
-	else {
-	  const auto& disp_vs_pot = disp_vs_xa_.at( xangle );
-	  const dispersion_t disp = disp_vs_pot.at( pot );
-	  xi = x_aligned/( -disp.value );
-	}
+	else if ( xangle < 120 ) xi = fabs( xtoxib1_120->Eval( x_aligned ) + ( ( ( xangle - 120. )/( 120. - 140. ) )*( xtoxib1_140->Eval( x_aligned )-xtoxib1_120->Eval( x_aligned ) ) ) );
+	else if ( xangle > 120 && xangle < 150 ) xi = fabs( xtoxib2_120->Eval( x_aligned ) + ( ( ( 120. - xangle )/( 120. - 140. ) )*( xtoxib2_140->Eval( x_aligned )-xtoxib2_120->Eval( x_aligned ) ) ) );
+	*/
+	//else {
+	const auto& disp_vs_pot = disp_vs_xa_.at( xangle );
+	const dispersion_t disp = disp_vs_pot.at( pot );
+	xi = x_aligned/( -disp.value );
+	//}
       }	  
     }
     

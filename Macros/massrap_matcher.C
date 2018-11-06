@@ -80,23 +80,24 @@ void massrap_matcher()
   unsigned int num_massmatch = 0, num_rapmatch = 0, num_massrapmatch = 0, num_nomatch = 0;
 
   TCanvas* c1 = new TCanvas("c1", "", 500, 500 );
-  TCanvas* c2 = new TCanvas("c2", "", 500, 500 );
-  TCanvas* c3 = new TCanvas("c3", "", 500, 500 );
-  TCanvas* c4 = new TCanvas("c4", "", 500, 500 );
-  TCanvas* c5 = new TCanvas("c5", "", 500, 500 );
-  TCanvas* c6 = new TCanvas("c6", "", 500, 500 );
-  TCanvas* c7 = new TCanvas("c7", "", 500, 500 );
+  //TCanvas* c2 = new TCanvas("c2", "", 500, 500 );
+  //TCanvas* c3 = new TCanvas("c3", "", 500, 500 );
+  //TCanvas* c4 = new TCanvas("c4", "", 500, 500 );
+  //TCanvas* c5 = new TCanvas("c5", "", 500, 500 );
+  //TCanvas* c6 = new TCanvas("c6", "", 500, 500 );
+  //TCanvas* c7 = new TCanvas("c7", "", 500, 500 );
 
-  TH1D* h_eta = new TH1D( "h_eta", "#eta of matching events", 100, -2.5, 2.5 );
-  TH1D* h_dphi = new TH1D( "h_dphi", "#delta#phi of matching events", 100, -4., 4. );
-  TH1D* h_acop = new TH1D( "h_acop", "acoplanarity", 100, 0., 1. );
-  TH1D* h_pt = new TH1D( "h_pt", "p#_{T} of matching events", 100, 50., 500. );
-  TH1D* h_numjets = new TH1D( "h_humjets", "num jets in matching events", 100, 0., 50. );
-  TH1D* h_numleps = new TH1D( "h_numleps", "num leptons in matching events", 100, 0., 50. );
-  TH1D* h_mass = new TH1D( "h_mass", "Diphoton Mass", 100., 0., 2500. );
-  TH1D* h_mass_all = new TH1D( "mass_all", "Diproton missing mass@@Events@@GeV", 12, 200., 2000. );
-  TH1D* h_rap_all = new TH1D( "rap_all", "Diproton rapidity@@Events", 20, -1., 1. );
-  TH2D* h_pu_v_run = new TH2D( "pu_v_run", "Pile Up as a function of Run number", 100, 294645, 302663, 100, 0, 100 );
+  TH1D* h_xangle = new TH1D( "h_xangle", "Crossing angle", 60, 100, 160 );
+  //TH1D* h_eta = new TH1D( "h_eta", "#eta of matching events", 100, -2.5, 2.5 );
+  //TH1D* h_dphi = new TH1D( "h_dphi", "#delta#phi of matching events", 100, -4., 4. );
+  //TH1D* h_acop = new TH1D( "h_acop", "acoplanarity", 100, 0., 1. );
+  //TH1D* h_pt = new TH1D( "h_pt", "p#_{T} of matching events", 100, 50., 500. );
+  //TH1D* h_numjets = new TH1D( "h_humjets", "num jets in matching events", 100, 0., 50. );
+  //TH1D* h_numleps = new TH1D( "h_numleps", "num leptons in matching events", 100, 0., 50. );
+  //TH1D* h_mass = new TH1D( "h_mass", "Diphoton Mass", 100., 0., 2500. );
+  //TH1D* h_mass_all = new TH1D( "mass_all", "Diproton missing mass@@Events@@GeV", 12, 200., 2000. );
+  //TH1D* h_rap_all = new TH1D( "rap_all", "Diproton rapidity@@Events", 20, -1., 1. );
+  //TH2D* h_pu_v_run = new TH2D( "pu_v_run", "Pile Up as a function of Run number", 100, 294645, 302663, 100, 0, 100 );
 
   const unsigned long long num_events = tr->GetEntriesFast();
 
@@ -113,6 +114,8 @@ void massrap_matcher()
 
     const auto cond = cond_fac.get( edm::EventID( ev.run_id, ev.lumisection, ev.event_number ) );
     double xangle = cond.crossing_angle;
+
+    h_xangle->Fill( xangle );
 
     for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
       const unsigned short pot_id = 100*ev.proton_track_side[j] + 10*ev.proton_track_station[j] + ev.proton_track_pot[j];
@@ -214,13 +217,13 @@ void massrap_matcher()
 	  if ( ev.diphoton_r92[j] < 0.94 ) continue;
 	  if ( ev.diphoton_mass[j] < 350. ) continue;
 	  
-	  h_acop->Fill( 1.-fabs( ev.diphoton_dphi[j] )/M_PI );
+	  //h_acop->Fill( 1.-fabs( ev.diphoton_dphi[j] )/M_PI );
 	  
 	  //----- back-to-back photons
 	  
 	  if ( 1.-fabs( ev.diphoton_dphi[j] )/M_PI > 0.005 ) continue;
 	  
-	  h_mass->Fill( ev.diphoton_mass[j] );
+	  //h_mass->Fill( ev.diphoton_mass[j] );
 
 	  //----- veto on track multiplicity
 
@@ -255,8 +258,8 @@ void massrap_matcher()
 	  
 
       for ( const auto cand : candidates ) {
-        h_mass_all->Fill( cand.mass() );
-        h_rap_all->Fill( cand.rapidity() );
+        //h_mass_all->Fill( cand.mass() );
+        //h_rap_all->Fill( cand.rapidity() );
         bool mass_match = is_matched( num_sigma, cms.M(), cand.mass(), diphoton_mass_error, cand.mass_error() );
         bool rap_match = is_matched( num_sigma, cms.Rapidity(), cand.rapidity(), diphoton_rapidity_error, cand.rapidity_error() );
 	
@@ -288,13 +291,13 @@ void massrap_matcher()
           gr_rap_massrapmatch.SetPoint( num_massrapmatch, cand.rapidity(), cms.Rapidity() );
           gr_rap_massrapmatch.SetPointError( num_massrapmatch, cand.rapidity_error(), diphoton_rapidity_error );
 	  
-	  h_eta->Fill( ev.diphoton_eta1[j] );
-	  h_eta->Fill( ev.diphoton_eta2[j] );
-	  h_dphi->Fill( ev.diphoton_dphi[j] );
-	  h_pt->Fill( ev.diphoton_pt1[j] );
-	  h_pt->Fill( ev.diphoton_pt2[j] );
-	  h_numjets->Fill( ev.num_jet );
-	  h_numleps->Fill( ev.num_muon + ev.num_electron );
+	  //h_eta->Fill( ev.diphoton_eta1[j] );
+	  //h_eta->Fill( ev.diphoton_eta2[j] );
+	  //h_dphi->Fill( ev.diphoton_dphi[j] );
+	  //h_pt->Fill( ev.diphoton_pt1[j] );
+	  //h_pt->Fill( ev.diphoton_pt2[j] );
+	  //h_numjets->Fill( ev.num_jet );
+	  //h_numleps->Fill( ev.num_muon + ev.num_electron );
 	  
           num_massrapmatch++;
         }
@@ -331,9 +334,12 @@ void massrap_matcher()
   //----- plotting part
 
   c1->cd();
-  h_mass->Draw();
-  c1->SaveAs("/eos/user/j/juwillia/www/2017data/mass.pdf");
+  h_xangle->Draw();
+  c1->SaveAs("/eos/user/j/juwillia/www/2017data/xangle.png");
+  //h_mass->Draw();
+  //c1->SaveAs("/eos/user/j/juwillia/www/2017data/mass.pdf");
 
+  /*
   c2->cd();
   h_eta->Draw();
   c2->SaveAs("/eos/user/j/juwillia/www/2017data/eta.pdf");
@@ -357,15 +363,15 @@ void massrap_matcher()
   c7->cd();
   h_acop->Draw();
   c7->SaveAs("/eos/user/j/juwillia/www/2017data/acoplanarity.pdf");
-
+  */
 
   gr_mass_massrapmatch.SetTitle( "Diproton system missing mass (GeV)@@Diphoton mass (GeV)" );
   gr_rap_massrapmatch.SetTitle( "Diproton system rapidity@@Diphoton rapidity" );
 
-  plot_matching( "2d_massmatch", gr_mass_nomatch, gr_mass_rapmatch, gr_mass_massmatch, gr_mass_massrapmatch, 300., 1800. );
-  plot_matching( "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -3., 3., 0.15 );
+  plot_matching( "2d_massmatch_prelimoptics", gr_mass_nomatch, gr_mass_rapmatch, gr_mass_massmatch, gr_mass_massrapmatch, 300., 1800. );
+  plot_matching( "2d_rapmatch_prelimoptics", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -3., 3., 0.15 );
 
-  {
+  /*{
     Canvas c( "1d_massmatch", "CMS+TOTEM Preliminary 2017, #sqrt{s} = 13 TeV, L = 41.199 fb^{-1}" );
     h_mass_all->Sumw2();
     h_mass_all->Draw();
@@ -380,7 +386,7 @@ void massrap_matcher()
     h_rap_all->Draw();
     c.Prettify( h_rap_all );
     c.Save( "pdf,png", "/eos/user/j/juwillia/www/2017data" );
-  }
+    }*/
 
 }
 
